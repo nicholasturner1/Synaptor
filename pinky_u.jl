@@ -1,11 +1,9 @@
 #!/usr/bin/env julia
 
-#__precompile__()
-
 module pinky_u
 
-import vol_u
-import postprocess_u
+import chunk_u 
+import utils
 import H5Array
 
 semantic_dir = "/mnt/data02/jingpeng/pinky/semanticmap/"
@@ -54,7 +52,7 @@ end
 function make_chunked_sem_assignment( seg, sem, seg_bounds,
   class_labels, max_chunk_size )
 
-  processing_chunk_bounds = vol_u.chunk_bounds( size(seg), max_chunk_size )
+  processing_chunk_bounds = chunk_u.chunk_bounds( size(seg), max_chunk_size )
   seg_offset = collect(seg_bounds.first) - 1;
 
   weights = Dict{Int, Vector{Float64}}();
@@ -65,7 +63,7 @@ function make_chunked_sem_assignment( seg, sem, seg_bounds,
     seg_chunk = fetch_chunk( seg, chunk_bounds )
     sem_chunk = fetch_chunk( sem, chunk_bounds, seg_offset )
 
-    @time assignment, weights = postprocess_u.make_semantic_assignment(
+    @time assignment, weights = utils.make_semantic_assignment(
                                   seg_chunk, sem_chunk,
                                   class_labels, weights )
 

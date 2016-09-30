@@ -22,4 +22,4 @@ seg_dtype = UInt32
 #out-of-core parameters
 w_radius = [300,300,30];
 scan_chunk_shape = [500,500,300];
-set_size_hint = 5000;
+set_size_hint = 15000;
