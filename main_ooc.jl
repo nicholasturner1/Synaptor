@@ -1,25 +1,33 @@
 #!/usr/bin/env julia
 
 #=
-   Postprocess Out of Core (OOC)
+   Out of Core (OOC)
 =#
-module postprocess_ooc
-#temporary
-unshift!(LOAD_PATH,".")
 
-#import utils #testing
-import io_u
-import pinky_u
-import seg_u
-import chunk_u
-import utils
+module main_ooc
+
+
+unshift!(LOAD_PATH,".") #temporary
+
+
+import io_u    # I/O Utils
+import pinky_u # Pinky-Specific Utils
+import seg_u   # Segmentation Utils
+import chunk_u # Chunking Utils
+import mfot    # Median-Over-Threshold Filter
+import utils   # General Utils
+
 
 #lines using these should be marked with
 #param
 include("parameters.jl")
 
+
 #------------------------------------------
-#Comparison tests with incore version
+# Command-line arguments
+
+# Current setup is designed for comparison
+# tests with incore version
 network_output_filename = ARGS[1];
 segmentation_filename   = ARGS[2];
 output_prefix           = ARGS[3];
@@ -32,7 +40,6 @@ function main( segmentation_fname, output_prefix )
   seg, sem_output = init_datasets( segmentation_fname )
 
   vol_shape = size(seg)
-  # seg_bounds = pinky_u.bounds_from_file( segmentation_fname )
   seg_bounds = [1,1,1] => collect(vol_shape) #vsincore test
   seg_offset = collect(seg_bounds.first) - 1;
 
@@ -46,23 +53,24 @@ function main( segmentation_fname, output_prefix )
 
   edges = Array{Tuple{Int,Int},1}();
   locations = Array{Tuple{Int,Int,Int},1}();
+  voxels = Vector{Vector{Tuple{Int,Int,Int}}}();
 
   psd_w = chunk_u.init_inspection_window( w_radius, sem_dtype ) #param
   seg_w = chunk_u.init_inspection_window( w_radius, seg_dtype ) #param
-
 
   for scan_bounds in scan_chunk_bounds
 
     println("Scan Chunk $(scan_bounds) ")
 
-    ins_block, block_offset = chunk_u.fetch_inspection_block( 
+    ins_block, block_offset = chunk_u.fetch_inspection_block(
                                                       sem_output, scan_bounds,
                                                       seg_offset, w_radius,
                                                       seg_bounds ) #param
-    seg_block, segb_offset  = chunk_u.fetch_inspection_block( 
+    seg_block, segb_offset  = chunk_u.fetch_inspection_block(
                                                       seg,        scan_bounds,
                                                       [0,0,0],    w_radius,
-                                                      seg_bounds )
+                                                      seg_bounds ) #param
+
 
     scan_chunk = chunk_u.fetch_chunk( sem_output, scan_bounds, seg_offset )
 
@@ -75,6 +83,13 @@ function main( segmentation_fname, output_prefix )
     psd_p         = scan_chunk[:,:,:,vol_map["PSD"]];
     psd_ins_block = ins_block[:,:,:,vol_map["PSD"]];
 
+    println("Block median filter")
+    #param
+    @time psd_ins_block = mfot.median_over_threshold_filter( psd_ins_block, mfot_radius, cc_thresh )
+    println("Chunk Median Filtering")
+    #param
+    @time psd_p = mfot.median_over_threshold_filter( psd_p, mfot_radius, cc_thresh )
+
     #extracted everything we need from here
     ins_block = nothing
     scan_chunk = nothing
@@ -86,13 +101,14 @@ function main( segmentation_fname, output_prefix )
     #println("ins block size: $(size(psd_ins_block))")
 
     process_scan_chunk!( psd_p, psd_ins_block, seg_block, semmap,
-                         edges, locations, processed_voxels,
+                         edges, locations, voxels, processed_voxels,
 
                          psd_w, seg_w,
 
                          scan_seg_offset, scan_global_offset,
                          block_offset, seg_bounds
                          )
+
     println("") #adding space to output
 
   end
@@ -100,6 +116,8 @@ function main( segmentation_fname, output_prefix )
   println("Saving edge information")
   io_u.save_edge_file( edges, locations, 1:length(locations),
                        "$(output_prefix)_edges.csv" )
+  io_u.save_voxel_file( voxels, 1:length(locations),
+                       "$(output_prefix)_voxels.csv")
 
 end
 
@@ -120,7 +138,7 @@ end
 
 
 function process_scan_chunk!( psd_p, inspection_block, seg_block, semmap,
-  edges, locations, processed_voxels,
+  edges, locations, voxels, processed_voxels,
   psd_w, seg_w,
   scan_seg_offset, scan_global_offset,
   inspection_global_offset, seg_bounds )
@@ -134,11 +152,12 @@ function process_scan_chunk!( psd_p, inspection_block, seg_block, semmap,
   ins_bounds = (seg_bounds.first  - inspection_global_offset) =>
                (seg_bounds.second - inspection_global_offset)
 
+
   for i in eachindex(psd_p)
 
 
-    if psd_p[i] < cc_thresh continue end
-    if isnan(psd_p[i]) continue end
+    if !psd_p[i] continue end
+    #if isnan(psd_p[i]) continue end
 
 
     isub        = ind2sub(chunk_shape,i)
@@ -177,15 +196,14 @@ function process_scan_chunk!( psd_p, inspection_block, seg_block, semmap,
     process_synapse!( psd_w, seg_w, isub_w,
                       inspection_global_offset + offset_w,
                       semmap,
-                      edges, locations, processed_voxels )
+                      edges, locations, voxels, processed_voxels )
   end
-
 end
 
 
 
 function process_synapse!( psd_p, seg, i, offset, semmap,
-  edges, locations, processed_voxels )
+  edges, locations, voxels, processed_voxels )
 
   syn, new_voxels = seg_u.connected_component3D( psd_p, i, cc_thresh )
 
@@ -194,7 +212,6 @@ function process_synapse!( psd_p, seg, i, offset, semmap,
 
   union!(processed_voxels, new_voxels)
   pop!(processed_voxels, utils.tuple_add(i,offset) )
-  println(length(processed_voxels))
 
 
   if length(new_voxels) <= size_thresh return end #param
@@ -212,12 +229,12 @@ function process_synapse!( psd_p, seg, i, offset, semmap,
   location = utils.coord_center_of_mass( new_voxels )
 
   println("Accepted synapse - adding information...")
-  push!(locations, location)
   println(synapse_members)
+  push!(locations, location)
   push!(edges, synapse_members[1])
+  push!(voxels, new_voxels)
 
 end
-
 
 
 main( segmentation_filename, output_prefix )

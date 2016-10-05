@@ -3,7 +3,7 @@ __precompile__()
 
 #=
   I/O Utils - io_u.jl
-=# 
+=#
 module io_u
 
 using HDF5
@@ -34,7 +34,7 @@ end
 
     save_edge_file( edges, locations, segids, output_filename )
 
-  Saves a file detailing the information on synapses discovered 
+  Saves a file detailing the information on synapses discovered
   through the postprocessing. Writes the following semicolon-separated
   format:
 
@@ -53,6 +53,29 @@ function save_edge_file( edges, locations, segids, output_filename )
     end
 
   end
+
+end
+
+
+"""
+
+    save_voxel_file( voxes, ids )
+"""
+function save_voxel_file( voxels::Vector{Vector{Tuple{Int,Int,Int}}}, ids,
+  output_filename )
+
+  @assert length(voxels) == length(ids)
+
+  open( output_filename, "w+" ) do f
+
+    for i in 1:length(voxels)
+      segid = ids[i]
+      locations = join(voxels[i],",")
+
+      write(f, "$segid ; $locations \n")
+    end
+
+  end#open() do f
 
 end
 
