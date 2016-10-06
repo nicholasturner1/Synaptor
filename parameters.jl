@@ -24,3 +24,6 @@ w_radius = [300,300,30];
 scan_chunk_shape = [500,500,300];
 set_size_hint = 15000;
 mfot_radius = 3
+
+scan_start_coord = [1,1,1]
+scan_end_coord = [513,513,100]

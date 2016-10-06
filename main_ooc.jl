@@ -39,13 +39,16 @@ function main( segmentation_fname, output_prefix )
 
   seg, sem_output = init_datasets( segmentation_fname )
 
-  vol_shape = size(seg)
-  seg_bounds = [1,1,1] => collect(vol_shape) #vsincore test
-  seg_offset = collect(seg_bounds.first) - 1;
+
+  seg_bounds  = [1,1,1] => collect(size(seg)) #vsincore test
+  scan_bounds = scan_start_coord => scan_end_coord;
+  scan_origin_offset = scan_start_coord - 1;
+
+  scan_vol_shape = chunk_u.vol_shape( scan_bounds ) #param
 
 
   #param
-  scan_chunk_bounds = chunk_u.chunk_bounds( vol_shape, scan_chunk_shape )
+  scan_chunk_bounds = chunk_u.chunk_bounds( scan_vol_shape, scan_chunk_shape, scan_origin_offset )
 
 
   processed_voxels = Set{Tuple{Int,Int,Int}}();
@@ -62,51 +65,52 @@ function main( segmentation_fname, output_prefix )
 
     println("Scan Chunk $(scan_bounds) ")
 
+    #want the inspection block to represent all valid mfot values
+    # in the original volume which can be reached by an inspection window
+    # within the scan chunk. Need to increase the window radius to acct
+    # for the median filtering operation
     ins_block, block_offset = chunk_u.fetch_inspection_block(
                                                       sem_output, scan_bounds,
-                                                      seg_offset, w_radius,
+                                                      [0,0,0], #sem and seg match
+                                                      w_radius + mfot_radius,
                                                       seg_bounds ) #param
     seg_block, segb_offset  = chunk_u.fetch_inspection_block(
                                                       seg,        scan_bounds,
-                                                      [0,0,0],    w_radius,
+                                                      [0,0,0],
+                                                      w_radius + mfot_radius,
                                                       seg_bounds ) #param
 
 
-    scan_chunk = chunk_u.fetch_chunk( sem_output, scan_bounds, seg_offset )
-
-
-    scan_seg_offset = scan_bounds.first - 1;
-    scan_global_offset = scan_seg_offset + seg_offset;
-
     semmap, _ = utils.make_semantic_assignment( seg_block, ins_block, [2,3] )
 
-    psd_p         = scan_chunk[:,:,:,vol_map["PSD"]];
+
     psd_ins_block = ins_block[:,:,:,vol_map["PSD"]];
 
     println("Block median filter")
     #param
     @time psd_ins_block = mfot.median_over_threshold_filter( psd_ins_block, mfot_radius, cc_thresh )
-    println("Chunk Median Filtering")
-    #param
-    @time psd_p = mfot.median_over_threshold_filter( psd_p, mfot_radius, cc_thresh )
+    scan_offset = scan_bounds.first - 1;
+    @time psd_p = chunk_u.fetch_chunk( psd_ins_block, scan_bounds, -block_offset )
+
+    # println("block offset: $(block_offset)")
+    # println("scan_offset: $(scan_offset)")
+    # println("scan_origin_offset: $(scan_origin_offset)")
+    # println("ins block size: $(size(psd_ins_block))")
+    # println("scan chunk size: $(size(psd_p))")
+
 
     #extracted everything we need from here
     ins_block = nothing
     scan_chunk = nothing
     gc()
 
-    #println("block offset: $(block_offset)")
-    #println("scan_seg_offset: $(scan_seg_offset)")
-    #println("scan_global_offset: $(scan_global_offset)")
-    #println("ins block size: $(size(psd_ins_block))")
 
     process_scan_chunk!( psd_p, psd_ins_block, seg_block, semmap,
                          edges, locations, voxels, processed_voxels,
 
                          psd_w, seg_w,
 
-                         scan_seg_offset, scan_global_offset,
-                         block_offset, seg_bounds
+                         scan_offset, block_offset, seg_bounds
                          )
 
     println("") #adding space to output
@@ -140,7 +144,7 @@ end
 function process_scan_chunk!( psd_p, inspection_block, seg_block, semmap,
   edges, locations, voxels, processed_voxels,
   psd_w, seg_w,
-  scan_seg_offset, scan_global_offset,
+  scan_global_offset,
   inspection_global_offset, seg_bounds )
 
   #this will usually be the scan_chunk_shape, but

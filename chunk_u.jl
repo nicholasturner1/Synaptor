@@ -1,5 +1,5 @@
 #!/usr/bin/env julia
-module chunk_u 
+module chunk_u
 
 #=
    Chunking Utilities - chunk_u.jl
@@ -12,6 +12,17 @@ export fetch_inspection_window
 export fill_inspection_window!, init_inspection_window
 export fetch_inspection_block
 
+
+"""
+
+    vol_shape( bounds )
+
+  Returns the overall shape of a subvolume which ranges
+  between the two coordinates contained within the Pair bounds.
+"""
+function vol_shape( bounds::Pair )
+  bounds.second - bounds.first + 1
+end
 
 """
 
@@ -28,11 +39,11 @@ function fetch_chunk( d, bounds::Pair, offset )
   if length(size(d)) == 3
     d[ i_beg[1]:i_end[1],
        i_beg[2]:i_end[2],
-       i_beg[3]:i_end[3]] 
+       i_beg[3]:i_end[3]]
   elseif length(size(d)) == 4
     d[ i_beg[1]:i_end[1],
        i_beg[2]:i_end[2],
-       i_beg[3]:i_end[3],:] 
+       i_beg[3]:i_end[3],:]
   end
 end
 
@@ -63,7 +74,7 @@ end
   don't match to allow for perfect splitting, smaller
   chunks are included at the end of each dimension.
 """
-function chunk_bounds( vol_size, chunk_size )
+function chunk_bounds( vol_size, chunk_size, offset=[0,0,0] )
 
   x_bounds = bounds1D( vol_size[1], chunk_size[1] )
   y_bounds = bounds1D( vol_size[2], chunk_size[2] )
@@ -80,8 +91,8 @@ function chunk_bounds( vol_size, chunk_size )
     for y in y_bounds
       for x in x_bounds
         i+=1;
-        bounds[i] = [x.first,  y.first,  z.first] =>
-                    [x.second, y.second, z.second]
+        bounds[i] = [x.first,  y.first,  z.first] + offset =>
+                    [x.second, y.second, z.second] + offset
       end
     end
   end
@@ -130,7 +141,7 @@ end
   Extracts a window from a dataset of all the existing
   coordinates within some radius of the given coordinate (rounded up).
   Returns the window of data, as well as the offset of the
-  window indices from those of the original dataset. 
+  window indices from those of the original dataset.
 """
 function fetch_inspection_window( dset, coord, radius, bounds=nothing )
 
@@ -189,7 +200,7 @@ function fill_inspection_window!( window, dset, coord, radius, bounds=nothing )
 
   #rel_coord = coord - beg_i;
   window_size = end_i - beg_i + 1
-  
+
   fill!( window, eltype(window)(0) )
 
   window[
@@ -210,7 +221,7 @@ end
     init_inspection_window( radius, dtype )
 
   Initializes a window of data of a given radius around a central
-  pixel (rounded up). Intended to be used in combination with 
+  pixel (rounded up). Intended to be used in combination with
   fill_inspection_window! above.
 """
 function init_inspection_window( radius, dtype )
