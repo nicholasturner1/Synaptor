@@ -40,7 +40,7 @@ function main( segmentation_fname, output_prefix )
   scan_rel_offset = scan_start_coord - 1; #param
 
   scan_vol_shape = chunk_u.vol_shape( scan_bounds ) #param
-  @assert all( scan_vol_shape .< collect(size(seg)) )
+  @assert all( scan_vol_shape .<= collect(size(seg)) )
 
 
   #param
@@ -87,11 +87,13 @@ function main( segmentation_fname, output_prefix )
 
     psd_ins_block = ins_block[:,:,:,vol_map["PSD"]];
 
+
     println("Block median filter...")
     #param
     @time psd_ins_block = mfot.median_over_threshold_filter( psd_ins_block, mfot_radius, cc_thresh )
 
-    psd_p = chunk_u.fetch_chunk( psd_ins_block, scan_bounds, seg_origin_offset-block_offset )
+
+    scan_chunk = chunk_u.fetch_chunk( psd_ins_block, scan_bounds, seg_origin_offset-block_offset )
     scan_offset = scan_bounds.first - 1 + seg_origin_offset;
 
     # println("block offset: $(block_offset)")
@@ -103,11 +105,10 @@ function main( segmentation_fname, output_prefix )
 
     # we've extracted everything we need from these
     ins_block = nothing
-    # scan_chunk = nothing
     gc()
 
 
-    process_scan_chunk!( psd_p, psd_ins_block, seg_block, semmap,
+    process_scan_chunk!( scan_chunk, psd_ins_block, seg_block, semmap,
                          edges, locations, voxels, processed_voxels,
 
                          psd_w, seg_w,
@@ -132,12 +133,15 @@ end
 function init_datasets( segmentation_filename )
 
   println("Reading segmentation file...")
-  @time seg    = io_u.read_h5( segmentation_filename, false )
+  @time seg    = io_u.read_h5( segmentation_filename, seg_incore )#param
 
-  println("Initializing semantic H5Array...")
-  sem_output = pinky_u.init_semantic_arr()
-  # println("Reading output file...")
-  # @time sem_output = io_u.read_h5( network_output_filename )
+  if network_output_filename != nothing
+    println("Reading semantic file...")
+    @time sem_output = io_u.read_h5( network_output_filename, sem_incore )#param
+  else
+    println("Initializing semantic H5Array...")
+    sem_output = pinky_u.init_semantic_arr()
+  end
 
   seg, sem_output
 end
