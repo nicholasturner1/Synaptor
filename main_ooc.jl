@@ -90,7 +90,7 @@ function main( segmentation_fname, output_prefix )
 
     println("Block median filter...")
     #param
-    @time psd_ins_block = mfot.median_over_threshold_filter( psd_ins_block, mfot_radius, cc_thresh )
+    @time psd_ins_block = mfot.median_filter_over_threshold( psd_ins_block, mfot_radius, cc_thresh )
 
 
     scan_chunk = chunk_u.fetch_chunk( psd_ins_block, scan_bounds, seg_origin_offset-block_offset )
