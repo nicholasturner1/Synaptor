@@ -133,7 +133,8 @@ end
 function init_datasets( segmentation_filename )
 
   println("Reading segmentation file...")
-  @time seg    = io_u.read_h5( segmentation_filename, seg_incore )#param
+  @time seg    = io_u.read_h5( segmentation_filename,
+                               seg_incore, seg_dset_name )#param
 
   if network_output_filename != nothing
     println("Reading semantic file...")
