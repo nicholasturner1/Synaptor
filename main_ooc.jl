@@ -57,9 +57,12 @@ function main( segmentation_fname, output_prefix )
   psd_w = chunk_u.init_inspection_window( w_radius, sem_dtype ) #param
   seg_w = chunk_u.init_inspection_window( w_radius, seg_dtype ) #param
 
+
+  num_scan_chunks = length(scan_chunk_bounds)
+  curr_chunk = 1
   for scan_bounds in scan_chunk_bounds
 
-    println("Scan Chunk $(scan_bounds) ")
+    println("Scan Chunk #$(curr_chunk) of $(num_scan_chunks): $(scan_bounds) ")
 
     #want the inspection block to represent all valid mfot values
     # in the original volume which can be reached by an inspection window
@@ -113,6 +116,7 @@ function main( segmentation_fname, output_prefix )
                          )
 
     println("") #adding space to output
+    curr_chunk += 1
 
   end
 
