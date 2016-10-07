@@ -24,7 +24,7 @@ function median_filter_over_threshold{T}( d::AbstractArray{T,3}, r::Integer, t )
   zmax = size(d,3)
 
   for z in 1:zmax
-    median_over_threshold_filter!( d, res, r, z, t )
+    median_filter_over_threshold!( d, res, r, z, t )
   end
 
   res
