@@ -70,12 +70,43 @@ function save_voxel_file( voxels::Vector{Vector{Tuple{Int,Int,Int}}}, ids,
 
     for i in 1:length(voxels)
       segid = ids[i]
-      locations = join(voxels[i],",")
+      for v in voxels[i]
+        write(f, "$segid, $(join(v,",")) \n")
+      end
+      #locations = join(voxels[i],",")
 
-      write(f, "$segid ; $locations \n")
+      #write(f, "$segid ; $locations \n")
     end
 
   end#open() do f
+
+end
+
+
+"""
+
+    read_voxel_file
+
+
+"""
+function read_voxel_file( input_filename )
+
+  res = Dict{Int,Vector{Tuple{Int,Int,Int}}}();
+
+  open(input_filename) do f
+
+    for ln in eachline(f)
+
+      segid, x,y,z = map(x -> parse(Int,x), split(ln,","))
+
+      if !haskey(res,segid) res[segid] = [] end
+      
+      push!(res[segid], (x,y,z) )
+
+    end#for ln
+  end#do f
+
+  res
 
 end
 
@@ -134,6 +165,17 @@ function read_map_file( input_filename, num_columns, sep=";" )
   dicts
 end
 
+
+function create_seg_dset( fname, vol_size, chunk_size,
+  dset_name="/synseg", dtype=UInt32, compress_level=3 )
+
+  f = h5open( fname, "w" )
+
+  dset = d_create(f, dset_name, datatype(dtype), dataspace(vol_size...),
+                  "chunk", chunk_size, "compress", compress_level )
+
+  dset
+end
 
 #module end
 end

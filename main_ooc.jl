@@ -1,7 +1,7 @@
 #!/usr/bin/env julia
 
 #=
-   Out of Core (OOC)
+   Out of Core (OOC) Processing
 =#
 
 module main_ooc
@@ -17,22 +17,16 @@ import chunk_u # Chunking Utils
 import mfot    # Median-Over-Threshold Filter
 import utils   # General Utils
 
+#------------------------------------------
+# Command-line arguments
+
+config_filename = ARGS[1]
+#------------------------------------------
 
 #lines using these should be marked with
 #param
 include("parameters.jl")
-
-
-#------------------------------------------
-# Command-line arguments
-
-# Current setup is designed for comparison
-# tests with incore version
-network_output_filename = ARGS[1];
-segmentation_filename   = ARGS[2];
-output_prefix           = ARGS[3];
-
-#------------------------------------------
+include(config_filename)
 
 
 function main( segmentation_fname, output_prefix )
@@ -40,15 +34,17 @@ function main( segmentation_fname, output_prefix )
   seg, sem_output = init_datasets( segmentation_fname )
 
 
-  seg_bounds  = [1,1,1] => collect(size(seg)) #vsincore test
+  seg_origin_offset  = seg_start - 1;#param
+  seg_bounds  = seg_start => collect(size(seg)) + seg_origin_offset #param
   scan_bounds = scan_start_coord => scan_end_coord;
-  scan_origin_offset = scan_start_coord - 1;
+  scan_rel_offset = scan_start_coord - 1; #param
 
   scan_vol_shape = chunk_u.vol_shape( scan_bounds ) #param
+  @assert all( scan_vol_shape .< collect(size(seg)) )
 
 
   #param
-  scan_chunk_bounds = chunk_u.chunk_bounds( scan_vol_shape, scan_chunk_shape, scan_origin_offset )
+  scan_chunk_bounds = chunk_u.chunk_bounds( scan_vol_shape, scan_chunk_shape, scan_rel_offset )
 
 
   processed_voxels = Set{Tuple{Int,Int,Int}}();
@@ -69,28 +65,31 @@ function main( segmentation_fname, output_prefix )
     # in the original volume which can be reached by an inspection window
     # within the scan chunk. Need to increase the window radius to acct
     # for the median filtering operation
-    ins_block, block_offset = chunk_u.fetch_inspection_block(
+    println("Fetching Inspection Blocks...")
+    @time ins_block, block_offset = chunk_u.fetch_inspection_block(
                                                       sem_output, scan_bounds,
-                                                      [0,0,0], #sem and seg match
+                                                      seg_origin_offset,
                                                       w_radius + mfot_radius,
                                                       seg_bounds ) #param
-    seg_block, segb_offset  = chunk_u.fetch_inspection_block(
+    @time seg_block, segb_offset  = chunk_u.fetch_inspection_block(
                                                       seg,        scan_bounds,
                                                       [0,0,0],
                                                       w_radius + mfot_radius,
-                                                      seg_bounds ) #param
+                                                      [1,1,1] => collect(size(seg)) ) #param
 
 
-    semmap, _ = utils.make_semantic_assignment( seg_block, ins_block, [2,3] )
+    println("Making semantic assignment...")
+    @time semmap, _ = utils.make_semantic_assignment( seg_block, ins_block, [2,3] )
 
 
     psd_ins_block = ins_block[:,:,:,vol_map["PSD"]];
 
-    println("Block median filter")
+    println("Block median filter...")
     #param
     @time psd_ins_block = mfot.median_over_threshold_filter( psd_ins_block, mfot_radius, cc_thresh )
-    scan_offset = scan_bounds.first - 1;
-    @time psd_p = chunk_u.fetch_chunk( psd_ins_block, scan_bounds, -block_offset )
+
+    psd_p = chunk_u.fetch_chunk( psd_ins_block, scan_bounds, seg_origin_offset-block_offset )
+    scan_offset = scan_bounds.first - 1 + seg_origin_offset;
 
     # println("block offset: $(block_offset)")
     # println("scan_offset: $(scan_offset)")
@@ -99,9 +98,9 @@ function main( segmentation_fname, output_prefix )
     # println("scan chunk size: $(size(psd_p))")
 
 
-    #extracted everything we need from here
+    # we've extracted everything we need from these
     ins_block = nothing
-    scan_chunk = nothing
+    # scan_chunk = nothing
     gc()
 
 
@@ -129,12 +128,12 @@ end
 function init_datasets( segmentation_filename )
 
   println("Reading segmentation file...")
-  @time seg    = io_u.read_h5( segmentation_filename )
+  @time seg    = io_u.read_h5( segmentation_filename, false )
 
-  # println("Initializing semantic H5Array...")
-  # sem_output = pinky_u.init_semantic_arr()
-  println("Reading output file...")
-  @time sem_output = io_u.read_h5( network_output_filename )
+  println("Initializing semantic H5Array...")
+  sem_output = pinky_u.init_semantic_arr()
+  # println("Reading output file...")
+  # @time sem_output = io_u.read_h5( network_output_filename )
 
   seg, sem_output
 end
