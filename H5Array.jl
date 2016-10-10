@@ -84,7 +84,8 @@ function getindex( A::H5Arr, indices::Union{Colon,Range{Int},Int}... )
 
   end
 
-   @time read_and_map( A, bounds, to_read )
+  # @time read_and_map( A, bounds, to_read )
+  read_and_map( A, bounds, to_read )
 end
 
 
@@ -126,17 +127,15 @@ function read_chunk( filename, dset_name, bounds )
   d = f[dset_name]
 
   if length(size(d)) > 3
-    chunk = d[read_beg[1]:read_end[1],
+    d[read_beg[1]:read_end[1],
               read_beg[2]:read_end[2],
               read_beg[3]:read_end[3],
               : ]
   else
-    chunk = d[read_beg[1]:read_end[1],
+    d[read_beg[1]:read_end[1],
               read_beg[2]:read_end[2],
               read_beg[3]:read_end[3]]
   end
-
-  chunk
 end
 
 end #module

@@ -255,4 +255,44 @@ function fetch_inspection_block( vol, scan_bounds, scan_offset,
                          block_radius, bounds )
 end
 
+
+"""
+
+    bounds( d::H5Array.H5Arr, offset=[0,0,0] )
+
+  Extracts the index bounds from an H5Arr object
+"""
+function bounds( d::H5Array.H5Arr, offset=[0,0,0] )
+  d.shape.first[1:3] + offset => d.shape.second[1:3] + offset
+end
+
+
+"""
+
+    bounds( d, offset=[0,0,0] )
+
+  Extracts the index bounds for general purpose objects
+  which have size and a given offset
+"""
+function bounds( d, offset=[0,0,0] )
+  offset + 1 => collect(size(d)[1:3]) + offset
+end
+
+
+"""
+
+    intersect_bounds( bounds1, bounds2, bounds2_offset )
+
+  Takes two index bounds defined by Pairs and takes their
+  intersection. Performs no checking for validity of the result
+  (i.e. the result can specify bounds with 0 or negative volume).
+"""
+function intersect_bounds( bounds1, bounds2, bounds2_offset )
+  b1_beg, b1_end = bounds1
+  b2_beg = bounds2.first  + bounds2_offset
+  b2_end = bounds2.second + bounds2_offset
+
+  max( b1_beg, b2_beg ) => min( b1_end, b2_end )
+end
+
 end#module

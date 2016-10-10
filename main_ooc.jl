@@ -15,6 +15,7 @@ import pinky_u # Pinky-Specific Utils
 import seg_u   # Segmentation Utils
 import chunk_u # Chunking Utils
 import mfot    # Median-Over-Threshold Filter
+import vol_u   # Data Volume Utils
 import utils   # General Utils
 
 #------------------------------------------
@@ -35,14 +36,18 @@ function main( segmentation_fname, output_prefix )
 
 
   seg_origin_offset  = seg_start - 1;#param
-  seg_bounds  = seg_start => collect(size(seg)) + seg_origin_offset #param
+  seg_bounds  = chunk_u.bounds( seg )#param
+  sem_bounds  = chunk_u.bounds( sem_output )
+
+  valid_sem_bounds = chunk_u.intersect_bounds( sem_bounds, seg_bounds, seg_origin_offset )
+  valid_seg_bounds = chunk_u.intersect_bounds( seg_bounds, sem_bounds, -seg_origin_offset )
+
   scan_bounds = scan_start_coord => scan_end_coord;
-  scan_rel_offset = scan_start_coord - 1; #param
+  @assert vol_u.in_bounds( scan_bounds, valid_seg_bounds )
 
   scan_vol_shape = chunk_u.vol_shape( scan_bounds ) #param
-  @assert all( scan_vol_shape .<= collect(size(seg)) )
 
-
+  scan_rel_offset = scan_start_coord - 1; #param
   #param
   scan_chunk_bounds = chunk_u.chunk_bounds( scan_vol_shape, scan_chunk_shape, scan_rel_offset )
 
@@ -73,12 +78,12 @@ function main( segmentation_fname, output_prefix )
                                                       sem_output, scan_bounds,
                                                       seg_origin_offset,
                                                       w_radius + mfot_radius,
-                                                      seg_bounds ) #param
+                                                      valid_sem_bounds ) #param
     @time seg_block, segb_offset  = chunk_u.fetch_inspection_block(
                                                       seg,        scan_bounds,
                                                       [0,0,0],
                                                       w_radius + mfot_radius,
-                                                      [1,1,1] => collect(size(seg)) ) #param
+                                                      valid_seg_bounds ) #param
 
 
     println("Making semantic assignment...")
@@ -113,7 +118,7 @@ function main( segmentation_fname, output_prefix )
 
                          psd_w, seg_w,
 
-                         scan_offset, block_offset, seg_bounds
+                         scan_offset, block_offset, valid_sem_bounds
                          )
 
     println("") #adding space to output
@@ -153,16 +158,16 @@ function process_scan_chunk!( psd_p, inspection_block, seg_block, semmap,
   edges, locations, voxels, processed_voxels,
   psd_w, seg_w,
   scan_global_offset,
-  inspection_global_offset, seg_bounds )
+  inspection_global_offset, valid_bounds )
 
   #this will usually be the scan_chunk_shape, but
   # isn't likely to be so at the boundaries
   chunk_shape = size(psd_p)
 
-  #translating the bounds of the segmentation volume
-  # to those of the inspection window (and seg block?)
-  ins_bounds = (seg_bounds.first  - inspection_global_offset) =>
-               (seg_bounds.second - inspection_global_offset)
+  #translating the bounds of the valid data
+  # to those of the inspection blocks
+  ins_bounds = (valid_bounds.first  - inspection_global_offset) =>
+               (valid_bounds.second - inspection_global_offset)
 
 
   for i in eachindex(psd_p)
