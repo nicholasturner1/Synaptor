@@ -166,6 +166,29 @@ function read_map_file( input_filename, num_columns, sep=";" )
 end
 
 
+function read_id_map_lines( input_filename, sep=";" )
+
+  res = Dict{Int,AbstractString}();
+
+  open(input_filename) do f
+
+    for ln in eachline(f)
+
+      fields = split(ln,sep)
+
+      lineid = parse(Int, fields[1])
+      rest = join(fields[2:end],sep)
+
+      res[lineid] = rest
+
+    end#for ln
+
+  end#do f
+
+  res
+end
+
+
 function create_seg_dset( fname, vol_size, chunk_size,
   dset_name="/synseg", dtype=UInt32, compress_level=3 )
 
