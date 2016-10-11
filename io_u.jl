@@ -89,9 +89,9 @@ end
 
 
 """
-function read_voxel_file( input_filename )
+function read_voxel_file( input_filename, offset=[0,0,0] )
 
-  res = Dict{Int,Vector{Tuple{Int,Int,Int}}}();
+  res = Dict{Vector{Int},Int}();
 
   open(input_filename) do f
 
@@ -99,9 +99,9 @@ function read_voxel_file( input_filename )
 
       segid, x,y,z = map(x -> parse(Int,x), split(ln,","))
 
-      if !haskey(res,segid) res[segid] = [] end
-      
-      push!(res[segid], (x,y,z) )
+      res[[x+offset[1],
+           y+offset[2],
+           z+offset[3]]] = segid
 
     end#for ln
   end#do f
