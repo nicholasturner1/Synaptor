@@ -19,6 +19,7 @@ offset = seg_start - 1;
 
 #seg_chunk_shape in params
 #output_seg_shape in config
+#max_chunk_multiplier, size_div in params
 #-----------------------------
 
 
@@ -33,11 +34,10 @@ function main()
                                     seg_chunk_shape, "/main" )
 
 
-  bounds = chunk_u.chunk_bounds( output_seg_shape, seg_chunk_shape )
-
-
   println("Making chunk plans...")
-  @time chunk_membership = deal_voxels_to_chunks( segment_voxels, bounds )
+  @time membership, bounds = binary_deal_voxels_to_chunks( segment_voxels,
+                              max_chunk_multiplier*seg_chunk_shape,
+                              output_seg_shape, seg_chunk_shape, size_div )
 
 
   chunk = zeros( seg_dtype, (seg_chunk_shape...) )
@@ -48,7 +48,7 @@ function main()
 
     println("Writing chunk $chunk_id of $num_chunks...")
 
-    fill_chunk_with_voxels!( chunk, chunk_membership[chunk_id],
+    fill_chunk_with_voxels!( chunk, membership[chunk_id],
                              bounds[chunk_id].first-1 )
 
     write_chunk_to_output( seg, chunk, bounds[chunk_id] )
@@ -57,6 +57,64 @@ function main()
 
 end
 
+"""
+No longer binary...but whatever it seems to work pretty well
+"""
+function binary_deal_voxels_to_chunks( voxels, initial_chunk_shape,
+  volume_shape, final_chunk_shape, size_div )
+
+  chunk_shape = initial_chunk_shape
+
+  println("Performing initial deal")
+  bounds = chunk_u.chunk_bounds( volume_shape, chunk_shape )
+  members = deal_voxels_to_chunks( voxels, bounds )
+
+  while all( chunk_shape .> final_chunk_shape )
+
+    chunk_shape = div(chunk_shape,size_div);
+    println("Chunk shape: $chunk_shape")
+
+    new_bounds = chunk_u.chunk_bounds( volume_shape, chunk_shape )
+    members = deal_voxels_to_contained_chunks( members, bounds, new_bounds )
+    bounds = new_bounds
+
+  end
+
+  members, bounds
+end
+
+function deal_voxels_to_contained_chunks( memberships, L_bounds, S_bounds)
+
+  new_memberships = Vector{Vector{Pair{Vector{Int},Int}}}(length(S_bounds));
+  for i in eachindex(new_memberships) new_memberships[i] = [] end
+
+  for (i,members) in enumerate(memberships)
+
+    #first pass to find which small bounds possibly contain
+    # the voxels here
+    contained_bounds = Vector{Int}();
+
+    for (j,sb) in enumerate(S_bounds  )
+      if !contained_within( sb, L_bounds[i] ) continue end
+      push!(contained_bounds, j)
+    end
+
+    #second pass to deal the voxels within the larger bound
+    for (v,segid) in members
+
+      for j in contained_bounds
+        if in_bounds(v,S_bounds[j])
+          push!(new_memberships[j], v=>segid)
+          break
+        end
+      end
+
+    end
+
+  end
+
+  new_memberships
+end
 
 function deal_voxels_to_chunks( voxels, bounds )
 
@@ -92,6 +150,32 @@ function in_bounds( voxel, bounds )
     voxel[1] <= b_end[1] &&
     voxel[2] <= b_end[2] &&
     voxel[3] <= b_end[3] )
+end
+
+
+function contained_within( bounds1, bounds2 )
+  beg1,end1 = bounds1
+  beg2,end2 = bounds2
+
+  ( beg1[1] >= beg2[1] &&
+    beg1[2] >= beg2[2] &&
+    beg1[3] >= beg2[3] &&
+
+    end1[1] <= end2[1] &&
+    end1[2] <= end2[2] &&
+    end1[3] <= end2[3] )
+end
+
+function lte3d( v1, v2 )
+  ( v1[1] <= v2[1] &&
+    v1[2] <= v2[2] &&
+    v1[3] <= v2[3] )
+end
+
+function gte3d( v1, v2 )
+  ( v1[1] >= v2[1] &&
+    v1[2] >= v2[2] &&
+    v1[3] >= v2[3] )
 end
 
 function fill_chunk_with_voxels!( chunk, voxels, offset )

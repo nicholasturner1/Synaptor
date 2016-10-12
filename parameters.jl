@@ -20,6 +20,8 @@ sem_dtype = Float32
 seg_dtype = UInt32
 
 seg_chunk_shape = [256,256,32];
+max_chunk_multiplier = 8;
+size_div = 8;
 
 #out-of-core parameters
 w_radius = [300,300,30];
