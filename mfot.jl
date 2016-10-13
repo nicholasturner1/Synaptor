@@ -1,4 +1,5 @@
 #!/usr/bin/env julia
+__precompile__()
 
 #=
   Median Over Threshold Filter - mfot.jl
@@ -137,6 +138,12 @@ function advance_counts!(counts, d,r,y,t,z )
 end
 
 
+"""
+
+    slow_median_filter{T}( d::AbstractArray{T,3}, r )
+
+  Comparison implementation for benchmarking
+"""
 function slow_median_filter{T}( d::AbstractArray{T,3}, r )
 
   res = zeros(eltype(d), size(d));
@@ -161,5 +168,6 @@ function slow_median_filter{T}( d::AbstractArray{T,3}, r )
 
   res
 end
+
 
 end #module

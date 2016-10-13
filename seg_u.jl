@@ -4,14 +4,14 @@ __precompile__()
 #=
   Segmentation Utilities - seg_u.jl
 =#
-module seg_u 
+module seg_u
 
 export centers_of_mass
 export dilate_by_k
 export segment_sizes, filter_segments_by_size!
 export connected_components3D
 export count_overlapping_labels
-
+export filter_segments_by_ids!
 
 
 """
@@ -40,8 +40,8 @@ end
 
     count_overlapping_labels( d, labels, max_label=nothing )
 
-  Returns a sparse matrix representing the overlap matrix 
-  between the two passed segmentations. 
+  Returns a sparse matrix representing the overlap matrix
+  between the two passed segmentations.
 
   It can be useful to extend the sparse matrix to include
   more indices than supplied within the labels (e.g. to
@@ -242,7 +242,7 @@ function manhattan_distance2D!{T}( d::Array{T,3} )
     end
   end
 
-  dists 
+  dists
 end
 
 
@@ -326,5 +326,20 @@ function centers_of_mass( d )
   centers_of_mass
 end
 
+
+"""
+
+    filter_segments_by_ids!( seg, ids )
+
+  Only keeps the segments within ids
+"""
+function filter_segments_by_ids!( seg, ids )
+
+  for i in eachindex(seg)
+    if seg[i] in ids continue end
+    seg[i] = eltype(seg)(0)
+  end
+
+end
 
 end#module

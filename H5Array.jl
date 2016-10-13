@@ -1,20 +1,25 @@
 #!/usr/bin/env julia
+__precompile__()
 
-#__precompile__()
-
+#=
+  Fairly Inflexible type for reading a dir of h5 chunks - H5Arr.jl
+=#
 module H5Array
+
 
 export H5Array
 
-import pinky_u
+
 import vol_u
 import HDF5
 
 import Base: getindex
 
+
 type H5Arr{T <: Real}
 
   filenames::Array{AbstractString}
+  #bounds of each file within some global space
   file_bounds::Array{ Pair{Vector{Int},Vector{Int}} }
 
   dset_name::AbstractString
@@ -23,14 +28,14 @@ type H5Arr{T <: Real}
 
 end
 
-function create_h5arr( filenames::Array{String,1}, dset_name, eltype::DataType )
 
-  file_bounds = [ pinky_u.bounds_from_file(f) for f in filenames ];
+""" janky constructor """
+function create_h5arr( filenames::Array{String,1}, bounds, dset_name, eltype::DataType )
 
   vol_start = [typemax(Int),typemax(Int),typemax(Int)]
   vol_end = [0,0,0]
 
-  for bound in file_bounds
+  for bound in bounds
     vol_start = min(vol_start, bound.first)
     vol_end = max(vol_end, bound.second)
   end
@@ -43,9 +48,17 @@ function create_h5arr( filenames::Array{String,1}, dset_name, eltype::DataType )
     push!(shape.second, num_vols)
   end
 
-  H5Arr{eltype}( filenames, file_bounds, dset_name, shape )
+  H5Arr{eltype}( filenames, bounds, dset_name, shape )
 end
 
+
+"""
+
+    extract_4d_shape( filename, dset_name )
+
+  Finds the number of 3d volumes (4th dim length)
+  from an h5 dataset.
+"""
 function extract_4d_shape( filename, dset_name )
 
   f = HDF5.h5open(filename)
@@ -63,6 +76,12 @@ function extract_4d_shape( filename, dset_name )
 end
 
 
+"""
+
+    getindex( A::H5Arr, indices::Union{Colon,Range{Int},Int}... )
+
+  Reads stuff
+"""
 function getindex( A::H5Arr, indices::Union{Colon,Range{Int},Int}... )
 
   shape3d = A.shape.first[1:3] => A.shape.second[1:3]
@@ -89,6 +108,13 @@ function getindex( A::H5Arr, indices::Union{Colon,Range{Int},Int}... )
 end
 
 
+"""
+
+    read_and_map{T}( A::H5Arr{T}, indices, to_read )
+
+  Determines which chunks to reads, and then maps
+  the values to a volume of the proper size
+"""
 function read_and_map{T}( A::H5Arr{T}, indices, to_read )
 
   output_shape = collect(indices.second) - collect(indices.first) + 1
@@ -119,6 +145,14 @@ function read_and_map{T}( A::H5Arr{T}, indices, to_read )
   output
 end
 
+
+"""
+
+    read_chunk( filename, dset_name, bounds )
+
+  Reads the data within the specified bounds from a specific
+  chunk dataset
+"""
 function read_chunk( filename, dset_name, bounds )
 
   read_beg, read_end = bounds
@@ -137,5 +171,6 @@ function read_chunk( filename, dset_name, bounds )
               read_beg[3]:read_end[3]]
   end
 end
+
 
 end #module

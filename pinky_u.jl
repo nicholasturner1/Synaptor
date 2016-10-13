@@ -2,7 +2,7 @@
 
 module pinky_u
 
-import chunk_u 
+import chunk_u
 import utils
 import H5Array
 
@@ -33,8 +33,9 @@ function init_semantic_arr()
   all_fnames = readdir( semantic_dir )
   filter!( x -> contains(x,"h5"), all_fnames )
   fnames = [ "$(semantic_dir)$fname" for fname in all_fnames ];
+  file_bounds = [bounds_from_file(f) for f in fnames];
 
-  H5Array.create_h5arr( fnames, "/img", Float32 )
+  H5Array.create_h5arr( fnames, "/img", Float32, bounds )
 end
 
 

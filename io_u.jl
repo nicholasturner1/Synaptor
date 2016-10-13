@@ -11,6 +11,9 @@ using HDF5
 export read_h5
 export save_edge_file
 export read_map_file, write_map_file
+export save_voxel_file, read_voxel_file
+export read_id_map_lines
+export create_seg_dset
 
 
 #using HDF5 here
@@ -27,6 +30,21 @@ function read_h5( filename, read_whole_dataset=true, h5_dset_name="/main" )
   end
 
   return d;
+end
+
+
+"""
+
+    write_h5( dset, filename, h5_dset_name="/main" )
+
+  Makes a new h5file containing dset under the name h5_dset_name
+"""
+function write_h5( dset, filename, h5_dset_name="/main" )
+  if isfile(filename)
+    rm(filename)
+  end
+
+  HDF5.h5write(filename, "/main", dset);
 end
 
 
@@ -59,7 +77,10 @@ end
 
 """
 
-    save_voxel_file( voxes, ids )
+    save_voxel_file( voxels, ids )
+
+  Writes a file which specifies each synapse coordinate as a
+  separate line, along with its segment id in the first column.
 """
 function save_voxel_file( voxels::Vector{Vector{Tuple{Int,Int,Int}}}, ids,
   output_filename )
@@ -73,9 +94,7 @@ function save_voxel_file( voxels::Vector{Vector{Tuple{Int,Int,Int}}}, ids,
       for v in voxels[i]
         write(f, "$segid, $(join(v,",")) \n")
       end
-      #locations = join(voxels[i],",")
 
-      #write(f, "$segid ; $locations \n")
     end
 
   end#open() do f
@@ -87,7 +106,8 @@ end
 
     read_voxel_file
 
-
+  Reads the files produced by save_voxel_file. Returns a mapping
+  from coordinate (Vector{Int}) to segid
 """
 function read_voxel_file( input_filename, offset=[0,0,0] )
 
@@ -166,6 +186,14 @@ function read_map_file( input_filename, num_columns, sep=";" )
 end
 
 
+"""
+
+    read_id_map_lines( input_filename, sep=";" )
+
+  Reads a file which has an id number in the first field,
+  and returns a mapping from that id to the rest of the
+  line as a string.
+"""
 function read_id_map_lines( input_filename, sep=";" )
 
   res = Dict{Int,AbstractString}();
@@ -189,6 +217,14 @@ function read_id_map_lines( input_filename, sep=";" )
 end
 
 
+"""
+
+    create_seg_dset( fname, vol_size, chunk_size, dset_name="/synseg",
+      dtype=UInt32, compress_level=3 )
+
+  Initializes an empty HDF5 dataset within a file under the given
+  name, shape, chunk shape, type, and compresion level.
+"""
 function create_seg_dset( fname, vol_size, chunk_size,
   dset_name="/synseg", dtype=UInt32, compress_level=3 )
 

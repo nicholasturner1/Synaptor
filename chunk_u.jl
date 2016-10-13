@@ -1,4 +1,7 @@
 #!/usr/bin/env julia
+__precompile__()
+
+
 module chunk_u
 
 #=
@@ -9,9 +12,11 @@ import H5Array
 export fetch_chunk
 export chunk_bounds
 export fetch_inspection_window
-export fill_inspection_window!, init_inspection_window
+export init_inspection_window, fill_inspection_window!
 export fetch_inspection_block
+export bounds, intersect_bounds
 
+export vol_shape
 
 """
 
@@ -258,17 +263,6 @@ end
 
 """
 
-    bounds( d::H5Array.H5Arr, offset=[0,0,0] )
-
-  Extracts the index bounds from an H5Arr object
-"""
-function bounds( d::H5Array.H5Arr, offset=[0,0,0] )
-  d.shape.first[1:3] + offset => d.shape.second[1:3] + offset
-end
-
-
-"""
-
     bounds( d, offset=[0,0,0] )
 
   Extracts the index bounds for general purpose objects
@@ -281,9 +275,20 @@ end
 
 """
 
+    bounds( d::H5Array.H5Arr, offset=[0,0,0] )
+
+  Extracts the index bounds from an H5Arr object
+"""
+function bounds( d::H5Array.H5Arr, offset=[0,0,0] )
+  d.shape.first[1:3] + offset => d.shape.second[1:3] + offset
+end
+
+
+"""
+
     intersect_bounds( bounds1, bounds2, bounds2_offset )
 
-  Takes two index bounds defined by Pairs and takes their
+  Takes two index bounds defined by Pairs and returns their
   intersection. Performs no checking for validity of the result
   (i.e. the result can specify bounds with 0 or negative volume).
 """
