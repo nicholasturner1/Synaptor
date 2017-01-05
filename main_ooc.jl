@@ -20,6 +20,8 @@ import mfot    # Median-Over-Threshold Filter
 import vol_u   # Data Volume Utils
 import utils   # General Utils
 
+using BigArrays.H5sBigArrays
+
 #------------------------------------------
 # Command-line arguments
 
@@ -145,7 +147,8 @@ function init_datasets( segmentation_filename )
 
   if network_output_filename != nothing
     println("Reading semantic file...")
-    @time sem_output = io_u.read_h5( network_output_filename, sem_incore )#param
+    #@time sem_output = io_u.read_h5( network_output_filename, sem_incore )#param
+    @time sem_output = H5sBigArray(network_output_filename);
   else
     println("Initializing semantic H5Array...")
     sem_output = pinky_u.init_semantic_arr()
