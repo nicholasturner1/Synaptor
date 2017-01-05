@@ -19,6 +19,7 @@ import chunk_u # Chunking Utils
 import mfot    # Median-Over-Threshold Filter
 import vol_u   # Data Volume Utils
 import utils   # General Utils
+import omni_u  # MST Utils
 
 using BigArrays.H5sBigArrays
 
@@ -36,17 +37,22 @@ include(config_filename)
 
 function main( segmentation_fname, output_prefix )
 
-  seg, sem_output = init_datasets( segmentation_fname )
+  seg, sem_output, mst_mapping = init_datasets( segmentation_fname )
 
 
   seg_origin_offset  = seg_start - 1;#param
   seg_bounds  = chunk_u.bounds( seg )#param
-  sem_bounds  = chunk_u.bounds( sem_output )
+  sem_bounds  = chunk_u.bounds( sem_output, seg_origin_offset )
 
   valid_sem_bounds = chunk_u.intersect_bounds( sem_bounds, seg_bounds, seg_origin_offset )
   valid_seg_bounds = chunk_u.intersect_bounds( seg_bounds, sem_bounds, -seg_origin_offset )
 
   scan_bounds = scan_start_coord => scan_end_coord;
+  #println("seg_bounds: $seg_bounds")
+  #println("sem_bounds: $sem_bounds")
+  #println("seg_origin_offset: $seg_origin_offset")
+  #println("scan_bounds: $scan_bounds")
+  #println("valid_seg_bounds: $valid_seg_bounds")
   @assert vol_u.in_bounds( scan_bounds, valid_seg_bounds )
 
   scan_vol_shape = chunk_u.vol_shape( scan_bounds ) #param
@@ -88,6 +94,8 @@ function main( segmentation_fname, output_prefix )
                                                       [0,0,0],
                                                       w_radius + mfot_radius,
                                                       valid_seg_bounds ) #param
+    println("Thresholding segmentation block")
+    @time vol_u.relabel_data!(seg_block, mst_mapping)
 
 
     println("Making semantic assignment...")
@@ -144,6 +152,9 @@ function init_datasets( segmentation_filename )
   println("Reading segmentation file...")
   @time seg    = io_u.read_h5( segmentation_filename,
                                seg_incore, seg_dset_name )#param
+  dend_pairs = io_u.read_h5( segmentation_filename, true, "dend" )
+  dend_values = io_u.read_h5( segmentation_filename, true, "dendValues" )
+  mst_mapping = omni_u.read_MST(dend_pairs, dend_values, 0.25)
 
   if network_output_filename != nothing
     println("Reading semantic file...")
@@ -154,7 +165,7 @@ function init_datasets( segmentation_filename )
     sem_output = pinky_u.init_semantic_arr()
   end
 
-  seg, sem_output
+  seg, sem_output, mst_mapping
 end
 
 
