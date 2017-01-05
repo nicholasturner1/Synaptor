@@ -29,9 +29,9 @@ include("parameters.jl")
 
 
 println("Reading network output file...")
-output = io_u.read_h5( net_output_filename )
+@time output = io_u.read_h5( net_output_filename )
 println("Reading segmentation file...")
-seg    = io_u.read_h5( segmentation_filename )
+@time seg    = io_u.read_h5( segmentation_filename )
 
 
 println("Assigning segments to semantic categories...") #param
@@ -39,10 +39,11 @@ println("Assigning segments to semantic categories...") #param
                                                [vol_map["axon"],
                                                vol_map["dendrite"]] )
 
-
 println("Forming synapse segments at $(cc_thresh)...") #param
 @time syn_segs = seg_u.connected_components3D(
                     output[:,:,:,vol_map["PSD"]], cc_thresh )
+
+output = nothing; gc(); #freeing up memory
 
 
 println("Filtering by size threshold $(size_thresh)...") #param

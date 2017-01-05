@@ -36,7 +36,7 @@ end
   Somewhat generalized function to fetch a 3d chunk
   from within a 3/4d Array, H5Dataset, etc.
 """
-function fetch_chunk( d, bounds::Pair, offset )
+function fetch_chunk( d, bounds::Pair, offset=[0,0,0] )
 
   i_beg = bounds.first  + offset;
   i_end = bounds.second + offset;
@@ -60,7 +60,7 @@ end
   Specific function for H5Arr's which only accept 3d indices,
   and potentially return 4d volumes.
 """
-function fetch_chunk( d::H5Array.H5Arr, bounds::Pair, offset )
+function fetch_chunk( d::H5Array.H5Arr, bounds::Pair, offset=[0,0,0] )
 
   i_beg = bounds.first  + offset;
   i_end = bounds.second + offset;

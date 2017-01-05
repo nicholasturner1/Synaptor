@@ -62,13 +62,15 @@ function count_overlapping_labels( d, labels, max_label=nothing )
     counts = spzeros(Int, maxd, max_label);
   end
 
+  zv = eltype(d)(0)
+  zl = eltype(labels)(0)
   for i in eachindex(d)
 
     val = d[i]
     lab = labels[i]
 
-    if val == eltype(d)(0) continue end
-    if lab == eltype(labels)(0) continue end
+    if val == zv continue end
+    if lab == zl continue end
 
     counts[ val, lab ] += 1
 
@@ -278,6 +280,7 @@ function filter_segments_by_size!( d, thresh )
   sizes = segment_sizes(d)
 
   to_keep = Vector{eltype(keys(sizes))}()
+  if length(to_keep) == 0 warn("no segments remaining after size threshold") end
 
   for (segid,size) in sizes
     if size > thresh push!(to_keep, segid) end
@@ -335,7 +338,9 @@ end
 """
 function filter_segments_by_ids!( seg, ids )
 
+  z = eltype(seg)(0)
   for i in eachindex(seg)
+    if seg[i] == z continue end
     if seg[i] in ids continue end
     seg[i] = eltype(seg)(0)
   end
