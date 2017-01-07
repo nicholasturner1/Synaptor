@@ -92,20 +92,25 @@ function connected_components3D{T}( d::Array{T}, thresh=zero(T) )
   masked = d .<= T(thresh)
   res = zeros(Int, size(d));
 
-  xmax, ymax, zmax = size(d)
-  segid = zero(Int)
-
-  for z in 1:zmax
-    for y in 1:ymax
-      for x in 1:xmax
-        @inbounds if masked[x,y,z] continue end
-        segid += 1
-        assign_component!(res, masked,x,y,z, segid)
-      end
-    end
-  end
+  fill_in_new_components!( res, masked, 1 )
 
   res
+end
+
+
+function fill_in_new_components!{T}( d::Array{T}, masked, next_id )
+
+  @assert size(masked) == size(d)
+
+  xmax, ymax, zmax = size(d)
+
+  for z in 1:zmax, y in 1:ymax, x in 1:xmax
+    @inbounds if masked[x,y,z] continue end
+    assign_component!(d, masked,x,y,z, next_id)
+    next_id += 1
+  end
+
+  next_id
 end
 
 
@@ -142,7 +147,8 @@ function assign_component!{T}(arr::Array{T}, masked::BitArray{3},
 
   end
 
-  Set(explored)
+  #don't think I need this anymore...
+  #Set(explored)
 end
 
 
@@ -187,6 +193,60 @@ function connected_component3D!{T}( d::Array{T}, seed::Tuple{Int,Int,Int}, vol::
 end
 
 
+"""
+
+    fill_in_connected_components( d::Array{T}, next_id, continuation_list, cc_thresh )
+
+  Continues filling in a chunk of connected components, starting with any segments continued
+  from other chunks.
+"""
+function fill_in_connected_components{T}( d::Array{T}, next_id, continuation_list, thresh )
+  
+  masked = d .<= T(thresh)
+ 
+  component_vol = zeros(UInt32,size(d))
+
+  to_merge = fill_in_continuation_components!( component_vol, masked, continuation_list )
+
+  next_id = fill_in_new_components!( component_vol, masked, next_id )
+
+  component_vol, next_id, to_merge
+end
+
+
+"""
+
+    fill_in_continuation_components!{T}( component_vol, masked, continuation_list )
+
+  Fills in the components that are connected to other chunks. These are specified by
+  a list of continuations.
+"""
+function fill_in_continuation_components!{T}( component_vol::Array{T}, masked, continuation_list )
+
+  to_merge = Vector{Tuple{T,T}}()
+  z = T(0)
+
+  for continuation in continuation_list, v in continuation.cont_voxels
+    
+    comp_val = component_vol[v[1],v[2],v[3]]
+
+    if comp_val == z
+      if masked[v[1],v[2],v[3]] continue end
+
+      assign_component!( component_vol, masked, v[1],v[2],v[3], 
+                                 continuation.segid )
+      continue
+    end
+
+    #if we're here, then the value at the voxel shouldn't be masked
+    if comp_val == continuation.segid continue end
+
+    push!(to_merge, (comp_val, continuation.segid))
+
+  end
+
+  to_merge 
+end
 """
 
     manhattan_distance2D!( d )
