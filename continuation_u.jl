@@ -26,22 +26,12 @@ function segids{T}(c_list::Vector{Continuation{T}})
 end
 
 
-function update_continuation_sizes!{T}( c_list::Vector{Continuation{T}}, sizes )
-  for c in c_list c.num_voxels += sizes[c.segid] end
+function update_sizes!{T}( c_list::Vector{Continuation{T}}, sizes )
+  for c in c_list c.num_voxels = sizes[c.segid] end
 end
 
-
-function update_locs_and_sizes!{T}( c_list::Vector{Continuation{T}}, locs, sizes )
-  
-  for c in c_list
-    segid = c.segid
-    full_size = c.num_voxels + sizes[segid] #new size + old size
-    c.center_of_mass = ((c.center_of_mass * (c.num_voxels / full_size)) + 
-                        (locs[segid] * (sizes[segid] / full_size))
-                       )
-    c.num_voxels = full_size
-  end
-
+function update_locs!{T}( c_list::Vector{Continuation{T}}, locs )
+  for c in c_list c.center_of_mass = locs[c.segid] end
 end
 
 
@@ -56,9 +46,55 @@ function ContinuationArray(T, size)
 end
 
 Base.getindex( ca::ContinuationArray, idxes... ) = ca.arr[idxes...]
+Base.setindex!( ca::ContinuationArray, v, idxes... ) = setindex!(ca.arr, v, idxes...)
 Base.append!( ca::ContinuationArray, c_list, idxes... ) = append!(ca[idxes...], c_list)
 Base.size( ca::ContinuationArray ) = size(ca.arr)
 Base.eachindex( ca::ContinuationArray ) = eachindex(ca.arr)
+
+"""
+
+    find_chunk_continuations( ca::ContinuationArray, current_chunk_index )
+
+  Compiles the list of continuations which apply to the current chunk
+"""
+function find_continuations_to_apply{T}( ca::ContinuationArray{T}, current_chunk_index )
+
+  c_arr_size = collect(size(ca))
+  continuations_to_apply = Vector{Continuation{T}}();
+
+  for axis in 1:3, low_face in (true,false)
+
+    sender_index = copy(current_chunk_index)
+    if low_face
+      sender_index[axis] -= 1
+    else
+      sender_index[axis] += 1
+    end
+
+    #boundary checks
+    if  low_face && sender_index[axis] == 0 continue end
+    if !low_face && sender_index[axis] > c_arr_size[axis] continue end
+
+    sender_continuations = ca[sender_index...]
+
+    #continuations which apply to this chunk have the same axis, and opposite 
+    # "low_face" value
+    new_conts = filter_conts_for_face( sender_continuations, axis, !low_face )
+
+    append!(continuations_to_apply, new_conts)
+  end
+  
+  continuations_to_apply
+end
+
+
+"""
+
+    filter_conts_for_face( c_list::Vector{Continuation{T}}, axis, low_face )
+"""
+@inline function filter_conts_for_face{T}( c_list::Vector{Continuation{T}}, axis, low_face)
+  filter( x -> x.face_axis == axis && x.low_face == low_face, c_list )
+end
 
 
 """
@@ -69,11 +105,9 @@ Base.eachindex( ca::ContinuationArray ) = eachindex(ca.arr)
 
   Documentation soon...
 """
-function update_continuations!{T}( segment_volume::Array{T,3}, 
-                                   progress_arr::Array{Bool,3},
-                                   current_chunk_index )
+function find_continuations{T}( segment_volume::Array{T,3}, chunk_arr_size, 
+                                 current_chunk_index )
 
-  c_arr_size = collect(size(c_arr))
   chunk_continuations = Vector{Continuation{T}}();
   
   for axis in 1:3, low_face in (true,false)
@@ -87,10 +121,9 @@ function update_continuations!{T}( segment_volume::Array{T,3},
 
     #boundary checks
     if  low_face && propagation_index[axis] == 0 continue end
-    if !low_face && propagation_index[axis] > c_arr_size[axis] continue end
-    if  progress_arr[propagation_index...] continue end
+    if !low_face && propagation_index[axis] > chunk_arr_size[axis] continue end
 
-    new_conts = find_new_continuations( segment_volume, axis, low_face )
+    new_conts = find_face_continuations( segment_volume, axis, low_face )
 
     append!(chunk_continuations, new_conts)
   end
@@ -101,11 +134,11 @@ end
 
 """
 
-    find_new_continuations{T}( vol::Array{T,3}, axis, low_face )
+    find_face_continuations{T}( vol::Array{T,3}, axis, low_face )
 
   Documentation soon...
 """
-function find_new_continuations{T}( vol::Array{T,3}, axis, low_face )
+function find_face_continuations{T}( vol::Array{T,3}, axis, low_face )
 
   sx,sy,sz = size(vol)
   sizes = [sx,sy,sz]
@@ -134,7 +167,7 @@ function find_new_continuations{T}( vol::Array{T,3}, axis, low_face )
       for i in eachindex(voxels) voxels[i][axis] = 1 end
     end
 
-    c = Continuation( segid, 0, [0,0,0], UInt8(axis), !low_face, 
+    c = Continuation( segid, 0, [0,0,0], UInt8(axis), low_face, 
                       voxels, Dict{T,Int}(), Dict{T,UInt8}() )
 
     push!(continuations, c)
@@ -170,16 +203,5 @@ function find_boundary_voxels{T}( vol::Array{T,3}, idxes )
   boundary_voxels
 end
 
-
-#not sure if this is worth using... probabbly not
-type ContinuationMap{T}
-  mapping :: Dict{T,T}
-end
-
-ContinuationMap() = ContinuationMap(Dict());
-ContinuationMap(T::DataType) = ContinuationMap(Dict{T,T}());
-
-Base.setindex!{T}(cm::ContinuationMap{T},dest,src) = setindex!(cm.mapping,dest,src)
-Base.getindex{T}(cm::ContinuationMap{T},src) = getindex(cm.mapping,src)
 
 end #module
