@@ -202,4 +202,46 @@ function find_boundary_voxels{T}( vol::Array{T,3}, idxes )
 end
 
 
+"""
+"""
+function consolidate_continuations( ca::ContinuationArray, to_merge )
+
+  collected = collect_continuations(ca)
+
+  mg = find_merge_graph(to_merge)
+
+  ccs = find_connected_components(mg)
+
+  consolidated = merge_components(consolidated)
+
+  edges = filter_results
+
+  locs = centers_of_mass(consolidated)
+
+end
+
+function collect_continuations( ca::ContinuationArray )
+  0#stub
+end
+
+function find_merge_graph(to_merge)
+  0#stub
+end
+
+function find_connected_compontned(merge_graph)
+  0#stub
+end
+
+function merge_components(consolidated)
+  0#stub
+end
+
+function filter_results(consolidated)
+  0#stub
+end
+
+function centers_of_mass(consolidated)
+  0#stub
+end
+
 end #module
