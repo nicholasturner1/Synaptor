@@ -105,8 +105,8 @@ end
 
   Documentation soon...
 """
-function find_continuations{T}( segment_volume::Array{T,3}, chunk_arr_size, 
-                                 current_chunk_index )
+function find_new_continuations{T}( segment_volume::Array{T,3}, chunk_arr_size, 
+                                    current_chunk_index )
 
   chunk_continuations = Vector{Continuation{T}}();
   
