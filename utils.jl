@@ -30,6 +30,7 @@ function find_synaptic_edges( psd_segs, seg, semmap,
 
   overlap = seg_u.count_overlapping_labels( psd_segs, seg, maximum(keys(semmap)) );
 
+  seg_ids = extract_unique_rows(overlap)
   axons, dendrites = split_map_into_groups( semmap, [axon_label, dendrite_label] );
   axon_overlaps = overlap[:,axons]; dend_overlaps = overlap[:,dendrites];
 
@@ -38,22 +39,62 @@ function find_synaptic_edges( psd_segs, seg, semmap,
   # println("# dendrites: $(length(dendrites))")
 
   if length(nonzeros(axon_overlaps)) == 0 || length(nonzeros(dend_overlaps)) == 0
-    return [(0,0)], []
+    return Dict(), seg_ids, overlap
   end
 
   #finding the axons/dendrites with the highest overlap with the
   # psd segment
-  axon_max, axon_ind  = findmax(axon_overlaps, 2);
-  dend_max, dend_ind  = findmax(dend_overlaps, 2);
+  #changing this implementation to avoid allocating huge arrays
+  #axon_max, axon_ind  = findmax(axon_overlaps, 2);
+  #dend_max, dend_ind  = findmax(dend_overlaps, 2);
 
-  axon_ind = ind2sub(size(axon_overlaps), axon_ind[:])[2];
-  dend_ind = ind2sub(size(dend_overlaps), dend_ind[:])[2];
+  #axon_ind = ind2sub(size(axon_overlaps), axon_ind[:])[2];
+  #dend_ind = ind2sub(size(dend_overlaps), dend_ind[:])[2];
+  axon_max, axon_ids = find_max_overlaps( axon_overlaps, axons, seg_ids )
+  dend_max, dend_ids = find_max_overlaps( dend_overlaps, dendrites, seg_ids )
+  #println("$axon_max, $axon_ids")
+  #println("$dend_max, $dend_ids")
+  #println("$seg_ids")
 
   #only count edges if they overlap with SOME axon or dendrite
-  valid_edges = filter_edges( axon_max, dend_max );
+  valid_edges, invalid_edges = filter_edges( axon_max, dend_max );
 
   #edges as an array of Int tuples
-  [( axons[axon_ind[i]], dendrites[dend_ind[i]] ) for i in valid_edges], valid_edges
+  #[( axons[axon_ind[i]], dendrites[dend_ind[i]] ) for i in valid_edges], valid_edges
+
+  edges = Dict( sid => (axon_ids[sid],dend_ids[sid]) for sid in valid_edges )
+
+  edges, invalid_edges, overlap
+end
+
+
+"""
+
+    extract_unique_rows(overlap)
+
+  Finds the unique row ids with nonzero entries
+"""
+function extract_unique_rows(overlap)
+  unique(findn(overlap)[1])
+end
+
+function find_max_overlaps( overlaps, col_ids, seg_ids )
+
+  rs, cs = findn(overlaps); vs = nonzeros(overlaps)
+
+  maxs = Dict( s => eltype(vs)(0) for s in seg_ids )
+  inds = Dict( s => eltype(cs)(0) for s in seg_ids )
+
+  for i in eachindex(rs)
+    r = rs[i]; v = vs[i]
+
+    if v > maxs[r] 
+      maxs[r] = v
+      inds[r] = col_ids[cs[i]]
+    end
+  end
+
+  maxs, inds
 end
 
 
@@ -90,14 +131,18 @@ function filter_edges( max_axon_overlap, max_dend_overlap )
 
   num_psd_segs = length(max_axon_overlap)
   valid_edges = Vector{Int}();
-  for i in 1:num_psd_segs
-    if max_axon_overlap[i] == 0 continue end
-    if max_dend_overlap[i] == 0 continue end
+  invalid_edges = Vector{Int}();
 
-    push!(valid_edges, i)
+  zT = valtype(max_axon_overlap)(0)
+  for k in keys(max_axon_overlap)
+    if max_axon_overlap[k] == zT || max_dend_overlap[k] == zT
+      push!(invalid_edges,k)
+    else
+      push!(valid_edges, k)
+    end
   end
 
-  valid_edges
+  valid_edges, invalid_edges
 end
 
 
