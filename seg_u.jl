@@ -402,7 +402,23 @@ function filter_segments_by_ids!( seg, ids )
   for i in eachindex(seg)
     if seg[i] == z continue end
     if seg[i] in ids continue end
-    seg[i] = eltype(seg)(0)
+    seg[i] = z
+  end
+
+end
+
+"""
+
+    filter_out_segments_by_ids!( seg, ids )
+
+  Zeros the segments with id within ids from the volume
+"""
+function filter_out_segments_by_ids!( seg, ids )
+
+  z = eltype(seg)(0)
+  for i in eachindex(seg)
+    if seg[i] == z continue end
+    if seg[i] in ids seg[i] = z end
   end
 
 end

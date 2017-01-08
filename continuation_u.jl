@@ -16,11 +16,32 @@ end
 export seg_ids
 
 #dummy for testing
+dummy_cont_vox = Vector{Vector{Int}}()
+push!(dummy_cont_vox,[1,1,1])
 Continuation() = Continuation(1,5,[1,1,1],UInt8(1),
-                              true,[(1,1,1)],Dict(1=>5),Dict(1=>UInt8(2)))
+                              true,dummy_cont_vox,Dict(1=>5),Dict(1=>UInt8(2)))
 
 function segids{T}(c_list::Vector{Continuation{T}})
-  [ c.segid for c in c_list ]
+  Set([ c.segid for c in c_list ])
+end
+
+
+function update_continuation_sizes!{T}( c_list::Vector{Continuation{T}}, sizes )
+  for c in c_list c.num_voxels += sizes[c.segid] end
+end
+
+
+function update_locs_and_sizes!{T}( c_list::Vector{Continuation{T}}, locs, sizes )
+  
+  for c in c_list
+    segid = c.segid
+    full_size = c.num_voxels + sizes[segid] #new size + old size
+    c.center_of_mass = ((c.center_of_mass * (c.num_voxels / full_size)) + 
+                        (locs[segid] * (sizes[segid] / full_size))
+                       )
+    c.num_voxels = full_size
+  end
+
 end
 
 
@@ -52,15 +73,10 @@ function update_continuations!{T}( segment_volume::Array{T,3},
                                    progress_arr::Array{Bool,3},
                                    current_chunk_index )
 
-  #this won't work unless every face transmits a continuation
-  # (not guaranteed)
   c_arr_size = collect(size(c_arr))
   chunk_continuations = Vector{Continuation{T}}();
-  cont_ids = Set{T}();
   
   for axis in 1:3, low_face in (true,false)
-
-    #if (axis,low_face) in already_covered continue end
 
     propagation_index = copy(current_chunk_index)
     if low_face
@@ -76,13 +92,10 @@ function update_continuations!{T}( segment_volume::Array{T,3},
 
     new_conts = find_new_continuations( segment_volume, axis, low_face )
 
-    #keeping track of the segment ids which are continuations
-    # within this chunk
     append!(chunk_continuations, new_conts)
-    union!(cont_ids,segids(new_conts))
   end
 
-  chunk_continuations, cont_ids
+  chunk_continuations
 end
 
 
