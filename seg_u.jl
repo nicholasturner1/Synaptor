@@ -223,11 +223,18 @@ end
 """
 function fill_in_continuation_components!{T}( component_vol::Array{T}, masked, continuation_list )
 
+  szs = size(component_vol)
   to_merge = Vector{Tuple{T,T}}()
   z = T(0)
 
-  for continuation in continuation_list, v in continuation.cont_voxels
-    
+  for continuation in continuation_list, vx in continuation.cont_voxels
+
+    #translating a '-1' index to the max of the chunk    
+    v = [vx[1],vx[2],vx[3]]
+    for i in eachindex(v)
+      if v[i] == -1 v[i] = szs[i] end
+    end
+
     comp_val = component_vol[v[1],v[2],v[3]]
 
     if comp_val == z

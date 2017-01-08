@@ -159,9 +159,7 @@ function find_face_continuations{T}( vol::Array{T,3}, axis, low_face )
 
     if low_face
       #implicitly assumes that the chunks are the same size
-      # though this shouldn't happen given the current implementation
-      # (skips chunks which have already been traversed)
-      for i in eachindex(voxels) voxels[i][axis] = sizes[axis] end
+      for i in eachindex(voxels) voxels[i][axis] = -1 end
     else
       #this is fine
       for i in eachindex(voxels) voxels[i][axis] = 1 end
