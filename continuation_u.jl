@@ -2,6 +2,8 @@
 
 module continuation_u
 
+using LightGraphs
+
 type Continuation{T}
   segid :: T
   num_voxels :: Int # 0 = COM not computed yet
@@ -9,17 +11,19 @@ type Continuation{T}
   face_axis :: UInt8
   low_face :: Bool
   cont_voxels :: Vector{Vector{Int}}
-  overlaps :: Dict{T,Int} # Dict() = no overlaps yet
-  overlap_semantics :: Dict{T,UInt8} # Dict() = no overlaps yet
+  overlaps :: Dict # Dict() = no overlaps yet
+  overlap_semantics :: Vector{Tuple{Int,Int}} # Dict() = no overlaps yet
 end
 
-export seg_ids
+Base.eltype{T}(c::Continuation{T}) = T
+
+export segids
 
 #dummy for testing
 dummy_cont_vox = Vector{Vector{Int}}()
 push!(dummy_cont_vox,[1,1,1])
 Continuation() = Continuation(1,5,[1,1,1],UInt8(1),
-                              true,dummy_cont_vox,Dict(1=>5),Dict(1=>UInt8(2)))
+                              true,dummy_cont_vox,Dict(1=>5),[(1,2)])
 
 function segids{T}(c_list::Vector{Continuation{T}})
   Set([ c.segid for c in c_list ])
@@ -34,6 +38,16 @@ function update_locs!{T}( c_list::Vector{Continuation{T}}, locs )
   for c in c_list c.center_of_mass = locs[c.segid] end
 end
 
+function update_overlaps!{T}( c_list::Vector{Continuation{T}}, overlap, semmap )
+  for c in c_list
+    seg_overlaps = overlap[c.segid,:]
+    cs = find(seg_overlaps); vs = nonzeros(seg_overlaps)
+    
+    c.overlaps = Dict( cs[i]=> vs[i] for i in eachindex(cs) )
+    c.overlap_semantics = [(cs[i], semmap[cs[i]]) for i in eachindex(cs)]
+  end
+end
+
 
 type ContinuationArray{T}
   arr :: Array{Vector{Continuation{T}}}
@@ -42,14 +56,18 @@ end
 function ContinuationArray(T, size)
   a = Array(Vector{Continuation{T}},size)
   for i in eachindex(a) a[i] = [] end
-  ContinuationArray(a)
+  ContinuationArray{T}(a)
 end
 
 Base.getindex( ca::ContinuationArray, idxes... ) = ca.arr[idxes...]
 Base.setindex!( ca::ContinuationArray, v, idxes... ) = setindex!(ca.arr, v, idxes...)
 Base.append!( ca::ContinuationArray, c_list, idxes... ) = append!(ca[idxes...], c_list)
 Base.size( ca::ContinuationArray ) = size(ca.arr)
+Base.size( ca::ContinuationArray, dim... ) = size(ca.arr,dim...)
 Base.eachindex( ca::ContinuationArray ) = eachindex(ca.arr)
+Base.start( ca::ContinuationArray ) = start(ca.arr)
+Base.next( ca::ContinuationArray, st ) = next(ca.arr, st)
+Base.done( ca::ContinuationArray, st ) = done(ca.arr, st)
 
 """
 
@@ -158,15 +176,13 @@ function find_face_continuations{T}( vol::Array{T,3}, axis, low_face )
   for (segid,voxels) in bvs
 
     if low_face
-      #implicitly assumes that the chunks are the same size
       for i in eachindex(voxels) voxels[i][axis] = -1 end
     else
-      #this is fine
       for i in eachindex(voxels) voxels[i][axis] = 1 end
     end
 
-    c = Continuation( segid, 0, [0,0,0], UInt8(axis), low_face, 
-                      voxels, Dict{T,Int}(), Dict{T,UInt8}() )
+    c = Continuation{T}( segid, 0, [0,0,0], UInt8(axis), low_face, 
+                      voxels, Dict{T,Int}(), Vector{Tuple{Int,Int}}() )
 
     push!(continuations, c)
   end
@@ -202,46 +218,154 @@ function find_boundary_voxels{T}( vol::Array{T,3}, idxes )
 end
 
 
+dummy_ca = ContinuationArray(Int,(2,1))
+cs = [Continuation() for i in 1:4]
+cs[3].segid = 2; cs[4].segid = 3
+cs[3].overlap_semantics = [(2,3)]
+cs[4].overlap_semantics = [(1,2),(2,3)]
+cs[3].overlaps = Dict( 2 => 3 )
+cs[4].overlaps = Dict( 1=>2, 2=>3 )
+
+dummy_ca[1] = [cs[1],cs[2]]
+dummy_ca[2] = [cs[3],cs[4]]
+
 """
 """
 function consolidate_continuations( ca::ContinuationArray, to_merge )
 
   collected = collect_continuations(ca)
 
-  mg = find_merge_graph(to_merge)
+  components = find_merge_components(to_merge)
 
-  ccs = find_connected_components(mg)
+  consolidated, mapping = merge_components!(collected, components)
+  consolidated = collect(values(consolidated))
 
-  consolidated = merge_components(consolidated)
-
-  edges = filter_results
+  edges, mapping = filter_results(consolidated, mapping)
 
   locs = centers_of_mass(consolidated)
+  sizes = completed_sizes(consolidated)
 
+  edges, locs, sizes, mapping
 end
 
-function collect_continuations( ca::ContinuationArray )
-  0#stub
+function collect_continuations{T}( ca::ContinuationArray{T} )
+  
+  collected = Dict{T,Continuation{T}}();
+
+  for c_list in ca
+
+    #collapsing multiple instances of a continuation with the
+    # same segid to one
+    cl = collect(values(Dict( c.segid => c for c in c_list )))
+    for c in cl
+
+      if !haskey(collected, c.segid) 
+        collected[c.segid] = c
+        continue
+      end
+
+      collected[c.segid] = merge(c, collected[c.segid])
+    end
+  end
+
+  collected
 end
 
-function find_merge_graph(to_merge)
-  0#stub
+function merge( c1::Continuation, c2::Continuation )
+
+  added_size = c1.num_voxels + c2.num_voxels
+
+  c2.center_of_mass = round(Int,(c1.center_of_mass * (c1.num_voxels / added_size)) +
+                                (c2.center_of_mass * (c2.num_voxels / added_size)))
+
+  for (k,v) in c1.overlaps
+    if !haskey(c2.overlaps, k) c2.overlaps[k] = v
+    else c2.overlaps[k] += v
+    end
+  end
+    
+  append!(c2.overlap_semantics, c1.overlap_semantics)
+
+  c2
 end
 
-function find_connected_compontned(merge_graph)
-  0#stub
+function find_merge_components(to_merge)
+  
+  segids = Set{Int}();
+
+  for edge in to_merge
+    push!(segids, edge[1])
+    push!(segids, edge[2])
+  end
+
+  forward = Dict( s => i for (i,s) in enumerate(segids) )
+  backward = Dict( v => k for (k,v) in forward )
+
+  g = Graph(length(segids))
+
+  for edge in to_merge
+    add_edge!(g,forward[edge[1]],forward[edge[2]])
+  end
+
+  ccs = connected_components(g)
+
+  for i in eachindex(ccs) map!(x -> backward[x], ccs[i]) end
+
+  ccs
 end
 
-function merge_components(consolidated)
-  0#stub
+function merge_components!{T,S}(collected::Dict{S,Continuation{T}}, components)
+  
+  mapping = Dict{T,T}();
+
+  for comp in components
+    if length(comp) == 1 continue end
+    
+    target_id = minimum(comp)
+
+    for i in comp
+      if i == target_id continue end
+
+      merge(collected[i], collected[target_id])
+      mapping[i] = target_id
+      delete!(collected,i)
+    end
+  end
+
+  collected, mapping
 end
 
-function filter_results(consolidated)
-  0#stub
+keys_w_val(d, t) = map(x -> x[1], filter(x -> x[2] == t, d))
+key_w_max_value(d, ks) = ks[findmax([d[k] for k in ks])[2]]
+
+function filter_results{T}(c_list::Vector{Continuation{T}}, mapping)
+  
+  edges = Dict{T,Tuple{T,T}}();
+
+  for c in c_list
+    axons = keys_w_val(c.overlap_semantics, 2)
+    dends = keys_w_val(c.overlap_semantics, 3)
+
+    if length(axons) == 0 || length(dends) == 0
+      mapping[c.segid] = 0
+      continue
+    end
+
+    max_axon = key_w_max_value(c.overlaps, axons)
+    max_dend = key_w_max_value(c.overlaps, dends)
+
+    push!(edges, c.segid => (max_axon,max_dend))
+  end
+
+  edges, mapping  
 end
 
-function centers_of_mass(consolidated)
-  0#stub
+function centers_of_mass(c_list)
+  Dict( c.segid => c.center_of_mass for c in c_list )
+end
+
+function completed_sizes(c_list)
+  Dict( c.segid => c.num_voxels for c in c_list )
 end
 
 end #module

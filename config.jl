@@ -9,7 +9,6 @@
 network_output_filename = nothing;
 
 #Pathname to segmentation volume
-# currently assumed to be an HDF5 file
 segmentation_filename = "dummy.sgm.h5";
 #dataset path name within file
 seg_dset_name = "/main";
@@ -29,6 +28,7 @@ seg_start = [22657,18049,4003];
 
 #Shape of output segmentation if desired
 output_seg_shape = [2048,2048,256];
+seg_chunk_size = [1024,1024,256];
 
 #If using ooc processing, specify the bounds of the volume
 # which you'd like to analyze

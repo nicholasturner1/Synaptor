@@ -19,6 +19,16 @@ export bounds, intersect_bounds
 export vol_shape
 
 
+function zip_bounds( bounds::Pair )
+
+  bz = Vector{Any}(length(bounds.first))
+
+  for i in eachindex(bounds.first)
+    bz[i] = bounds.first[i]:bounds.second[i]
+  end
+
+  bz
+end
 """
 
     vol_shape( bounds )
@@ -76,10 +86,6 @@ type BoundArray
   arr :: Array{Pair{Vector{Int},Vector{Int}}}
 end
 
-
-type BoundArray
-  arr :: Array{Pair{Vector{Int},Vector{Int}}}
-end
 
 function BoundArray(vol_size, chunk_size, offset=[0,0,0])
   

@@ -29,7 +29,7 @@ seg_dtype = UInt32
 =================================#
 #
 w_radius = [300,300,30];
-scan_chunk_shape = [500,500,300];
+scan_chunk_shape = [1024,1024,256];
 #Size hint for voxel set (mild performance tuning, not important)
 set_size_hint = 15000;
 #Median Filter Over Threshold Radius
