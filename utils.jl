@@ -28,6 +28,8 @@ export tuple_add
 function find_synaptic_edges( psd_segs, seg, semmap,
   axon_label = 2, dendrite_label = 3)
 
+  if length(keys(semmap)) == 0 return Dict(), [], spzeros(0,0) end
+
   overlap = seg_u.count_overlapping_labels( psd_segs, seg, maximum(keys(semmap)) );
 
   seg_ids = extract_unique_rows(overlap)
