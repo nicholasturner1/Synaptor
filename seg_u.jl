@@ -347,11 +347,11 @@ function filter_segments_by_size!( d, thresh )
   sizes = segment_sizes(d)
 
   to_keep = Vector{eltype(keys(sizes))}()
-  if length(to_keep) == 0 warn("no segments remaining after size threshold") end
 
   for (segid,size) in sizes
     if size > thresh push!(to_keep, segid) end
   end
+  if length(to_keep) == 0 warn("no segments remaining after size threshold") end
 
   for i in eachindex(d)
     if !(d[i] in to_keep)
