@@ -40,7 +40,7 @@ function main_test( output_filename, segmentation_filename )
   println("Reading input...")
   @time output = io_u.read_h5(output_filename)
   @time seg = io_u.read_h5(segmentation_filename)
-  @time seg_out = io_u.create_seg_dset( "test_seg.h5", size(seg), [1024,1024,256],"main" )
+  @time seg_out = io_u.create_seg_dset( "test_seg.h5", size(seg), [1164,1164,136],"main" )
 
   cbs = chunk_u.BoundArray(size(seg), [1024,1024,256], [0,0,0])
   c_arr = continuation_u.ContinuationArray( seg_dtype, size(cbs) )#param
@@ -139,8 +139,8 @@ function main( network_output_filename, segmentation_fname, output_prefix )
   num_chunks = length(chunk_bounds)
   curr_chunk = 1
   next_seg_id = 1
-  sz,sy,sz = size(chunk_bounds)
-  for z in 1:sz, y in 1:sy, x in 1:sz
+  sx,sy,sz = size(chunk_bounds)
+  for z in 1:sz, y in 1:sy, x in 1:sx
     curr_bounds = chunk_bounds[x,y,z]
 
     println("Scan Chunk #$(curr_chunk) of $(num_chunks): $(curr_bounds) ")
