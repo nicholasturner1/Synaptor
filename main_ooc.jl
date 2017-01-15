@@ -40,12 +40,12 @@ function main( network_output_filename, segmentation_fname, output_prefix )
 
   #Figuring out where I can index things without breaking anything
   seg_origin_offset  = seg_start - 1;#param
-  seg_bounds  = bounds( seg )#param
-  sem_bounds  = bounds( sem_output, seg_origin_offset )#param
+  seg_bounds  = chunk_u.bounds( seg )#param
+  sem_bounds  = chunk_u.bounds( sem_output, seg_origin_offset )#param
   scan_bounds = scan_start_coord => scan_end_coord;#param
   scan_rel_offset = scan_start_coord - 1; #param
 
-  check_bounds( seg_bounds, sem_bounds, seg_origin_offset, DEBUG )#param
+  #TODO write this instead#check_bounds( seg_bounds, sem_bounds, seg_origin_offset, DEBUG )#param
   valid_sem_bounds = chunk_u.intersect_bounds( sem_bounds, seg_bounds, seg_origin_offset )#param
   valid_seg_bounds = chunk_u.intersect_bounds( seg_bounds, sem_bounds, -seg_origin_offset )#param
 

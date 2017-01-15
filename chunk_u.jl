@@ -22,7 +22,7 @@ export vol_shape
 @inline function zip_bounds( bounds::Pair )
 
   #need Any for possible Colon()s
-  dbz = Vector{Any}(length(bounds.first))
+  bz = Vector{Any}(length(bounds.first))
 
   for i in eachindex(bounds.first)
     bz[i] = bounds.first[i]:bounds.second[i]
@@ -53,7 +53,7 @@ function fetch_chunk( d, bounds::Pair, offset=[0,0,0] )
   shifted = (bounds.first  + offset) => (bounds.second + offset);
   zipped = zip_bounds(shifted)
 
-  while length(zipped) < length(size(d)) push!(zipped,Colon())
+  while length(zipped) < length(size(d)) push!(zipped,Colon()) end
 
   d[zipped...]
 end
