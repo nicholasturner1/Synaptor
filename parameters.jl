@@ -27,13 +27,7 @@ seg_dtype = UInt32
 #=================================
 #out-of-core parameters
 =================================#
-#
-w_radius = [300,300,30];
-scan_chunk_shape = [1024,1024,256];
-#Size hint for voxel set (mild performance tuning, not important)
-set_size_hint = 15000;
-#Median Filter Over Threshold Radius
-mfot_radius = 3
+scan_chunk_shape = [1024,1024,128];
 
 #=================================
 #create_seg_volume parameters

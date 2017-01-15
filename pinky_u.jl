@@ -35,7 +35,7 @@ function init_semantic_arr()
   fnames = [ "$(semantic_dir)$fname" for fname in all_fnames ];
   file_bounds = [bounds_from_file(f) for f in fnames];
 
-  H5Array.create_h5arr( fnames, "/img", Float32, bounds )
+  H5Array.create_h5arr( fnames, file_bounds, "/img", Float32 )
 end
 
 

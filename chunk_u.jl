@@ -19,9 +19,10 @@ export bounds, intersect_bounds
 export vol_shape
 
 
-function zip_bounds( bounds::Pair )
+@inline function zip_bounds( bounds::Pair )
 
-  bz = Vector{Any}(length(bounds.first))
+  #need Any for possible Colon()s
+  dbz = Vector{Any}(length(bounds.first))
 
   for i in eachindex(bounds.first)
     bz[i] = bounds.first[i]:bounds.second[i]
@@ -44,42 +45,18 @@ end
 
     fetch_chunk( d, bounds::Pair, offset )
 
-  Somewhat generalized function to fetch a 3d chunk
-  from within a 3/4d Array, H5Dataset, etc.
+  Generalized function to fetch a 3d chunk
+  from within an Nd Array, H5Dataset, etc.
 """
 function fetch_chunk( d, bounds::Pair, offset=[0,0,0] )
 
-  i_beg = bounds.first  + offset;
-  i_end = bounds.second + offset;
+  shifted = (bounds.first  + offset) => (bounds.second + offset);
+  zipped = zip_bounds(shifted)
 
-  if length(size(d)) == 3
-    d[ i_beg[1]:i_end[1],
-       i_beg[2]:i_end[2],
-       i_beg[3]:i_end[3]]
-  elseif length(size(d)) == 4
-    d[ i_beg[1]:i_end[1],
-       i_beg[2]:i_end[2],
-       i_beg[3]:i_end[3],:]
-  end
+  while length(zipped) < length(size(d)) push!(zipped,Colon())
+
+  d[zipped...]
 end
-
-
-#"""
-#
-#    fetch_chunk( d::H5Array.H5Arr, bounds::Pair, offset )
-#
-#  Specific function for H5Arr's which only accept 3d indices,
-#  and potentially return 4d volumes.
-#"""
-#function fetch_chunk( d::H5Array.H5Arr, bounds::Pair, offset=[0,0,0] )
-#
-#  i_beg = bounds.first  + offset;
-#  i_end = bounds.second + offset;
-#
-#  d[ i_beg[1]:i_end[1],
-#     i_beg[2]:i_end[2],
-#     i_beg[3]:i_end[3]]
-#end
 
 
 type BoundArray
@@ -88,7 +65,7 @@ end
 
 
 function BoundArray(vol_size, chunk_size, offset=[0,0,0])
-  
+
   x_bounds = bounds1D( vol_size[1], chunk_size[1] )
   y_bounds = bounds1D( vol_size[2], chunk_size[2] )
   z_bounds = bounds1D( vol_size[3], chunk_size[3] )
@@ -317,17 +294,6 @@ end
 function bounds( d, offset=[0,0,0] )
   offset + 1 => collect(size(d)[1:3]) + offset
 end
-
-
-#"""
-#
-#    bounds( d::H5Array.H5Arr, offset=[0,0,0] )
-#
-#  Extracts the index bounds from an H5Arr object
-#"""
-#function bounds( d::H5Array.H5Arr, offset=[0,0,0] )
-#  d.shape.first[1:3] + offset => d.shape.second[1:3] + offset
-#end
 
 
 """
