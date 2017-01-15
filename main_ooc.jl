@@ -11,17 +11,12 @@ module main_ooc
 unshift!(LOAD_PATH,".") #temporary
 
 
-import io_u           # I/O Utils
-import pinky_u        # Pinky-Specific Utils
-import seg_u          # Segmentation Utils
-import chunk_u        # Chunking Utils
-import mfot           # Median-Over-Threshold Filter
-import vol_u          # Data Volume Utils
-import utils          # General Utils
-import omni_u         # MST Utils
-import continuation_u # Handling Segment Continuations
-
-using BigWrappers
+import io_u        # I/O Utils
+import seg_u       # Segmentation Utils
+import chunk_u     # Chunking Utils
+import vol_u       # Data Volume Utils
+import utils       # General Utils
+import contin_u    # Handling Segment Continuations
 
 #------------------------------------------
 # Command-line arguments
@@ -35,84 +30,25 @@ include("parameters.jl")
 include(config_filename)
 
 
-function main_test( output_filename, segmentation_filename )
-
-  println("Reading input...")
-  @time output = io_u.read_h5(output_filename)
-  @time seg = io_u.read_h5(segmentation_filename)
-  @time seg_out = io_u.create_seg_dset( "test_seg.h5", size(seg), [1164,1164,136],"main" )
-
-  cbs = chunk_u.BoundArray(size(seg), [1024,1024,256], [0,0,0])
-  c_arr = continuation_u.ContinuationArray( seg_dtype, size(cbs) )#param
-
-  
-  #edges = Dict{Int,Tuple{sT,sT}}();
-  edges = Dict{Int,Tuple{Int,Int}}();
-  sizes = Dict{Int,Int}();
-  locations = Dict{Int,Vector{Int}}();
-
-  println("Making semantic assignment...")
-  @time semmap, _ = utils.make_semantic_assignment( seg, output, [2,3] )
-
-  psd_vol = output[:,:,:,vol_map["PSD"]];
-
-  i = 1; num_chunks = length(cbs)
-  next_seg_id = 1
-  sx,sy,sz = size(cbs)
-  conts_to_merge = Vector{Tuple{Int,Int}}()
-
-  for z in 1:sz, y in 1:sy, x in 1:sx
-    println("chunk $i of $num_chunks, $(cbs[x,y,z])")
-    println("next id: $next_seg_id")
-    seg_chunk = chunk_u.fetch_chunk(seg, cbs[x,y,z])
-    psd_chunk = chunk_u.fetch_chunk(psd_vol, cbs[x,y,z])
-
-    @time (psd_segments, next_seg_id, to_merge
-    ) = process_scan_chunk!( psd_chunk, seg_chunk, semmap,
-                             edges, locations, sizes, cbs[x,y,z].first-1,
-                             c_arr, [x,y,z],
-                             next_seg_id )
-
-    zb = chunk_u.zip_bounds( cbs[x,y,z] )
-    @time seg_out[zb...] = psd_segments
-
-    i += 1
-    append!(conts_to_merge, to_merge)
-  end
-
-
-  # we've extracted everything we need from these
-  output_block = nothing; gc()
-
-  @time (new_es, new_ls, new_szs, mapping
-  ) = continuation_u.consolidate_continuations( c_arr, conts_to_merge )
-
-  merge!(edges, new_es)
-  merge!(locations, new_ls)
-  merge!(sizes, new_szs)
-
-
-  io_u.write_map_file("test_results.csv",edges, locations, sizes)
-  io_u.write_map_file("test_mapping.csv",mapping)
-  println("c_list, $([Int(c.segid) for c in c_arr[1,1,1]])")
-end
 
 function main( network_output_filename, segmentation_fname, output_prefix )
 
-  seg, sem_output = init_datasets( segmentation_fname, network_output_filename )
+  #Reading/Initializing Data
+  seg = io_u.import_dataset( segmentation_fname, seg_incore )#param
+  sem_output = io_u.import_dataset( network_output_filename, sem_incore )#param
 
 
   #Figuring out where I can index things without breaking anything
   seg_origin_offset  = seg_start - 1;#param
-  #seg_bounds  = chunk_u.bounds( seg )#param
-  #sem_bounds  = chunk_u.bounds( sem_output, seg_origin_offset )
   seg_bounds  = bounds( seg )#param
   sem_bounds  = bounds( sem_output, seg_origin_offset )#param
+  scan_bounds = scan_start_coord => scan_end_coord;#param
+  scan_rel_offset = scan_start_coord - 1; #param
 
-  valid_sem_bounds = chunk_u.intersect_bounds( sem_bounds, seg_bounds, seg_origin_offset )
-  valid_seg_bounds = chunk_u.intersect_bounds( seg_bounds, sem_bounds, -seg_origin_offset )
+  check_bounds( seg_bounds, sem_bounds, seg_origin_offset, DEBUG )#param
+  valid_sem_bounds = chunk_u.intersect_bounds( sem_bounds, seg_bounds, seg_origin_offset )#param
+  valid_seg_bounds = chunk_u.intersect_bounds( seg_bounds, sem_bounds, -seg_origin_offset )#param
 
-  scan_bounds = scan_start_coord => scan_end_coord;
   #println("seg_bounds: $seg_bounds")
   #println("sem_bounds: $sem_bounds")
   #println("seg_origin_offset: $seg_origin_offset")
@@ -122,10 +58,10 @@ function main( network_output_filename, segmentation_fname, output_prefix )
 
   scan_vol_shape = chunk_u.vol_shape( scan_bounds ) #param
 
-  scan_rel_offset = scan_start_coord - 1; #param
+  #Init
   #param
   chunk_bounds = chunk_u.BoundArray( scan_vol_shape, scan_chunk_shape, scan_rel_offset )
-  continuation_arr = continuation_u.ContinuationArray( seg_dtype, size(chunk_bounds) )
+  continuation_arr = contin_u.ContinuationArray( seg_dtype, size(chunk_bounds) )
   conts_to_merge = Vector{Tuple{Int,Int}}()
 
 
@@ -137,13 +73,15 @@ function main( network_output_filename, segmentation_fname, output_prefix )
                                   seg_chunk_size,"main" )
 
   num_chunks = length(chunk_bounds)
-  curr_chunk = 1
+  chunk_count = 1
   next_seg_id = 1
   sx,sy,sz = size(chunk_bounds)
+
+  #Chunk Loop
   for z in 1:sz, y in 1:sy, x in 1:sx
     curr_bounds = chunk_bounds[x,y,z]
 
-    println("Scan Chunk #$(curr_chunk) of $(num_chunks): $(curr_bounds) ")
+    println("Scan Chunk #$(chunk_count) of $(num_chunks): $(curr_bounds) ")
 
     println("Fetching Chunks...")
     @time output_chunk = chunk_u.fetch_chunk( sem_output, curr_bounds, seg_origin_offset )
@@ -155,16 +93,18 @@ function main( network_output_filename, segmentation_fname, output_prefix )
 
 
     psd_chunk = output_chunk[:,:,:,vol_map["PSD"]];
-    #remove_artifact_output!(psd_chunk, bboxes) #TODO
+    #remove_artifact_output!(psd_chunk, bboxes) #TODO...maybe
 
 
-    scan_offset = scan_bounds.first - 1 + seg_origin_offset;
+    scan_offset = scan_rel_offset + seg_origin_offset;
 
+    #if DEBUG
     # println("block offset: $(block_offset)")
     # println("scan_offset: $(scan_offset)")
     # println("scan_origin_offset: $(scan_origin_offset)")
     # println("ins block size: $(size(psd_ins_block))")
     # println("scan chunk size: $(size(psd_p))")
+    #end
 
 
     # we've extracted everything we need from these
@@ -181,6 +121,7 @@ function main( network_output_filename, segmentation_fname, output_prefix )
 
     append!(conts_to_merge, to_merge)
 
+
     #Writing chunk to segmentation
     println("Writing chunk")
     zb = chunk_u.zip_bounds( curr_bounds.first  - scan_rel_offset =>
@@ -188,13 +129,13 @@ function main( network_output_filename, segmentation_fname, output_prefix )
     @time seg_out[zb...] = psd_segments
 
     println("") #adding space to output
-    curr_chunk += 1
+    chunk_count += 1
 
   end
 
   println("Consolidating continuations")
   @time (new_es, new_ls, new_szs, mapping
-  ) = continuation_u.consolidate_continuations( continuation_arr, conts_to_merge )
+  ) = contin_u.consolidate_continuations( continuation_arr, conts_to_merge )
 
   merge!(edges, new_es)
   merge!(locations, new_ls)
@@ -207,34 +148,17 @@ function main( network_output_filename, segmentation_fname, output_prefix )
 end
 
 
-function init_datasets( segmentation_filename, network_output_filename )
+"""
 
-  println("Reading segmentation file...")
-  #BigArray
-  @time seg = BigWrapper(segmentation_filename)
-  #@time seg    = io_u.read_h5( segmentation_filename,
-  #                             seg_incore, seg_dset_name )#param
-
-  if network_output_filename != nothing
-    println("Reading semantic file...")
-    #@time sem_output = io_u.read_h5( network_output_filename, sem_incore )#param
-    #@time sem_output = H5sBigArray(network_output_filename);
-    @time sem_output = BigWrapper(network_output_filename);
-  else
-    println("Initializing semantic H5Array...")
-    sem_output = pinky_u.init_semantic_arr()
-  end
-
-  seg, sem_output
-end
-
-
+    process_scan_chunk!( psd_p, seg, semmap, edges, locations, sizes,
+                         chunk_offset, cont_arr, chunk_index, next_seg_id )
+"""
 function process_scan_chunk!( psd_p, seg, semmap,
                               edges, locations, sizes, chunk_offset,
                               cont_arr, chunk_index, next_seg_id )
 
   #See if any segments might not be complete from other chunks
-  c_list = continuation_u.find_continuations_to_apply( cont_arr, chunk_index )
+  c_list = contin_u.find_continuations_to_apply( cont_arr, chunk_index )
 
 
   #Filling in continuations and new segments
@@ -243,15 +167,15 @@ function process_scan_chunk!( psd_p, seg, semmap,
 
 
   #Determining continuations within this chunk
-  new_c_list = continuation_u.find_new_continuations( segments, size(cont_arr),
+  new_c_list = contin_u.find_new_continuations( segments, size(cont_arr),
                                                       chunk_index )
   cont_arr[chunk_index...] = new_c_list
-  cont_ids = continuation_u.segids(new_c_list)
+  cont_ids = contin_u.segids(new_c_list)
 
 
   #Finding segment sizes
   new_sizes = seg_u.segment_sizes(segments)
-  continuation_u.update_sizes!(cont_arr[chunk_index...], new_sizes)
+  contin_u.update_sizes!(cont_arr[chunk_index...], new_sizes)
 
 
   #Finding non-continuation segments under size threshold
@@ -265,7 +189,7 @@ function process_scan_chunk!( psd_p, seg, semmap,
   new_locs = seg_u.centers_of_mass( segments )
   #adjusting locations to offset
   new_locs = Dict( k => v + chunk_offset for (k,v) in new_locs )
-  continuation_u.update_locs!(cont_arr[chunk_index...], new_locs)
+  contin_u.update_locs!(cont_arr[chunk_index...], new_locs)
 
 
   to_dilate = copy(segments)
@@ -282,7 +206,9 @@ function process_scan_chunk!( psd_p, seg, semmap,
   filter!( (k,v) -> !(k in invalid_edges), new_locs )
   filter!( (k,v) -> !(k in keys(edges)), new_sizes )
 
-  continuation_u.update_overlaps!(cont_arr[chunk_index...], overlap, semmap)
+  #Recording how often each continuation overlaps with
+  # the morphological segments we've seen so far
+  contin_u.update_overlaps!(cont_arr[chunk_index...], overlap, semmap)
   
   
   merge!(edges, new_edges)
@@ -295,7 +221,6 @@ end
 
 
 main( network_output_filename, segmentation_filename, output_prefix )
-#main_test( network_output_filename, segmentation_filename )
 #------------------------------------------
 
 end#module end

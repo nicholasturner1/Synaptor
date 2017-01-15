@@ -1,9 +1,17 @@
 #!/usr/bin/env julia
 
-module continuation_u
+#=
+  Segment Continuation Utilities - contin_u
+
+=#
+
+module contin_u
 
 using LightGraphs
 
+export segids
+
+#Basic Type
 type Continuation{T}
   segid :: T
   num_voxels :: Int # 0 = COM not computed yet
@@ -17,27 +25,62 @@ end
 
 Base.eltype{T}(c::Continuation{T}) = T
 
-export segids
-
 #dummy for testing
 dummy_cont_vox = Vector{Vector{Int}}()
 push!(dummy_cont_vox,[1,1,1])
 Continuation() = Continuation(1,5,[1,1,1],UInt8(1),
                               true,dummy_cont_vox,Dict(1=>5),[(1,2)])
 
+"""
+
+    segids{T}( c_list::Vector{Continuation{T}} )
+
+  Returns the set of segment ids represented by the
+  Continuations within c_list
+"""
 function segids{T}(c_list::Vector{Continuation{T}})
   Set([ c.segid for c in c_list ])
 end
 
 
+"""
+
+    update_sizes!{T}( c_list::Vector{Continuation{T}}, sizes )
+
+  Updates the size field for each of the Continuations within c_list.
+
+  Assumes that these Continuations are "new", with no contributions from
+  other chunks.
+"""
 function update_sizes!{T}( c_list::Vector{Continuation{T}}, sizes )
   for c in c_list c.num_voxels = sizes[c.segid] end
 end
 
+
+"""
+
+    update_locs!{T}( c_list::Vector{Continuation{T}}, locs )
+
+  Updates the center_of_mass field for each of the Continuations within c_list.
+
+  Assumes that these Continuations are "new", with no contributions from
+  other chunks.
+"""
 function update_locs!{T}( c_list::Vector{Continuation{T}}, locs )
   for c in c_list c.center_of_mass = locs[c.segid] end
 end
 
+
+"""
+
+    update_overlaps!{T}( c_list::Vector{Continuation{T}}, overlap, semmap )
+
+  Updates the overlaps and overlap_semantics field for each of the Continuations 
+  within c_list.
+
+  Assumes that these Continuations are "new", with no contributions from
+  other chunks.
+"""
 function update_overlaps!{T}( c_list::Vector{Continuation{T}}, overlap, semmap )
   for c in c_list
     seg_overlaps = overlap[c.segid,:]
@@ -49,6 +92,14 @@ function update_overlaps!{T}( c_list::Vector{Continuation{T}}, overlap, semmap )
 end
 
 
+"""
+
+    ContinuationArray(T, size)
+
+  Often, it's nice to associate a Continuation as coming from a
+  particular chunk/index. This stores a list of Continuation at each
+  index within an array.
+"""
 type ContinuationArray{T}
   arr :: Array{Vector{Continuation{T}}}
 end
@@ -68,6 +119,7 @@ Base.eachindex( ca::ContinuationArray ) = eachindex(ca.arr)
 Base.start( ca::ContinuationArray ) = start(ca.arr)
 Base.next( ca::ContinuationArray, st ) = next(ca.arr, st)
 Base.done( ca::ContinuationArray, st ) = done(ca.arr, st)
+
 
 """
 
@@ -109,6 +161,9 @@ end
 """
 
     filter_conts_for_face( c_list::Vector{Continuation{T}}, axis, low_face )
+
+  Finds the Continuations within a list which have the desired axis
+  and low_face field values
 """
 @inline function filter_conts_for_face{T}( c_list::Vector{Continuation{T}}, axis, low_face)
   filter( x -> x.face_axis == axis && x.low_face == low_face, c_list )
@@ -117,11 +172,12 @@ end
 
 """
 
-    update_continuations!{T}( segment_volume::Array{T,3},
+    find_new_continuations!{T}( segment_volume::Array{T,3},
                                    progress_arr::Array{Bool,3},
                                    current_chunk_index )
 
-  Documentation soon...
+  Traverses a segment volume over each of its faces which contact
+  another chunk, and forms new Continuations where it finds them.
 """
 function find_new_continuations{T}( segment_volume::Array{T,3}, chunk_arr_size, 
                                     current_chunk_index )
@@ -154,7 +210,7 @@ end
 
     find_face_continuations{T}( vol::Array{T,3}, axis, low_face )
 
-  Documentation soon...
+  Finds the continuations within a particular face of a volume
 """
 function find_face_continuations{T}( vol::Array{T,3}, axis, low_face )
 
@@ -230,9 +286,16 @@ dummy_ca[1] = [cs[1],cs[2]]
 dummy_ca[2] = [cs[3],cs[4]]
 
 """
+
+    consolidate_continuations( ca::ContinuationArray, to_merge )
+
+  Takes a (filled) ContinuationArray as well as a list of segment
+  ids to merge. Collects and combines the Continuations such that each 
+  represents the size, location, etc. of a full psd segment across
+  the boundaries. Also filters these results for semantic and size constraints
 """
 function consolidate_continuations( ca::ContinuationArray, to_merge )
-
+  #TODO Separate filtering functions from this
   collected = collect_continuations(ca)
 
   components = find_merge_components(to_merge)

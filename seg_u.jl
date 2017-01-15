@@ -98,6 +98,13 @@ function connected_components3D{T}( d::Array{T}, thresh=zero(T) )
 end
 
 
+"""
+
+    fill_in_new_components!{T}( d::Array{T}, masked, next_id )
+
+  Connect any components from masked. It's implied (but not assumed)
+  that other components have already been filled in from continuations.
+"""
 function fill_in_new_components!{T}( d::Array{T}, masked, next_id )
 
   @assert size(masked) == size(d)
@@ -254,6 +261,8 @@ function fill_in_continuation_components!{T}( component_vol::Array{T}, masked, c
 
   to_merge 
 end
+
+
 """
 
     manhattan_distance2D!( d )

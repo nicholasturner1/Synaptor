@@ -6,7 +6,7 @@ __precompile__()
 =#
 module io_u
 
-using HDF5
+using HDF5, BigWrappers
 
 export read_h5
 export save_edge_file
@@ -16,7 +16,7 @@ export read_id_map_lines
 export create_seg_dset
 
 
-#using HDF5 here
+#using HDF5
 """
     read_h5( filename, read_whole_dataset=true, h5_dset_name="/main" )
 """
@@ -217,6 +217,7 @@ function read_id_map_lines( input_filename, sep=";" )
 end
 
 
+#using HDF5
 """
 
     create_seg_dset( fname, vol_size, chunk_size, dset_name="/synseg",
@@ -234,6 +235,25 @@ function create_seg_dset( fname, vol_size, chunk_size,
                   "chunk", chunk_size, "compress", compress_level )
 
   dset
+end
+
+
+#using HDF5
+"""
+
+    import_dataset( seg_fname, net_out_fname )
+
+  Imports a dataset as a BigArray wrapper (put repo URL here) or
+  an HDF5 file, possibly reading the entire file into RAM. Attempts
+  to read by filename extension.
+"""
+function import_dataset( fname, incore )
+
+  if ismatch( r".*.h5", fname )
+    read_h5(fname, incore)
+  else
+    BigWrapper(fname)
+  end
 end
 
 #module end
