@@ -135,7 +135,8 @@ function main( network_output_filename, segmentation_fname, output_prefix )
 
   println("Consolidating continuations")
   @time (new_es, new_ls, new_szs, mapping
-  ) = contin_u.consolidate_continuations( continuation_arr, conts_to_merge )
+  ) = contin_u.consolidate_continuations( continuation_arr, size_thresh, conts_to_merge )
+
 
   merge!(edges, new_es)
   merge!(locations, new_ls)
@@ -181,6 +182,7 @@ function process_scan_chunk!( psd_p, seg, semmap,
   #Finding non-continuation segments under size threshold
   # (continuations may have more voxels somewhere else)
   under_thresh = filter( (k,v) -> v < size_thresh, new_sizes )#param
+  
   filter!( (k,v) -> !(k in cont_ids), under_thresh )
   seg_u.filter_out_segments_by_ids!( segments, collect(keys(under_thresh)) )
   #TODO make a fn for this
@@ -203,8 +205,14 @@ function process_scan_chunk!( psd_p, seg, semmap,
   #Filtering out semantic mismatches w/o continuations
   filter!( x -> !(x in cont_ids), invalid_edges)
   seg_u.filter_out_segments_by_ids!( segments, invalid_edges )
-  filter!( (k,v) -> !(k in invalid_edges), new_locs )
-  filter!( (k,v) -> !(k in keys(edges)), new_sizes )
+
+  #filtering out small segments from edges, locs, and sizes
+  # this removes small continuations at this point bc their info has been
+  # stored already
+  filter!( (k,v) -> (new_sizes[k] >= size_thresh), new_edges )
+  filter!( (k,v) -> (k in keys(new_edges)), new_locs )
+  filter!( (k,v) -> (k in keys(new_edges)), new_sizes )
+
 
   #Recording how often each continuation overlaps with
   # the morphological segments we've seen so far

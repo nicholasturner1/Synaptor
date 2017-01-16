@@ -294,7 +294,7 @@ dummy_ca[2] = [cs[3],cs[4]]
   represents the size, location, etc. of a full psd segment across
   the boundaries. Also filters these results for semantic and size constraints
 """
-function consolidate_continuations( ca::ContinuationArray, to_merge )
+function consolidate_continuations( ca::ContinuationArray, size_thresh, to_merge )
   #TODO Separate filtering functions from this
   collected = collect_continuations(ca)
 
@@ -303,8 +303,9 @@ function consolidate_continuations( ca::ContinuationArray, to_merge )
   consolidated, mapping = merge_components!(collected, components)
   consolidated = collect(values(consolidated))
 
-  edges, mapping = filter_results(consolidated, mapping)
+  edges, mapping = filter_results(consolidated, size_thresh, mapping)
 
+  filter!( x -> x.segid in keys(edges), consolidated )
   locs = centers_of_mass(consolidated)
   sizes = completed_sizes(consolidated)
 
@@ -401,10 +402,11 @@ end
 keys_w_val(d, t) = map(x -> x[1], filter(x -> x[2] == t, d))
 key_w_max_value(d, ks) = ks[findmax([d[k] for k in ks])[2]]
 
-function filter_results{T}(c_list::Vector{Continuation{T}}, mapping)
+function filter_results{T}(c_list::Vector{Continuation{T}}, size_thresh, mapping)
   
   edges = Dict{T,Tuple{T,T}}();
 
+  #semantic filtering
   for c in c_list
     axons = keys_w_val(c.overlap_semantics, 2)
     dends = keys_w_val(c.overlap_semantics, 3)
@@ -419,6 +421,14 @@ function filter_results{T}(c_list::Vector{Continuation{T}}, mapping)
 
     push!(edges, c.segid => (max_axon,max_dend))
   end
+
+  #size filtering
+  for c in c_list
+    if c.num_voxels < size_thresh
+      delete!(edges,c.segid)
+      mapping[c.segid] = 0
+    end
+  end 
 
   edges, mapping  
 end
