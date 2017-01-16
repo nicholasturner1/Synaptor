@@ -353,6 +353,7 @@ function merge( c1::Continuation, c2::Continuation )
   c2
 end
 
+#Using LightGraphs here
 function find_merge_components(to_merge)
   
   segids = Set{Int}();
@@ -413,6 +414,7 @@ function filter_results{T}(c_list::Vector{Continuation{T}}, size_thresh, mapping
 
     if length(axons) == 0 || length(dends) == 0
       mapping[c.segid] = 0
+      set_all_srcs_to_zero(mapping, c.segid)
       continue
     end
 
@@ -427,10 +429,27 @@ function filter_results{T}(c_list::Vector{Continuation{T}}, size_thresh, mapping
     if c.num_voxels < size_thresh
       delete!(edges,c.segid)
       mapping[c.segid] = 0
+      set_all_srcs_to_zero(mapping, c.segid)
     end
   end 
 
   edges, mapping  
+end
+
+"""
+
+    set_all_srcs_to_zero(mapping, segid)
+
+  Sets all the mapping values which map to a particular
+  value to zero. This is useful for filtering, since the other
+  mapping step (merging) results in a path of maximum length equal
+  to 1.
+"""
+function set_all_srcs_to_zero(mapping, segid)
+
+  srcs = filter( (k,v) -> (v == segid), mapping )
+  for (k,v) in srcs mapping[k] = 0 end
+
 end
 
 function centers_of_mass(c_list)

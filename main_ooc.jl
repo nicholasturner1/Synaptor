@@ -182,7 +182,6 @@ function process_scan_chunk!( psd_p, seg, semmap,
   #Finding non-continuation segments under size threshold
   # (continuations may have more voxels somewhere else)
   under_thresh = filter( (k,v) -> v < size_thresh, new_sizes )#param
-  
   filter!( (k,v) -> !(k in cont_ids), under_thresh )
   seg_u.filter_out_segments_by_ids!( segments, collect(keys(under_thresh)) )
   #TODO make a fn for this
@@ -206,10 +205,12 @@ function process_scan_chunk!( psd_p, seg, semmap,
   filter!( x -> !(x in cont_ids), invalid_edges)
   seg_u.filter_out_segments_by_ids!( segments, invalid_edges )
 
-  #filtering out small segments from edges, locs, and sizes
-  # this removes small continuations at this point bc their info has been
-  # stored already
-  filter!( (k,v) -> (new_sizes[k] >= size_thresh), new_edges )
+  #filtering out continuations from edges, locs, and sizes. 
+  # We can rm continuations at this point bc their info has been
+  # stored already, and they might corrupt the edge lists since
+  # we haven't made final decisions about them yet
+  filter!( (k,v) -> !(k in cont_ids), new_edges )
+  #filter!( (k,v) -> (new_sizes[k] >= size_thresh), new_edges )
   filter!( (k,v) -> (k in keys(new_edges)), new_locs )
   filter!( (k,v) -> (k in keys(new_edges)), new_sizes )
 
