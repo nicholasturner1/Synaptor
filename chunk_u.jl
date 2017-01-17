@@ -8,6 +8,7 @@ module chunk_u
    Chunking Utilities - chunk_u.jl
 =#
 #import H5Array
+import BigWrappers 
 
 export fetch_chunk
 export chunk_bounds
@@ -295,6 +296,10 @@ function bounds( d, offset=[0,0,0] )
   offset + 1 => collect(size(d)[1:3]) + offset
 end
 
+
+function bounds( d::BigWrapper, offset=[0,0,0] )
+  BigWrapper.bounds(d)
+end
 
 """
 
