@@ -297,8 +297,8 @@ function bounds( d, offset=[0,0,0] )
 end
 
 
-function bounds( d::BigWrapper, offset=[0,0,0] )
-  BigWrapper.bounds(d)
+function bounds( d::BigWrappers.BigWrapper, offset=[0,0,0] )
+  BigWrappers.bounds(d)
 end
 
 """
