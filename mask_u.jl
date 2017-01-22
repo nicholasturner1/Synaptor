@@ -176,17 +176,19 @@ end
     fill_polygon_volume!{T}(vol::AbstractArray{T,3}, p_list, v::T, offset=Int[0,0])
 
   Fills a 3d volume according to the polygons specified in p_list. The number of polygons
-  should be equal to the number of slices in z. The value v is placed into the volume
+  should be lte to the number of slices in z. The value v is placed into the volume
   whenever an index is contained within the polygon. Each polygon is specified as:
 
   ( \${list_of_x_coords}, \${list_of_y_coords} )
+
+  The first n polygons are applied to the first n slices in order
 """
 function fill_polygon_volume!{T}( vol::AbstractArray{T,3}, p_list, v::T, offset=Int[0,0] )
 
   sx,sy,sz = size(vol)
-  @assert length(p_list) == sz
+  @assert length(p_list) <= sz
 
-  for z in 1:sz
+  for z in 1:length(p_list)
     pxs, pys = p_list[z]
     fill_polygon!(view(vol,:,:,z),pxs,pys,v,offset)
   end
@@ -222,13 +224,20 @@ function mask_vol_by_polygons!{T}( vol::AbstractArray{T,3}, p_list, offset=Int[0
 end
 
 
-function polygon_list( p_struct, start_index, list_length )
-
-  println("polygon list start: $start_index list_length: $list_length")
+"""
+Sometimes, the list won't be equal to the desired list length
+if there aren't enough sections/polygons, but mask_vol_by_polygons
+will just apply as many as it sees
+"""
+function polygon_list( p_dict, start_index, list_length )
 
   index_range = start_index:(start_index+list_length-1)
+  p_list = []
+  for i in index_range
+    if haskey(p_dict,i) push!(p_list,p_dict[i]) end
+  end
 
-  [p_struct[i] for i in index_range]
+  p_list
 end
 
 """
