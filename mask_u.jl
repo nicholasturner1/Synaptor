@@ -16,7 +16,7 @@ module mask_u
   algorithm. Vertices are assumed to be listed in counter-clockwise order
 """
 function clip_polygon( pxs, pys, cxs, cys )
-  
+
   @assert length(pxs) == length(pys)
   @assert length(cxs) == length(cys)
 
@@ -58,11 +58,11 @@ end
 
 
 """
-  
+
     isinside( p, src, dst )
 
   Determines whether a point is on the "inside" side of a line bounding
-  a polygon. The polygon is specified by a source and destination point. 
+  a polygon. The polygon is specified by a source and destination point.
   If following a counter-clockwise vertex list convention, the "inside" corresponds
   to a positive cross product.
 """
@@ -88,7 +88,7 @@ function find_intersection( src1, dst1, src2, dst2 )
   denom = (src1[1]-dst1[1])*(src2[2]-dst2[2]) - (src1[2]-dst1[2])*(src2[1]-dst2[1])
 
   ((diff2[1]*numer_t1 - diff1[1]*numer_t2) / denom, #x
-   (diff2[2]*numer_t1 - diff1[2]*numer_t2) / denom) #y 
+   (diff2[2]*numer_t1 - diff1[2]*numer_t2) / denom) #y
 end
 
 
@@ -99,26 +99,27 @@ end
   Fills a volume with the value v whether the index is contained within
   a polygon (specified by pxs and pys).
 """
-function fill_polygon!{T}(vol::AbstractArray{T,2}, pxs, pys, v::T, offset=Int[0,0])
+function fill_polygon!{T}( vol::AbstractArray{T,2}, pxs, pys, v::T, offset=Int[0,0] )
 
   @assert length(pxs) == length(pys)
 
   num_verts = length(pxs)
 
   sx,sy = size(vol)
-  
+
   for y in 1:sy
     xs = [];
     j = num_verts
+    y_w_off = y+offset[2]
     for i in eachindex(pys)
-      if ((pys[i]>(y+offset[2])) != (pys[j]>(y+offset[2])))
+      if ((pys[i]>(y_w_off)) != (pys[j]>(y_w_off)))
 
-        crossx = ((y-pys[i]) * (pxs[j]-pxs[i]) / (pys[j]-pys[i]) + pxs[i])
+        crossx = ((y_w_off-pys[i]) * (pxs[j]-pxs[i]) / (pys[j]-pys[i]) + pxs[i])
         push!(xs,crossx)
       end
       j = i
     end #i loop
-    
+
     sort!(xs)
 
     #relating bounds to the current reference volume
@@ -138,13 +139,13 @@ end
 
 """
 
-    _filter_indices(is, bounds)
+    filter_indices(is, bounds)
 
   Modifies a list of indices which specify entry/exit points of a ray
   cast across a polygon in order to fit the passed bounds. The indices
   are assumed to be sorted.
 """
-function _filter_indices!(is, bounds)
+function _filter_indices!( is, bounds )
 
   st_b, end_b = bounds
   st_i, end_i = 1, length(is)
@@ -180,7 +181,7 @@ end
 
   ( \${list_of_x_coords}, \${list_of_y_coords} )
 """
-function fill_polygon_volume!{T}(vol::AbstractArray{T,3}, p_list, v::T, offset=Int[0,0])
+function fill_polygon_volume!{T}( vol::AbstractArray{T,3}, p_list, v::T, offset=Int[0,0] )
 
   sx,sy,sz = size(vol)
   @assert length(p_list) == sz
@@ -189,10 +190,46 @@ function fill_polygon_volume!{T}(vol::AbstractArray{T,3}, p_list, v::T, offset=I
     pxs, pys = p_list[z]
     fill_polygon!(view(vol,:,:,z),pxs,pys,v,offset)
   end
+
 end
 
 
+function polygon_volume_mask( vol_size, p_list, offset=Int[0,0] )
 
+  mask = zeros(Bool,vol_size)
+  fill_polygon_volume!(mask, p_list, true, offset)
+
+  mask
+end
+
+
+function mask_vol_by_polygons!{T}( vol::AbstractArray{T,3}, p_list, offset=Int[0,0] )
+
+  println("offset $offset")
+  mask = polygon_volume_mask(size(vol), p_list, offset)
+  # println(unique(mask))
+
+  zT = eltype(vol)(0)
+  count=0
+  for i in eachindex(mask)
+    if mask[i] continue end
+    count += 1
+    vol[i] = zT
+  end
+
+  println("$count voxels masked")
+
+end
+
+
+function polygon_list( p_struct, start_index, list_length )
+
+  println("polygon list start: $start_index list_length: $list_length")
+
+  index_range = start_index:(start_index+list_length-1)
+
+  [p_struct[i] for i in index_range]
+end
 
 """
 
@@ -267,7 +304,7 @@ end
 
 """
 
-    _index_window(i,r,bounds)
+    index_window(i,r,bounds)
 
   Finds the range of all indices between the end points of
   bounds and within distance r of i

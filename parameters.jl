@@ -24,18 +24,14 @@ dilation_param = 15
 sem_dtype = Float32
 seg_dtype = UInt32
 
+#Polygon mask filename
+# Useful if your data doesn't fill the whole volume
+# or significant output artifacts exist
+mask_poly_fname = nothing;
+
 #=================================
 #out-of-core parameters
 =================================#
 scan_chunk_shape = [1024,1024,128];
 
-#=================================
-#create_seg_volume parameters
-=================================#
-#chunk size of input&output segmentation HDF5 files
-seg_chunk_shape = [256,256,32];
-#how much larger to make the initial chunk deal
-max_chunk_multiplier = 8;
-#how quickly to shrink the chunks after
-# the initial deal
-size_div = 8;
+DEBUG=false;

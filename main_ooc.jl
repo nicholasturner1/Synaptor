@@ -17,6 +17,7 @@ import chunk_u     # Chunking Utils
 import vol_u       # Data Volume Utils
 import utils       # General Utils
 import contin_u    # Handling Segment Continuations
+import mask_u      # Masking Utilities
 
 #------------------------------------------
 # Command-line arguments
@@ -34,9 +35,12 @@ include(config_filename)
 function main( network_output_filename, segmentation_fname, output_prefix )
 
   #Reading/Initializing Data
-  seg = io_u.import_dataset( segmentation_fname, seg_incore )#param
-  sem_output = io_u.import_dataset( network_output_filename, sem_incore )#param
+  seg = io_u.import_dataset( segmentation_fname, seg_incore )#config
+  sem_output = io_u.import_dataset( network_output_filename, sem_incore )#config
 
+  #params
+  slice_masks = nothing;
+  if mask_poly_fname != nothing slice_masks = io_u.read_single_map(mask_poly_fname) end
 
   #Figuring out where I can index things without breaking anything
   seg_origin_offset  = seg_start - 1;#param
@@ -49,11 +53,14 @@ function main( network_output_filename, segmentation_fname, output_prefix )
   valid_sem_bounds = chunk_u.intersect_bounds( sem_bounds, seg_bounds, seg_origin_offset )#param
   valid_seg_bounds = chunk_u.intersect_bounds( seg_bounds, sem_bounds, -seg_origin_offset )#param
 
-  #println("seg_bounds: $seg_bounds")
-  #println("sem_bounds: $sem_bounds")
-  #println("seg_origin_offset: $seg_origin_offset")
-  #println("scan_bounds: $scan_bounds")
-  #println("valid_seg_bounds: $valid_seg_bounds")
+  if DEBUG
+    println("seg_bounds: $seg_bounds")
+    println("sem_bounds: $sem_bounds")
+    println("seg_origin_offset: $seg_origin_offset")
+    println("scan_bounds: $scan_bounds")
+    println("valid_seg_bounds: $valid_seg_bounds")
+  end
+
   @assert vol_u.in_bounds( scan_bounds, valid_seg_bounds )
 
   scan_vol_shape = chunk_u.vol_shape( scan_bounds ) #param
@@ -98,18 +105,28 @@ function main( network_output_filename, segmentation_fname, output_prefix )
 
     scan_offset = scan_rel_offset + seg_origin_offset;
 
-    #if DEBUG
-    # println("block offset: $(block_offset)")
-    # println("scan_offset: $(scan_offset)")
-    # println("scan_origin_offset: $(scan_origin_offset)")
-    # println("ins block size: $(size(psd_ins_block))")
-    # println("scan chunk size: $(size(psd_p))")
-    #end
-
 
     # we've extracted everything we need from these
     output_chunk = nothing; gc()
 
+
+    if slice_masks != nothing
+
+      ch_x,ch_y,ch_z = curr_bounds.first
+      ch_size_z = size(psd_chunk,3)
+      
+      ch_polygon_list = mask_u.polygon_list( slice_masks, ch_z, ch_size_z )
+      mask_u.mask_vol_by_polygons!( psd_chunk, ch_polygon_list, [ch_x,ch_y]-1 )
+      
+    end
+
+    if DEBUG #param
+     println("block offset: $(block_offset)")
+     println("scan_offset: $(scan_offset)")
+     println("scan_origin_offset: $(scan_origin_offset)")
+     println("ins block size: $(size(psd_ins_block))")
+     println("scan chunk size: $(size(psd_p))")
+    end
 
     println("Processing chunk")
     @time (psd_segments, next_seg_id, to_merge

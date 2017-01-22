@@ -47,7 +47,9 @@ output = nothing; gc(); #freeing up memory
 
 
 println("Filtering by size threshold $(size_thresh)...") #param
-@time seg_u.filter_segments_by_size!( syn_segs, size_thresh )
+@time sizes = seg_u.segment_sizes( syn_segs )
+under_thresh = filter( (k,v) -> v < size_thresh, sizes )
+@time seg_u.filter_out_segments_by_ids!( syn_segs, collect(keys(under_thresh)) )
 
 
 println("Finding segment locations")
@@ -60,16 +62,18 @@ dilated_segs = deepcopy(syn_segs)
 
 
 println("Deriving synaptic edge list") #param
-@time edges, valid_segments = utils.find_synaptic_edges( dilated_segs, seg, sem_map,
+@time edges, invalid_segments, _ = utils.find_synaptic_edges( dilated_segs, seg, sem_map,
                                                      vol_map["axon"],vol_map["dendrite"] )
 
 
-locations = [ locations[ segid ] for segid in valid_segments ];
-seg_u.filter_segments_by_ids!( syn_segs, valid_segments );
+valid_segments = keys(edges)
+filter!( (k,v) -> k in valid_segments, locations )
+filter!( (k,v) -> k in valid_segments, sizes )
+seg_u.filter_out_segments_by_ids!( syn_segs, invalid_segments );
 
 
 println("Saving edge information")
-io_u.save_edge_file( edges, locations, 1:length(edges), "$(output_prefix)_edges.csv" )
+io_u.write_map_file( "$(output_prefix)_edges.csv", edges, locations, sizes )
 println("Saving semantic mapping")
 io_u.write_map_file( "$(output_prefix)_semmap.csv", sem_map );
 println("Saving synaptic segments")

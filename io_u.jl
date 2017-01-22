@@ -186,6 +186,11 @@ function read_map_file( input_filename, num_columns, sep=";" )
 end
 
 
+function read_single_map(filename)
+  read_map_file(filename,1)[1]
+end
+
+
 """
 
     read_id_map_lines( input_filename, sep=";" )
