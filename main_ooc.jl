@@ -41,6 +41,11 @@ function main( network_output_filename, segmentation_fname, output_prefix )
   #params
   slice_masks = nothing;
   if mask_poly_fname != nothing slice_masks = io_u.read_single_map(mask_poly_fname) end
+  seg_mst_map = nothing;
+  if seg_mst_fname != nothing 
+    seg_mst_map = io_u.read_MST(seg_mst_fname, seg_mst_thresh) 
+  end
+
 
   #Figuring out where I can index things without breaking anything
   seg_origin_offset  = seg_start - 1;#param
@@ -94,6 +99,10 @@ function main( network_output_filename, segmentation_fname, output_prefix )
     @time output_chunk = chunk_u.fetch_chunk( sem_output, curr_bounds, seg_origin_offset )
     @time seg_chunk    = chunk_u.fetch_chunk( seg, curr_bounds )
 
+    if seg_mst_map != nothing
+      println("Mapping seg by MST")
+      @time vol_u.relabel_data!(seg_chunk, seg_mst_map)
+    end
 
     println("Making semantic assignment...")
     @time semmap, _ = utils.make_semantic_assignment( seg_chunk, output_chunk, [2,3] )

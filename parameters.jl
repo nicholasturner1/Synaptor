@@ -29,6 +29,12 @@ seg_dtype = UInt32
 # or significant output artifacts exist
 mask_poly_fname = nothing;
 
+#Segment "MST" fname
+# Whether the segments within the volume need to be remapped
+# by an MST-like datastructure
+seg_mst_fname = nothing;
+seg_mst_thresh = nothing;
+
 #=================================
 #out-of-core parameters
 =================================#

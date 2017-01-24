@@ -261,5 +261,47 @@ function import_dataset( fname, incore )
   end
 end
 
+
+#using HDF5
+"""
+
+    read_MST( seg_fname, threshold )
+
+  Reads in an mst mapping from an h5 file assuming more than I should for now
+"""
+function read_MST( seg_fname, threshold )
+
+  segmentPairs = h5read( seg_fname, "dend" )
+  segmentPairAffinities = h5read( seg_fname, "dendValues" )
+
+  read_MST( segmentPairs, segmentPairAffinities, threshold )
+end
+
+
+"""
+
+    read_MST( segmentPairs, segmentPairAffinities, threshold )
+
+  Reads in the MST from segmentation files thresholded at the given
+  value. Only contains key value pairs for a node if it is not a root node
+"""
+function read_MST( segmentPairs, segmentPairAffinities, threshold )
+
+  assignment = Dict{Int,Int}();
+
+  for i in eachindex( segmentPairAffinities )
+
+    if segmentPairAffinities[i] > threshold
+      child, parent = segmentPairs[i,:];
+      # parent, child = segmentPairs[i,:];
+      #println("child: $child, parent: $parent, val: $(segmentPairAffinities[i])")
+      assignment[ child ] = get( assignment, parent, parent )
+    end
+
+  end
+
+  assignment
+end
+
 #module end
 end

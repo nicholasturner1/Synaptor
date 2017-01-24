@@ -37,14 +37,6 @@ function read_MST( segmentPairs, segmentPairAffinities, threshold )
 
   end
 
-  #for k in keys(assignment)
-  #  v = assignment[k]
-  #  while v != get(assignment,v,v)
-  #    println( "$v -> $(assignment[v])")
-  #    assignment[k] = assignment[v]
-  #  end
-  #end
-
   assignment
 end
 
