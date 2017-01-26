@@ -293,15 +293,30 @@ function read_MST( segmentPairs, segmentPairAffinities, threshold )
 
     if segmentPairAffinities[i] > threshold
       child, parent = segmentPairs[i,:];
-      # parent, child = segmentPairs[i,:];
-      #println("child: $child, parent: $parent, val: $(segmentPairAffinities[i])")
-      assignment[ child ] = get( assignment, parent, parent )
+      assignment[ child ] = parent #get( assignment, parent, parent )
     end
 
   end
 
+
+  #still not 100% sure why we should need to consolidate
+  # given proper ordering, but this should work for now
+  for (k,v) in assignment
+    ks = [k]
+    next_v = get(assignment,v,v)
+
+    while v != next_v
+      push!(ks,v)
+      v, next_v = next_v, get(assignment,next_v,next_v)
+    end
+
+    #next_v is now a root
+    for k in ks assignment[k] = next_v end
+   end
+
   assignment
 end
+
 
 #module end
 end
