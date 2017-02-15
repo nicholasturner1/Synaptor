@@ -7,8 +7,8 @@ module chunk_u
 #=
    Chunking Utilities - chunk_u.jl
 =#
-import H5Array
-import BigWrappers 
+include("H5Array.jl")
+include("BigWrappers.jl")
 
 export fetch_chunk
 export chunk_bounds
@@ -298,10 +298,11 @@ function bounds( d, offset=[0,0,0] )
 end
 
 
-bounds( d::BigWrappers.BigWrapper, offset=[0,0,0] ) = BigWrappers.bounds(d)
-function bounds( d::H5Array.H5Arr, offset=[0,0,0] ) 
-  (d.shape.first[1:3] + offset) => (d.shape.second[1:3] + offset)
-end
+#currently unusable given the current code structure - will rewrite in newer versions
+#bounds( d::BigWrappers.BigWrapper, offset=[0,0,0] ) = BigWrappers.bounds(d)
+#function bounds( d::H5Array.H5Arr, offset=[0,0,0] ) 
+#  (d.shape.first[1:3] + offset) => (d.shape.second[1:3] + offset)
+#end
 
 
 """

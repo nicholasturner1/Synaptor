@@ -6,7 +6,7 @@ __precompile__()
 =#
 module utils 
 
-import seg_u
+include("seg_u.jl")
 
 export find_synaptic_edges
 export make_semantic_assignment, voxelwise_class_judgment

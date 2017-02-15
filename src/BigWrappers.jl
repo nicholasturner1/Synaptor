@@ -23,6 +23,7 @@ function Base.size(bw::BigWrapper)
   size(ba)
 end
 
+
 function init(bw::BigWrapper)
   H5sBigArray(bw.dirname)
 end
@@ -34,5 +35,6 @@ function bounds(bw::BigWrapper, offset=[0,0,0])
   e = Int[v for v in bs.stop][1:3] + offset
   b => e
 end
+
 
 end#module

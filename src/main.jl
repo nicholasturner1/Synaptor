@@ -7,13 +7,11 @@
 # main_ooc (no median filtering business atm)
 
 
-#temporary
-unshift!(LOAD_PATH,".")
 
 
-import io_u  # I/O Utils
-import seg_u # Segmentation Utils
-import utils # General Utils
+include("io_u.jl")  # I/O Utils
+include("seg_u.jl") # Segmentation Utils
+include("utils.jl") # General Utils
 
 #------------------------------------------
 # Command-line arguments

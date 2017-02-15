@@ -5,9 +5,8 @@
 =#
 module create_seg_volume
 
-unshift!(LOAD_PATH,".")
-import io_u
-import chunk_u
+include("io_u.jl")
+include("chunk_u.jl")
 
 #-----------------------------
 include("parameters.jl")

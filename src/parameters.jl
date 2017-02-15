@@ -43,4 +43,4 @@ seg_mst_thresh = nothing;
 =================================#
 scan_chunk_shape = [1024,1024,128];
 
-DEBUG = false;
+DEBUG = true;

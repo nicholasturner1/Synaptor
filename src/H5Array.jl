@@ -7,10 +7,10 @@ __precompile__()
 module H5Array
 
 
-export H5Array
+export H5Array, bounds
 
 
-import vol_u
+include("vol_u.jl")
 import HDF5
 
 import Base: getindex, size
@@ -109,6 +109,12 @@ end
 
 
 size( A::H5Arr ) = A.shape.second - A.shape.first + 1
+
+
+function bounds( A, offset=[0,0,0] )
+  (A.shape.first[1:3] + offset) => (A.shape.second[1:3] + offset)
+end
+
 
 """
 

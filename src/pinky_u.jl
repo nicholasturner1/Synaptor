@@ -2,9 +2,9 @@
 
 module pinky_u
 
-import chunk_u
-import utils
-import H5Array
+include("chunk_u.jl")
+include("utils.jl")
+include("H5Array.jl")
 
 semantic_dir = "/mnt/data02/jingpeng/pinky/semanticmap/"
 semantic_dset_name = "/img"

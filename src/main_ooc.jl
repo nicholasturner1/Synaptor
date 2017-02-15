@@ -8,16 +8,14 @@
 module main_ooc
 
 
-unshift!(LOAD_PATH,".") #temporary
-
-
-import io_u        # I/O Utils
-import seg_u       # Segmentation Utils
-import chunk_u     # Chunking Utils
-import vol_u       # Data Volume Utils
-import utils       # General Utils
-import contin_u    # Handling Segment Continuations
-import mask_u      # Masking Utilities
+include("io_u.jl")     # I/O Utils
+include("seg_u.jl")    # Segmentation Utils
+include("chunk_u.jl")  # Chunking Utils
+include("vol_u.jl")    # Data Volume Utils
+include("contin_u.jl") # General Utils
+include("mask_u.jl")   # Handling Segment Continuations
+include("H5Array.jl")  # Pinky10 network output structure
+include("utils.jl")    # Masking Utilities
 
 #------------------------------------------
 # Command-line arguments
@@ -51,7 +49,7 @@ function main( network_output_filename, segmentation_fname, output_prefix )
   #Figuring out where I can index things without breaking anything
   seg_origin_offset  = seg_start - 1;#param
   seg_bounds  = chunk_u.bounds( seg )#param
-  sem_bounds  = chunk_u.bounds( sem_output )#param
+  sem_bounds  = H5Array.bounds( sem_output )#param #Cheating by a lot for now
   scan_bounds = scan_start_coord => scan_end_coord;#param
   scan_rel_offset = scan_start_coord - 1; #param
 

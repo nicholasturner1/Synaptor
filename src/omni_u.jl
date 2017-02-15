@@ -4,8 +4,8 @@ __precompile__()
 
 module omni_u
 
-import io_u
-import vol_u
+include("io_u.jl")
+include("vol_u.jl")
 using HDF5
 
 seg_dset_name = "/main";

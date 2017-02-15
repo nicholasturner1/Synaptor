@@ -1,14 +1,13 @@
 #!/usr/bin/env julia
-__precompile__()
 
 #=
   I/O Utils - io_u.jl
 =#
 module io_u
 
-import pinky_u
-
-using HDF5, BigWrappers
+include("pinky_u.jl")
+include("BigWrappers.jl")
+using HDF5
 
 export read_h5
 export save_edge_file
@@ -261,7 +260,7 @@ function import_dataset( fname, incore )
   elseif ismatch( r".*.h5", fname )
     read_h5(fname, incore)
   else
-    BigWrapper(fname)
+    BigWrappers.BigWrapper(fname)
   end
 end
 
