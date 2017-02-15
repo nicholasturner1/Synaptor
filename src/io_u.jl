@@ -321,5 +321,31 @@ function read_MST( segmentPairs, segmentPairAffinities, threshold )
 end
 
 
+function read_dframe( input_filename, sep=';' )
+
+  raw = readdlm(input_filename,sep)
+  raw = raw[:,1:(end-1)]
+  for i in 1:size(raw,2)
+    #readdlm returns Ints or strings
+    if typeof(raw[1,i]) == Int continue end
+    raw[:,i] = map(x -> eval(parse(x)), raw[:,i])
+  end
+
+  raw
+end
+
+
+function write_dframe( df, output_filename, sep=";" )
+
+  open(output_filename, "w+") do f
+
+    for r in 1:size(df,1)
+      fields = map(string,df[r,:])
+      write(f,"$(join(fields,sep))\n")
+    end #for r
+  end #open(fname)
+end
+
+
 #module end
 end
