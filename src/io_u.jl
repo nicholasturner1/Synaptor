@@ -6,6 +6,8 @@ __precompile__()
 =#
 module io_u
 
+import pinky_u
+
 using HDF5, BigWrappers
 
 export read_h5
@@ -254,7 +256,9 @@ end
 """
 function import_dataset( fname, incore )
 
-  if ismatch( r".*.h5", fname )
+  if fname == nothing
+    pinky_u.init_semantic_arr()
+  elseif ismatch( r".*.h5", fname )
     read_h5(fname, incore)
   else
     BigWrapper(fname)

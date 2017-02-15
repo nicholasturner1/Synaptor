@@ -13,7 +13,7 @@ export H5Array
 import vol_u
 import HDF5
 
-import Base: getindex
+import Base: getindex, size
 
 
 type H5Arr{T <: Real}
@@ -107,6 +107,8 @@ function getindex( A::H5Arr, indices::Union{Colon,Range{Int},Int}... )
   read_and_map( A, bounds, to_read )
 end
 
+
+size( A::H5Arr ) = A.shape.second - A.shape.first + 1
 
 """
 

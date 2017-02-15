@@ -7,7 +7,7 @@ module chunk_u
 #=
    Chunking Utilities - chunk_u.jl
 =#
-#import H5Array
+import H5Array
 import BigWrappers 
 
 export fetch_chunk
@@ -54,7 +54,8 @@ function fetch_chunk( d, bounds::Pair, offset=[0,0,0] )
   shifted = (bounds.first  + offset) => (bounds.second + offset);
   zipped = zip_bounds(shifted)
 
-  while length(zipped) < length(size(d)) push!(zipped,Colon()) end
+  #temp
+  #while length(zipped) < length(size(d)) push!(zipped,Colon()) end
 
   d[zipped...]
 end
@@ -297,9 +298,11 @@ function bounds( d, offset=[0,0,0] )
 end
 
 
-function bounds( d::BigWrappers.BigWrapper, offset=[0,0,0] )
-  BigWrappers.bounds(d)
+bounds( d::BigWrappers.BigWrapper, offset=[0,0,0] ) = BigWrappers.bounds(d)
+function bounds( d::H5Array.H5Arr, offset=[0,0,0] ) 
+  (d.shape.first[1:3] + offset) => (d.shape.second[1:3] + offset)
 end
+
 
 """
 

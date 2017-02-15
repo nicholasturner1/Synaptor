@@ -27,11 +27,14 @@ seg_dtype = UInt32
 #Polygon mask filename
 # Useful if your data doesn't fill the whole volume
 # or significant output artifacts exist
+#mask_poly_fname = "cons_bbox_shifted.csv";
 mask_poly_fname = nothing;
 
 #Segment "MST" fname
 # Whether the segments within the volume need to be remapped
 # by an MST-like datastructure
+#seg_mst_fname = "/mnt/data01/s1/sgm.h5";
+#seg_mst_thresh = 0.2;
 seg_mst_fname = nothing;
 seg_mst_thresh = nothing;
 
@@ -40,4 +43,4 @@ seg_mst_thresh = nothing;
 =================================#
 scan_chunk_shape = [1024,1024,128];
 
-DEBUG=false;
+DEBUG = false;

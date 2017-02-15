@@ -35,6 +35,7 @@ include(config_filename)
 function main( network_output_filename, segmentation_fname, output_prefix )
 
   #Reading/Initializing Data
+  @assert segmentation_fname != nothing
   seg = io_u.import_dataset( segmentation_fname, seg_incore )#config
   sem_output = io_u.import_dataset( network_output_filename, sem_incore )#config
 
@@ -50,7 +51,7 @@ function main( network_output_filename, segmentation_fname, output_prefix )
   #Figuring out where I can index things without breaking anything
   seg_origin_offset  = seg_start - 1;#param
   seg_bounds  = chunk_u.bounds( seg )#param
-  sem_bounds  = chunk_u.bounds( sem_output, seg_origin_offset )#param
+  sem_bounds  = chunk_u.bounds( sem_output )#param
   scan_bounds = scan_start_coord => scan_end_coord;#param
   scan_rel_offset = scan_start_coord - 1; #param
 
@@ -130,7 +131,7 @@ function main( network_output_filename, segmentation_fname, output_prefix )
     end
 
     if DEBUG #param
-     println("block offset: $(block_offset)")
+     #println("block offset: $(block_offset)")
      println("scan_offset: $(scan_offset)")
      println("scan_origin_offset: $(scan_origin_offset)")
      println("ins block size: $(size(psd_ins_block))")
