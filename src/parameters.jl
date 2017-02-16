@@ -42,3 +42,5 @@ seg_mst_thresh = nothing;
 #out-of-core parameters
 =================================#
 scan_chunk_shape = [1024,1024,128];
+
+DEBUG = false;
