@@ -131,9 +131,6 @@ function main( network_output_filename, segmentation_fname, output_prefix )
     if DEBUG #param
      #println("block offset: $(block_offset)")
      println("scan_offset: $(scan_offset)")
-     println("scan_origin_offset: $(scan_origin_offset)")
-     println("ins block size: $(size(psd_ins_block))")
-     println("scan chunk size: $(size(psd_p))")
     end
 
     println("Processing chunk")
