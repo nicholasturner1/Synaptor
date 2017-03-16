@@ -16,6 +16,6 @@ include("edgefinder.jl"); using .EF
 #Specific EdgeFinders
 #include("VesicleEdgeFinder.jl"); using .VesicleEF
 include("SemanticEdgeFinder.jl"); using .SemanticEF
-#include("PrePostEdgeFinder.jl"); using .PrePostEF
+include("PrePostEdgeFinder.jl"); using .PrePostEF
 
 end

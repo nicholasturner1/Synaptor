@@ -1,6 +1,9 @@
 module Synaptor
 
+export PrePostEdgeFinder, findedges_w_prepost
+export VesicleEdgefinder, findedges_w_ves
 export SemanticEdgeFinder, findedges_w_sem
+
 
 include("Types.jl")
 

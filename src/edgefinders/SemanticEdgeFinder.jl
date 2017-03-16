@@ -5,8 +5,7 @@ using ...Types
 using ..EF
 
 
-export SemanticEdgeFinder
-export findedges_w_sem
+export SemanticEdgeFinder, findedges_w_sem
 
 
 # Type parameters
@@ -17,6 +16,7 @@ reqd_args = [
 ("axon_label", Integer, EF.AUX_PARAM),
 ("dend_label", Integer, EF.AUX_PARAM)
 ]
+
 
 """
 
@@ -36,7 +36,7 @@ overlaps a single segment)
 * `axon_label`, `dend_label`: sending and receiving labels (respectively)
 
 
-#### Outputs:
+### Outputs:
 * `edges`: Dict mapping from psd_seg id to the morphological segments connected
          by that segment
 * `invalid`: list of psd segment ids which were deemed invalid
@@ -83,6 +83,12 @@ CLASS DEFINITION
 #Explicitly wrapping the required args
 explicit_args = map( x -> EF.EFArg(x[1],x[2],x[3]), reqd_args )
 
+"""
+
+    SemanticEdgeFinder <: EdgeFinder
+
+Wrapper class for findedges_w_sem (see that fn's docs for details)
+"""
 type SemanticEdgeFinder <: Types.EdgeFinder
   reqs :: Vector{EF.EFArg}
   args :: Dict{String,Any}
