@@ -1,12 +1,21 @@
 
 module EdgeFinders
 
+#I'm often dumping the names into the namespace since the exported
+# fns shouldn't clash with anything else, and affording "toolbox"-type
+# capabilities is very nice here
+export PrePostEdgeFinder, findedges_w_prepost
+export VesicleEdgefinder, findedges_w_ves
+export SemanticEdgeFinder, findedges_w_sem
+
+#General Utils and Interfaces
 include("utils.jl")
 include("edgefinder.jl"); using .EF
 
-include("VesicleEdgeFinder.jl")
-include("SemanticEdgeFinder.jl")
-include("PrePostEdgeFinder.jl")
-include("FloodFillingEdgeFinder.jl")
+
+#Specific EdgeFinders
+#include("VesicleEdgeFinder.jl"); using .VesicleEF
+include("SemanticEdgeFinder.jl"); using .SemanticEF
+#include("PrePostEdgeFinder.jl"); using .PrePostEF
 
 end
