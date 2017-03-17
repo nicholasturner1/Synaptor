@@ -3,6 +3,7 @@ module SemanticEF
 
 using ...Types
 using ..EF
+using ..Utils
 
 
 export SemanticEdgeFinder, findedges_w_sem
@@ -49,10 +50,10 @@ function findedges_w_sem( psd_segs, seg, semmap, axon_label, dend_label )
   if length(keys(semmap)) == 0 return Dict(), [], spzeros(0,0) end
 
 
-  overlap = segm.count_overlapping_labels( psd_segs, seg )
+  overlap = Utils.count_overlapping_labels( psd_segs, seg )
 
 
-  seg_ids = extract_unique_rows(overlap)
+  seg_ids = Utils.extract_unique_rows(overlap)
   axons, dends = split_map_into_groups( semmap, [axon_label, dendrite_label] )
 
   axon_overlaps = overlap[:,axons]; dend_overlaps = overlap[:,dendrites];
@@ -64,8 +65,8 @@ function findedges_w_sem( psd_segs, seg, semmap, axon_label, dend_label )
   end
 
 
-  axon_max, axon_ids = find_max_overlaps( axon_overlaps, axons, seg_ids )
-  dend_max, dend_ids = find_max_overlaps( dend_overlaps, dends, seg_ids )
+  axon_max, axon_ids = Utils.find_max_overlaps( axon_overlaps, axons, seg_ids )
+  dend_max, dend_ids = Utils.find_max_overlaps( dend_overlaps, dends, seg_ids )
 
   #only count edges if they overlap with SOME axon or dendrite
   valid_edges, invalid_edges = filter_edges( axon_max, dend_max )

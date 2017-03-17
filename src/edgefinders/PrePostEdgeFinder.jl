@@ -3,6 +3,7 @@ module PrePostEF
 
 using ...Types
 using ..EF
+using ..Utils
 
 
 export PrePostEdgeFinder, findedges_w_prepost
@@ -18,9 +19,45 @@ reqd_args = [
 
 
 """
+
+    findedges_w_prepost( psd_segs, seg, pre_vol, post_vol )
+
+Looks for edges within psd_segs by means of network output identifying
+pre and post synaptic terminals, along with morphological segments.
+Declares edges when a pair of pre and post synaptic terminals overlap,
+and declares the synaptic partners to be the morphological segments which
+carry the most output weight with each terminal.
+
+### Inputs:
+* `psd_segs`: 4D vol, pre (vol1) and post (vol2) synaptic segments
+* `seg`: morphological segmentation of the same chunk
+* `pre_vol`: 3D presynaptic output volume
+* `post_vol`: 3D postsynaptic output volume
+
+
+### Outputs:
+* `edges`: Dict mapping from a pair of pre and post synaptic ids to the
+         morphological segments connected by those segments
 """
 function findedges_w_prepost( psd_segs, seg, pre_vol, post_vol )
-  0#stub #NOTE INCOMPLETE
+
+
+  @assert length(size(psd_segs)) == 4
+
+  pre_segs = view(psd_segs,:,:,:,1)
+  post_segs = view(psd_segs,:,:,:,2)
+
+  pre_w  = Utils.sum_overlap_weight( pre_segs,  seg, pre_vol  )
+  post_w = Utils.sum_overlap_weight( post_segs, seg, post_vol )
+  overlap = Utils.count_overlapping_labels( pre_segs, post_segs )
+
+  pre_ids  = Utils.extract_unique_rows(pre_w)
+  post_ids = Utils.extract_unique_rows(post_w)
+
+  edges = Utils.find_pairs(overlap)
+  segs  = assign_pairs(edges, pre_w, post_w)
+
+  Dict( e => s for (e,s) in zip(edges,segs) )
 end
 
 #===========================================
