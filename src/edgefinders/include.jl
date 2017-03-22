@@ -1,5 +1,7 @@
 
 module EdgeFinders
+#See edgefinder.jl for a description for why edge finders are useful
+
 
 #I'm often dumping the names into the namespace since the exported
 # fns shouldn't clash with anything else, and affording "toolbox"-type

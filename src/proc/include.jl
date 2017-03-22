@@ -1,8 +1,9 @@
 module Processing
 
 
-include("InCore.jl")
-include("OutOfCore.jl")
+include("utils.jl")
+include("incore.jl"); using .InCore
+include("outofcore.jl")#; using .OutOfCore
 
 
 end

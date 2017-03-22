@@ -3,14 +3,14 @@ module Utils
 #all other misc segmentation utils
 
 export relabel_data!, relabel_data
-export centers_of_mass
+export centers_of_mass, filter_by_size!
 
 
 function relabel_data!{T}( d::AbstractArray{T}, mapping )
 
   zT = zero(T)
   for i in eachindex(d)
-    
+
     if d[i] == zT continue end
 
     v = d[i]
@@ -60,5 +60,42 @@ function centers_of_mass{T}( d::AbstractArray{T} )
   coms
 end
 
+
+function filter_by_size!( d::AbstractArray, thresh::Integer )
+
+  szs = segment_sizes(d)
+
+  to_keep = Vector{eltype(keys(szs))}()
+
+  for (segid,size) in szs
+    if size > thresh push!(to_keep, segid) end
+  end
+
+  if length(to_keep) == 0 warn("no segments remaining after size threshold") end
+
+  for i in eachindex(d)
+    if !(d[i] in to_keep)
+      d[i] = eltype(d)(0)
+    end
+  end
+
+end
+
+
+function segment_sizes{T}( d::AbstractArray{T} )
+
+  sizes = Dict{T,Int}()
+  zT = zero(T)
+
+  for i in eachindex(d)
+
+    if d[i] == zT continue end
+
+    segid = d[i]
+    sizes[segid] = get(sizes, segid, 0) + 1
+  end
+
+  sizes
+end
 
 end #module Utils

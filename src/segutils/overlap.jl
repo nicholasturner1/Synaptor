@@ -2,6 +2,9 @@
 module Overlap
 
 
+export count_overlapping_labels, sum_overlap_weight
+export find_max_overlaps
+
 """
 
     count_overlapping_labels( seg1, seg2, max_label=nothing )

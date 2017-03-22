@@ -1,11 +1,18 @@
 module EF
 #Common functions for EdgeFinders
+#
+# It can be time consuming, annoying, and disorganized to write several distinct
+# variations for how to find edges. EdgeFinder classes are meant to abstract this
+# process by wrapping a function for finding edges and allowing the user to
+# specify all the required arguments by writing few extra functions and a
+# dict of parameters.
 
 
 using ...Types
 
 
-export assign_volumes!, assert_specified, find_edges
+export assert_specified, findedges
+export assign_aux_params!, assign_aux_vols!, assign_ccs!
 
 
 #Specifying an enumeration for where we should look for the argument
@@ -16,7 +23,7 @@ export assign_volumes!, assert_specified, find_edges
 
 
 type EFArg
-  name :: String
+  name :: Symbol
   T :: DataType
   argtype :: ARGTYPE
 end
@@ -47,7 +54,7 @@ end
   Some edge finders require auxiliary volumes from the network output. This
   function fills those spots with views from the network output
 """
-function assign_aux_vols!{T}(ef::EdgeFinder, net_output::Array{T,4},
+function assign_aux_vols!{T}(ef::EdgeFinder, net_output::Array{T,4}, seg::Array,
                             volume_map::Dict)
 
   for arg in ef.reqs
@@ -57,22 +64,10 @@ function assign_aux_vols!{T}(ef::EdgeFinder, net_output::Array{T,4},
     end
   end
 
+  #always required
+  ef.args[:MORPHsegs] = view(seg,:,:,:)
+
 end
-
-
-"""
-
-    assign_ccs!{T}(ef::EdgeFinder, net_output::Array{T,4}, volume_map::Dict)
-
-  All edge finders (so far) require connected components formed over the network
-  output. This runs connected components, and fills in the corresponding volumes
-  as arguments to the edge finder.
-"""
-function assign_ccs!(ef::EdgeFinder, psdsegs::Array, seg::Array, params::Dict)
-  #NOTE INCOMPLETE
-  0#stub
-end
-
 
 
 """
@@ -86,9 +81,24 @@ function assert_specified(ef::EdgeFinder)
 
   for arg in ef.reqs
     @assert haskey( ef.args, arg.name )
-    @assert ef.args[arg.name] <: arg.T
+    # debug
+    # println("supplied: $(typeof(ef.args[arg.name])), reqd: $(arg.T)")
+    @assert typeof(ef.args[arg.name]) <: arg.T
   end
 
+end
+
+
+"""
+
+    assign_ccs!{T}(ef::EdgeFinder, T=Int)
+
+  All edge finders (so far) require connected components formed over the network
+  output. This runs connected components, and fills in the corresponding volumes
+  as arguments to the edge finder.
+"""
+function assign_ccs!(ef::EdgeFinder, T=Int)
+  error("assign_ccs! not implemented for type $(typeof(ef))")
 end
 
 
@@ -98,9 +108,10 @@ end
 
   Default "NotImplementedError" for different edge finder types
 """
-function find_edges(ef::EdgeFinder)
-  error("find_edges not implemented for type $(typeof(ef))")
+function findedges(ef::EdgeFinder)
+  error("findedges not implemented for type $(typeof(ef))")
 end
+
 
 
 

@@ -2,8 +2,8 @@
 module ConnComps
 
 
-export connected_components3D
-export connected_component3D
+export connected_components3D, connected_components3D!
+export connected_component3D, connected_component3D!
 export fill_in_connected_components!
 
 
@@ -15,9 +15,24 @@ Performs connected components over d using a high-pass threshold.
 """
 function connected_components3D{T}( d::Array{T}, thresh=zero(T) )
 
+  res = zeros(Int, size(d));
+
+  connected_components3D!(d, res, thresh)
+end
+
+
+"""
+
+    connected_components3D!( d, res, thresh )
+
+Performs 3D connected components over `d` using a high-pass threshold, and
+stores the result in the res volume
+"""
+function connected_components3D!{T}( d::AbstractArray{T}, res::AbstractArray,
+                                  thresh=zero(T) )
+
   #true => don't connect me
   masked = d .<= T(thresh)
-  res = zeros(Int, size(d));
 
   fill_in_new_components!( res, masked, 1 )
 
@@ -32,7 +47,7 @@ end
 Connect any components from masked. It's implied (but not assumed)
 that other components have already been filled in from continuations.
 """
-function fill_in_new_components!{T}( d::Array{T}, masked, next_id )
+function fill_in_new_components!{T}( d::AbstractArray{T}, masked, next_id )
 
   @assert size(masked) == size(d)
 
@@ -55,7 +70,7 @@ end
 Traverses the component connected to the start index, and assigns the
 values within the component to segid. Uses a depth first strategy.
 """
-function assign_component!{T}(arr::Array{T}, masked::BitArray{3},
+function assign_component!{T}(arr::AbstractArray{T}, masked::BitArray{3},
   xstart,ystart,zstart, segid)
 
   xmax, ymax, zmax = size(masked)

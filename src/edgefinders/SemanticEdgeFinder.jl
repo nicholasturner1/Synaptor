@@ -99,7 +99,7 @@ type SemanticEdgeFinder <: Types.EdgeFinder
 end
 
 
-function EF.find_edges(ef::SemanticEdgeFinder)
+function EF.findedges(ef::SemanticEdgeFinder)
 
   EF.assert_specified(ef)
 
@@ -109,7 +109,7 @@ function EF.find_edges(ef::SemanticEdgeFinder)
   axon_label = reqd_args["axon_label"]
   dend_label = reqd_args["dend_label"]
 
-  ef.find_edges(psd_segs, morph_segs, semmap, axon_label, dend_label)
+  ef.findedges(psd_segs, morph_segs, semmap, axon_label, dend_label)
 end
 
 
