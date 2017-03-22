@@ -51,14 +51,27 @@ function findedges_w_prepost( psd_segs, seg, pre_vol, post_vol )
   post_w = Utils.sum_overlap_weight( post_segs, seg, post_vol )
   overlap = Utils.count_overlapping_labels( pre_segs, post_segs )
 
-  pre_ids  = Utils.extract_unique_rows(pre_w)
-  post_ids = Utils.extract_unique_rows(post_w)
-
   edges = Utils.find_pairs(overlap)
   segs  = assign_pairs(edges, pre_w, post_w)
 
   Dict( e => s for (e,s) in zip(edges,segs) )
 end
+
+
+"""
+
+    assign_pairs( pairs, pre_weight_mat, post_weight_mat )
+
+Assigns the edges to morphological segment pairs by max weight
+"""
+function assign_pairs( pairs, pre_weight_mat, post_weight_mat )
+
+  pre_maxs,  pre_inds  = Utils.find_max_overlaps( pre_weight_mat )
+  post_maxs, post_inds = Utils.find_max_overlaps( post_weight_mat )
+
+  [ (pre_inds[s1],post_inds[s2]) for (s1,s2) in pairs ]
+end
+
 
 #===========================================
 CLASS DEFINITION
