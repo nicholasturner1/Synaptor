@@ -46,6 +46,7 @@ end
 
 end
 
+
 @testset "add_ccs_to_map!" begin
 
   mapping = Dict()
@@ -86,5 +87,6 @@ end
   @test mapping[5] == 5
 
 end
+
 
 end #module ConsCompsTests
