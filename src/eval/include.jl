@@ -1,7 +1,8 @@
-
 module Eval
 
-include("HyperparamSearch.jl")
-include("Scores.jl")
+#Scores
+export precision, recall, f1score, f0p5score
+
+include("scores.jl"); using .Scores
 
 end
