@@ -1,4 +1,3 @@
-
 module ConsComps
 
 
@@ -78,15 +77,15 @@ function potential_partners( ids, max_overlaps=nothing )
     push!(partners[group], i)
   end
 
-  partners    
+  partners
 end
 
 
 function find_components_within_dist( locs, res, dist_thr )
- 
+
   dists, pairs = dists_within_locs( locs, res )
   under_thresh = dists .< dist_thr
- 
+
   dup_pairs = pairs[under_thresh]
 
   g = LightGraphs.Graph(length(locs))
@@ -111,10 +110,10 @@ end
 
 
 function add_ccs_to_map!(mapping, ids, ccs)
-  
+
   for cc in ccs
     target_id = ids[minimum(cc)]
-    
+
     for i in cc mapping[ids[i]] = target_id end
   end
 
