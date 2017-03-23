@@ -121,11 +121,11 @@ function EF.assign_ccs!(ef::PrePostEdgeFinder, T=Int)
 
   synsegs = zeros(T,size(pre_vol)...,2)
 
-  @time SegUtils.connected_components3D!( pre_vol,  view(synsegs,:,:,:,1), cc_thresh )
-  @time SegUtils.connected_components3D!( post_vol, view(synsegs,:,:,:,2), cc_thresh )
+  SegUtils.connected_components3D!( pre_vol,  view(synsegs,:,:,:,1), cc_thresh )
+  SegUtils.connected_components3D!( post_vol, view(synsegs,:,:,:,2), cc_thresh )
 
-  @time SegUtils.filter_by_size!( view(synsegs,:,:,:,1), sz_thresh )
-  @time SegUtils.filter_by_size!( view(synsegs,:,:,:,2), sz_thresh )
+  SegUtils.filter_by_size!( view(synsegs,:,:,:,1), sz_thresh )
+  SegUtils.filter_by_size!( view(synsegs,:,:,:,2), sz_thresh )
 
   ef.args[:SYNsegs] = synsegs
 
