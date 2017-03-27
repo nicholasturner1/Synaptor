@@ -8,25 +8,33 @@ using ..Overlap
 using ..Utils
 
 
-export consolidated_components
+export consolidated_components, consolidated_components!
 
 
-function consolidated_components{T}( d::AbstractArray{T}, seg,
+function consolidated_components( d::AbstractArray, seg,
+                                  dist_thr::Real, res::Vector,
+                                  cc_thresh=zero(T) )
+  res = zeros(Int,size(d));
+
+  consolidated_components!(d, seg, res, dist_thr, res, cc_thresh)
+end
+
+function consolidated_components!{T}( d::AbstractArray{T}, seg, cc_vol,
                                      dist_thr::Real, res::Vector,
                                      cc_thresh=zero(T) )
 
-  ccs = ConnComps.connected_components3D( d, cc_thresh )
+  ConnComps.connected_components3D!( d, cc_vol, cc_thresh )
 
-  locs = Utils.centers_of_mass( ccs )
+  locs = Utils.centers_of_mass( cc_vol )
 
   #determine segments with max weight
-  om = Overlap.sum_overlap_weight( ccs, seg, d )
+  om = Overlap.sum_overlap_weight( cc_vol, seg, d )
   _, max_overlaps = Overlap.find_max_overlaps( om )
 
   #consolidates ccs within the dist_thresh
-  consolidate_segs!( ccs, locs, dist_thr, res, max_overlaps )
+  consolidate_segs!( cc_vol, locs, dist_thr, res, max_overlaps )
 
-  ccs
+  cc_vol
 end
 
 

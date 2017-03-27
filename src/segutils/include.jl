@@ -9,11 +9,16 @@ export find_max_overlaps
 #ConnComps
 export connected_components3D, connected_components3D!
 #ConsComps
-export consolidated_components
+export consolidated_components, consolidated_components!
+#Dilation
+export dilate_by_k!
+
 
 include("utils.jl"); using .Utils
 include("overlap.jl"); using .Overlap
 include("conncomps.jl"); using .ConnComps
 include("conscomps.jl"); using .ConsComps
+include("dilation.jl"); using .Dilation
+
 
 end #module SegUtils
