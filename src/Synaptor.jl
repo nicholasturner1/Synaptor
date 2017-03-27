@@ -17,7 +17,7 @@ export SemanticEdgeFinder, findedges_w_sem
 export assign_aux_params!, assign_aux_vols!, assign_ccs!
 export findedges
 #Eval
-export precision, recall, f1score, f0p5score
+export prec_score, rec_score, f1score, f0p5score
 #Proc
 export process_single_chunk
 export grid_search, f1_grid_search, f0p5_grid_search

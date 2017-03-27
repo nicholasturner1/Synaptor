@@ -1,13 +1,15 @@
 module Scores
 
 
-export precision, recall, f1score, f0p5score, fscore
+export prec_score, rec_score, f1score, f0p5score, fscore
 export false_positives, false_negatives
 
 
-function precision( list1::Vector, list2::Vector, penalize_dups=true )
+function prec_score( list1::Vector, list2::Vector, penalize_dups=true )
 
   list1 = penalize_dups? list1 : unique(list1)
+
+  if length(list1) == 0 return (1,Bool[]) end
 
   fps = false_positives(list1, list2)
   num_tps = sum(!fps)
@@ -16,7 +18,9 @@ function precision( list1::Vector, list2::Vector, penalize_dups=true )
 end
 
 
-function recall( list1::Vector, list2::Vector )
+function rec_score( list1::Vector, list2::Vector )
+
+  if length(list2) == 0 return (1,Bool[]) end
 
   fns = false_negatives(list1, list2)
   num_tps = sum(!fns)
@@ -58,13 +62,25 @@ end
 
 
 """
-Assumes that `edgelist2` represents the "ground truth"
+Assumes that `edgelist2` represents the "ground truth" and has no duplicates
 """
 function false_positives( list1, list2 )
 
   gt_set = Set(list2)
 
-  [ !(elem in gt_set) for elem in list1]
+  fps = zeros(Bool,length(list1))
+
+  for (i,v) in enumerate(list1)
+
+    if v in gt_set
+      delete!(gt_set,v)
+    else
+      fps[i] = true
+    end
+
+  end
+
+  fps
 end
 
 false_negatives(list1, list2) = false_positives(list2, list1)

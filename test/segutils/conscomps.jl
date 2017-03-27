@@ -57,14 +57,14 @@ end
   ids1 = [1,2,3,4,5]
   ids2 = [1000,2000,3000,4000,5]
 
-  ConsComps.add_ccs_to_map!(mapping, ccs1, ids1)
+  ConsComps.add_ccs_to_map!(mapping, ids1, ccs1)
 
   @test mapping[1] == 1
   @test mapping[2] == 1
   @test mapping[3] == 1
   @test mapping[4] == 4
 
-  ConsComps.add_ccs_to_map!(mapping, ccs1, ids2)
+  ConsComps.add_ccs_to_map!(mapping, ids2, ccs1)
 
   @test mapping[1] == 1
   @test mapping[1000] == 1000
@@ -72,14 +72,14 @@ end
   @test mapping[3000] == 1000
   @test mapping[4000] == 4000
 
-  ConsComps.add_ccs_to_map!(mapping, ccs2, ids1)
+  ConsComps.add_ccs_to_map!(mapping, ids1, ccs2)
 
   @test mapping[1] == 1
   @test mapping[2] == 1
   @test mapping[3] == 1
   @test mapping[5] == 5
 
-  ConsComps.add_ccs_to_map!(mapping, ccs2, ids2)
+  ConsComps.add_ccs_to_map!(mapping, ids2, ccs2)
 
   @test mapping[1000] == 1000
   @test mapping[2000] == 1000
