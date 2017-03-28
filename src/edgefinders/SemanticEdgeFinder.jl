@@ -4,6 +4,7 @@ module SemanticEF
 using ...Types
 using ..EF
 using ..Utils
+using ...SegUtils
 
 
 export SemanticEdgeFinder, findedges_w_sem
@@ -11,11 +12,13 @@ export SemanticEdgeFinder, findedges_w_sem
 
 # Type parameters
 reqd_args = [
-("PSDsegs",    Array,   EF.VOL),
-("MORPHsegs",  Array,   EF.VOL),
-("semmap",     Dict,    EF.AUX_PARAM),
-("axon_label", Integer, EF.AUX_PARAM),
-("dend_label", Integer, EF.AUX_PARAM)
+(:PSDsegs,    Array,   EF.VOL),
+(:MORPHsegs,  Array,   EF.VOL),
+(:semmap,     Dict,    EF.AUX_PARAM),
+(:axon_label, Integer, EF.AUX_PARAM),
+(:dend_label, Integer, EF.AUX_PARAM),
+(:CCthresh,   Real,    EF.AUX_PARAM),
+(:SZthresh,   Real,    EF.AUX_PARAM)
 ]
 
 
@@ -50,11 +53,11 @@ function findedges_w_sem( psd_segs, seg, semmap, axon_label, dend_label )
   if length(keys(semmap)) == 0 return Dict(), [], spzeros(0,0) end
 
 
-  overlap = Utils.count_overlapping_labels( psd_segs, seg )
+  overlap = SegUtils.count_overlapping_labels( psd_segs, seg )
 
 
   seg_ids = Utils.extract_unique_rows(overlap)
-  axons, dends = split_map_into_groups( semmap, [axon_label, dendrite_label] )
+  axons, dends = Utils.split_map_into_groups( semmap, [axon_label, dendrite_label] )
 
   axon_overlaps = overlap[:,axons]; dend_overlaps = overlap[:,dendrites];
 
@@ -65,15 +68,39 @@ function findedges_w_sem( psd_segs, seg, semmap, axon_label, dend_label )
   end
 
 
-  axon_max, axon_ids = Utils.find_max_overlaps( axon_overlaps, axons, seg_ids )
-  dend_max, dend_ids = Utils.find_max_overlaps( dend_overlaps, dends, seg_ids )
+  axon_max, axon_ids = SegUtils.find_max_overlaps( axon_overlaps, axons, seg_ids )
+  dend_max, dend_ids = SegUtils.find_max_overlaps( dend_overlaps, dends, seg_ids )
 
   #only count edges if they overlap with SOME axon or dendrite
-  valid_edges, invalid_edges = filter_edges( axon_max, dend_max )
+  valid_edges, invalid_edges = _filter_edges( axon_max, dend_max )
 
   edges = Dict( sid => (axon_ids[sid],dend_ids[sid]) for sid in valid_edges )
 
   edges, invalid_edges, overlap
+end
+
+
+"""
+
+    _filter_edges( max_ax_overlap, max_de_overlap )
+
+  Enacts filtering constraints on edges by means of semantic overlaps
+"""
+function _filter_edges( max_ax_overlap, max_de_overlap )
+
+  num_psd_segs = length(max_ax_overlap)
+  valid_edges, invalid_edges = Vector{Int}(), Vector{Int}();
+
+  zT = valtype(max_ax_overlap)(0)
+  for k in keys(max_ax_overlap)
+    if max_ax_overlap[k] == zT || max_de_overlap == zT
+      push!(invalid_edges,k)
+    else
+      push!(valid_edges,k)
+    end
+  end
+
+  valid_edges, invalid_edges
 end
 
 
@@ -92,10 +119,10 @@ Wrapper class for findedges_w_sem (see that fn's docs for details)
 """
 type SemanticEdgeFinder <: Types.EdgeFinder
   reqs :: Vector{EF.EFArg}
-  args :: Dict{String,Any}
+  args :: Dict{Symbol,Any}
   findedges :: Function
 
-  SemanticEdgeFinder() = new(explicit_args, Dict{String,Any}(), findedges_w_sem)
+  SemanticEdgeFinder() = new(explicit_args, Dict{Symbol,Any}(), findedges_w_sem)
 end
 
 
@@ -103,13 +130,30 @@ function EF.findedges(ef::SemanticEdgeFinder)
 
   EF.assert_specified(ef)
 
-  psd_segs   = reqd_args["PSDsegs"]
-  morph_segs = reqd_args["MORPHsegs"]
-  semmap     = reqd_args["semmap"]
-  axon_label = reqd_args["axon_label"]
-  dend_label = reqd_args["dend_label"]
+  psd_segs   = reqd_args[:PSDsegs]
+  morph_segs = reqd_args[:MORPHsegs]
+  semmap     = reqd_args[:semmap]
+  axon_label = reqd_args[:axon_label]
+  dend_label = reqd_args[:dend_label]
 
   ef.findedges(psd_segs, morph_segs, semmap, axon_label, dend_label)
+end
+
+
+function EF.assign_ccs!(ef::SemanticEdgeFinder, T=Int)
+
+  psdvol     = ef.args[:PSDvol]
+  cc_thresh  = ef.args[:CCthresh]
+  sz_thresh  = ef.args[:SZthresh]
+
+  psdsegs = zeros(T,size(psdvol)...)
+
+  SegUtils.connected_components3D!( psdvol, view(psdsegs,:,:,:), cc_thresh)
+
+  SegUtils.filter_by_size!( view(psdsegs,:,:,:), sz_thresh )
+
+  ef.args[:PSDsegs] = psdsegs
+
 end
 
 
