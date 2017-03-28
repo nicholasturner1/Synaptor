@@ -12,13 +12,14 @@ export SemanticEdgeFinder, findedges_w_sem
 
 # Type parameters
 reqd_args = [
-(:PSDsegs,    Array,   EF.VOL),
-(:MORPHsegs,  Array,   EF.VOL),
-(:semmap,     Dict,    EF.AUX_PARAM),
-(:axon_label, Integer, EF.AUX_PARAM),
-(:dend_label, Integer, EF.AUX_PARAM),
-(:CCthresh,   Real,    EF.AUX_PARAM),
-(:SZthresh,   Real,    EF.AUX_PARAM)
+(:PSDsegs,    AbstractArray,   EF.VOL),
+(:MORPHsegs,  AbstractArray,   EF.VOL),
+(:PSDvol,     AbstractArray,   EF.SUBVOL),
+(:semmap,     Dict,            EF.AUX_PARAM),
+(:axon_label, Integer,         EF.AUX_PARAM),
+(:dend_label, Integer,         EF.AUX_PARAM),
+(:CCthresh,   Real,            EF.AUX_PARAM),
+(:SZthresh,   Real,            EF.AUX_PARAM)
 ]
 
 
@@ -57,9 +58,9 @@ function findedges_w_sem( psd_segs, seg, semmap, axon_label, dend_label )
 
 
   seg_ids = Utils.extract_unique_rows(overlap)
-  axons, dends = Utils.split_map_into_groups( semmap, [axon_label, dendrite_label] )
+  axons, dends = Utils.split_map_into_groups( semmap, [axon_label, dend_label] )
 
-  axon_overlaps = overlap[:,axons]; dend_overlaps = overlap[:,dendrites];
+  axon_overlaps = overlap[:,axons]; dend_overlaps = overlap[:,dends];
 
 
   #if nothing overlaps, all segments are invalid
@@ -68,8 +69,8 @@ function findedges_w_sem( psd_segs, seg, semmap, axon_label, dend_label )
   end
 
 
-  axon_max, axon_ids = SegUtils.find_max_overlaps( axon_overlaps, axons, seg_ids )
-  dend_max, dend_ids = SegUtils.find_max_overlaps( dend_overlaps, dends, seg_ids )
+  axon_max, axon_ids = SegUtils.find_max_overlaps( axon_overlaps, axons )
+  dend_max, dend_ids = SegUtils.find_max_overlaps( dend_overlaps, dends )
 
   #only count edges if they overlap with SOME axon or dendrite
   valid_edges, invalid_edges = _filter_edges( axon_max, dend_max )
@@ -130,11 +131,11 @@ function EF.findedges(ef::SemanticEdgeFinder)
 
   EF.assert_specified(ef)
 
-  psd_segs   = reqd_args[:PSDsegs]
-  morph_segs = reqd_args[:MORPHsegs]
-  semmap     = reqd_args[:semmap]
-  axon_label = reqd_args[:axon_label]
-  dend_label = reqd_args[:dend_label]
+  psd_segs   = ef.args[:PSDsegs]
+  morph_segs = ef.args[:MORPHsegs]
+  semmap     = ef.args[:semmap]
+  axon_label = ef.args[:axon_label]
+  dend_label = ef.args[:dend_label]
 
   ef.findedges(psd_segs, morph_segs, semmap, axon_label, dend_label)
 end

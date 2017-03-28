@@ -41,7 +41,7 @@ function split_map_into_groups( segmap::Dict, ids )
 
   for (k,v) in segmap
     for i in eachindex(ids)
-      if v == group_ids[i] push!( groups[i], k ) end
+      if v == ids[i] push!( groups[i], k ) end
     end
   end
 
