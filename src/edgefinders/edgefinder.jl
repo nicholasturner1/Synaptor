@@ -113,6 +113,13 @@ function findedges(ef::EdgeFinder)
 end
 
 
+"""
+
+    filter_edges(ef::EdgeFinder, es)
+
+  Default implementation
+"""
+filter_edges(ef::EdgeFinder, es) = es
 
 
 end #module EF

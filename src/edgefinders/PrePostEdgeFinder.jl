@@ -146,4 +146,21 @@ function EF.assign_ccs!(ef::PrePostEdgeFinder, T=Int)
 end
 
 
+function EF.filter_edges!(ef::PrePostEdgeFinder, es::Dict)
+
+  filtered = Dict{keytype(es),valtype(es)}();
+
+  zT = valtype(es)(0)
+  for (k,v) in es
+    if v1 == v2 continue end
+    if v1 == zT continue end
+    if v2 == zT continue end
+
+    filtered[k] = v
+  end
+
+  filtered
+end
+
+
 end #module PrePostEF
