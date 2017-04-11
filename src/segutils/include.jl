@@ -12,6 +12,8 @@ export connected_components3D, connected_components3D!
 export consolidated_components, consolidated_components!
 #Dilation
 export dilate_by_k!
+#SemanticMap
+export make_semantic_assignment
 
 
 include("utils.jl"); using .Utils
@@ -19,6 +21,7 @@ include("overlap.jl"); using .Overlap
 include("conncomps.jl"); using .ConnComps
 include("conscomps.jl"); using .ConsComps
 include("dilation.jl"); using .Dilation
+include("semanticmap.jl"); using .SemanticMap
 
 
 end #module SegUtils
