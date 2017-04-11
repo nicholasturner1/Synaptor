@@ -112,7 +112,9 @@ function prec_rec_grid_search( chunk, seg, gt_edges, ef::EdgeFinder; params... )
 
     #NOTE: this will need to change if we change the
     # output format of ef's
-    edges = collect(values(res))
+    #edges = collect(values(res[1]))
+    edges = EdgeFinders.filteredges(ef, res)
+    edges = collect(values(edges))
 
     #NOTE: also output fmt dependent
     prec = Scores.prec_score(edges, gt_edges, false) #don't penalize dups for now
@@ -120,6 +122,7 @@ function prec_rec_grid_search( chunk, seg, gt_edges, ef::EdgeFinder; params... )
 
     precs[i]   = prec[1]
     recalls[i] = rec[1]
+    println("Precision: $(precs[i]) Recall: $(recalls[i])")
     gtcount[i] = length(rec[2])
     pcounts[i] = length(prec[2])
   end
