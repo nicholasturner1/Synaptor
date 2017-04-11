@@ -11,8 +11,9 @@ module EF
 using ...Types
 
 
-export assert_specified, findedges
+export assert_specified, findedges, filteredges
 export assign_aux_params!, assign_aux_vols!, assign_ccs!
+export get_ccs
 
 
 #Specifying an enumeration for where we should look for the argument
@@ -119,7 +120,13 @@ end
 
   Default implementation
 """
-filter_edges(ef::EdgeFinder, es) = es
+filteredges(ef::EdgeFinder, es::Dict) = es
 
+
+"""
+"""
+function get_ccs(ef::EdgeFinder)
+  error("get_ccs not implemented for type $(typeof(ef))")
+end
 
 end #module EF

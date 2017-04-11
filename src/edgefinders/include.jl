@@ -3,7 +3,7 @@ module EdgeFinders
 
 #EF - EdgeFinder Interface
 export assign_aux_params!, assign_aux_vols!, assign_ccs!
-export findedges
+export findedges, filteredges
 #SemanticEF
 export SemanticEdgeFinder, findedges_w_sem
 #PrePostEF

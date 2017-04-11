@@ -18,8 +18,8 @@ reqd_args = [
 (:POSTvol,   AbstractArray, EF.SUBVOL),
 (:CCthresh,  Real,          EF.AUX_PARAM),
 (:SZthresh,  Real,          EF.AUX_PARAM),
-(:dist_thr,  Real,          EF.AUX_PARAM), #distance thresh for conscomps
-(:res,       Array,        EF.AUX_PARAM), #voxel resolution
+#(:dist_thr,  Real,          EF.AUX_PARAM), #distance thresh for conscomps
+#(:res,       Array,         EF.AUX_PARAM), #voxel resolution
 (:dilation,  Real,          EF.AUX_PARAM)
 ]
 
@@ -123,38 +123,38 @@ function EF.assign_ccs!(ef::PrePostEdgeFinder, T=Int)
   cc_thresh = ef.args[:CCthresh]
   sz_thresh = ef.args[:SZthresh]
   dilation  = ef.args[:dilation]
-  dist_thr  = ef.args[:dist_thr]
-  res       = ef.args[:res]
+  #dist_thr  = ef.args[:dist_thr]
+  #res       = ef.args[:res]
 
   synsegs = zeros(T,size(pre_vol)...,2)
 
-  SegUtils.consolidated_components!(pre_vol,  seg, view(synsegs,:,:,:,1),
-                                    dist_thr, res, cc_thresh)
-  SegUtils.consolidated_components!(post_vol, seg, view(synsegs,:,:,:,2),
-                                    dist_thr, res, cc_thresh)
-  # SegUtils.connected_components3D!( pre_vol,  view(synsegs,:,:,:,1), cc_thresh )
-  # SegUtils.connected_components3D!( post_vol, view(synsegs,:,:,:,2), cc_thresh )
-
-  SegUtils.dilate_by_k!(view(synsegs,:,:,:,1),dilation)
-  SegUtils.dilate_by_k!(view(synsegs,:,:,:,2),dilation)
+  #SegUtils.consolidated_components!(pre_vol,  seg, view(synsegs,:,:,:,1),
+  #                                  dist_thr, res, cc_thresh)
+  #SegUtils.consolidated_components!(post_vol, seg, view(synsegs,:,:,:,2),
+  #                                  dist_thr, res, cc_thresh)
+  SegUtils.connected_components3D!( pre_vol,  view(synsegs,:,:,:,1), cc_thresh )
+  SegUtils.connected_components3D!( post_vol, view(synsegs,:,:,:,2), cc_thresh )
 
   SegUtils.filter_by_size!( view(synsegs,:,:,:,1), sz_thresh )
   SegUtils.filter_by_size!( view(synsegs,:,:,:,2), sz_thresh )
+
+  SegUtils.dilate_by_k!(view(synsegs,:,:,:,1),dilation)
+  SegUtils.dilate_by_k!(view(synsegs,:,:,:,2),dilation)
 
   ef.args[:SYNsegs] = synsegs
 
 end
 
 
-function EF.filter_edges(ef::PrePostEdgeFinder, es::Dict)
+function EF.filteredges(ef::PrePostEdgeFinder, es::Dict)
 
   filtered = Dict{keytype(es),valtype(es)}();
 
-  zT = valtype(es)(0)
+  zT = eltype(valtype(es))(0)
   for (k,v) in es
-    if v1 == v2 continue end
-    if v1 == zT continue end
-    if v2 == zT continue end
+    if v[1] == v[2] continue end
+    if v[1] == zT continue end
+    if v[2] == zT continue end
 
     filtered[k] = v
   end

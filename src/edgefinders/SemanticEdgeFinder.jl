@@ -19,7 +19,8 @@ reqd_args = [
 (:axon_label, Integer,         EF.AUX_PARAM),
 (:dend_label, Integer,         EF.AUX_PARAM),
 (:CCthresh,   Real,            EF.AUX_PARAM),
-(:SZthresh,   Real,            EF.AUX_PARAM)
+(:SZthresh,   Real,            EF.AUX_PARAM),
+(:dilation,   Real,            EF.AUX_PARAM)
 ]
 
 
@@ -83,7 +84,7 @@ end
 
 """
 
-    _filter_edges( max_ax_overlap, max_de_overlap )
+    _filter_edges( max_ax_overlap, max_de_overlap )_
 
   Enacts filtering constraints on edges by means of semantic overlaps
 """
@@ -94,7 +95,8 @@ function _filter_edges( max_ax_overlap, max_de_overlap )
 
   zT = valtype(max_ax_overlap)(0)
   for k in keys(max_ax_overlap)
-    if max_ax_overlap[k] == zT || max_de_overlap == zT
+    # println("k $k ax $(max_ax_overlap[k]) de $(max_de_overlap[k])")
+    if max_ax_overlap[k] == zT || max_de_overlap[k] == zT
       push!(invalid_edges,k)
     else
       push!(valid_edges,k)
@@ -146,6 +148,7 @@ function EF.assign_ccs!(ef::SemanticEdgeFinder, T=Int)
   psdvol     = ef.args[:PSDvol]
   cc_thresh  = ef.args[:CCthresh]
   sz_thresh  = ef.args[:SZthresh]
+  dilation   = ef.args[:dilation]
 
   psdsegs = zeros(T,size(psdvol)...)
 
@@ -153,8 +156,15 @@ function EF.assign_ccs!(ef::SemanticEdgeFinder, T=Int)
 
   SegUtils.filter_by_size!( view(psdsegs,:,:,:), sz_thresh )
 
+  SegUtils.dilate_by_k!( view(psdsegs,:,:,:), dilation )
+
   ef.args[:PSDsegs] = psdsegs
 
+end
+
+
+function EF.get_ccs(ef::SemanticEdgeFinder)
+  return ef.args[:PSDsegs]
 end
 
 
