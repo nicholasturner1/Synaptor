@@ -44,7 +44,7 @@ end
   Returns a new Dict with each entry equal to the sum of the entries
   under a particular key of the constituent semantic maps.
 """
-function add_semmaps{sT,wT}( semweights::Dict{sT,Vector{wT}}... )
+function addsemweights{sT,wT}( semweights::Dict{sT,Vector{wT}}... )
 
   all_keys = union([keys(sw) for sw in semweights]...)
   first_val = first(values(semweights[1]))
@@ -91,14 +91,14 @@ function neighborhood_semmaps{sT,wT}( semmaps::Array{Dict{sT,Vector{wT}},3}, rad
 
   sx,sy,sz = size(semmaps)
   for k1 in 1:sz, j1 in 1:sy, i1 in 1:sx
-    
+
     nh_min = max( [i1,j1,k1] - radius, [1,1,1] )
     nh_max = min( [i1,j1,k1] + radius, [sx,sy,sz] )
 
     nh_ranges = [nh_min[i]:nh_max[i] for i in 1:3 ]
 
     for k2 in nh_ranges[3], j2 in nh_ranges[2], i2 in nh_ranges[1]
-      nhood_sms[i2,j2,k2] = add_semmaps(semmaps[i1,j1,k1],nhood_sms[i2,j2,k2])
+      nhood_sms[i2,j2,k2] = addsemweights(semmaps[i1,j1,k1],nhood_sms[i2,j2,k2])
     end
   end
 

@@ -95,8 +95,6 @@ function assign_component!{T}(arr::AbstractArray{T}, masked::BitArray{3},
 
   end
 
-  #don't think I need this anymore...
-  #Set(explored)
 end
 
 
