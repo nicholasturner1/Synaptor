@@ -77,6 +77,34 @@ function make_assignment{sT,wT}( semweights::Dict{sT,Vector{wT}} )
 end
 
 
+"""
+
+    neighborhood_semmaps{sT,wT{( semmaps::Array{Dict{sT,Vector{wT}},3}, radius::Int )
+
+  For each index, sums the semantic maps within index distance `radius` of that location.
+"""
+function neighborhood_semmaps{sT,wT}( semmaps::Array{Dict{sT,Vector{wT}},3}, radius::Integer )
+
+  nhood_sms = Array{Dict{sT,Vector{wT}}}(size(semmaps));
+
+  for i in eachindex(nhood_sms)  nhood_sms[i] = Dict{sT,Vector{wT}}()  end
+
+  sx,sy,sz = size(semmaps)
+  for k1 in 1:sz, j1 in 1:sy, i1 in 1:sx
+    
+    nh_min = max( [i1,j1,k1] - radius, [1,1,1] )
+    nh_max = min( [i1,j1,k1] + radius, [sx,sy,sz] )
+
+    nh_ranges = [nh_min[i]:nh_max[i] for i in 1:3 ]
+
+    for k2 in nh_ranges[3], j2 in nh_ranges[2], i2 in nh_ranges[1]
+      nhood_sms[i2,j2,k2] = add_semmaps(semmaps[i1,j1,k1],nhood_sms[i2,j2,k2])
+    end
+  end
+
+  nhood_sms
+end
+
 #=================================================================
 =================================================================#
 
