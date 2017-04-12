@@ -6,6 +6,9 @@ using Base.Test
 import ....Synaptor.SegUtils.Overlap
 
 
+@testset "Overlap" begin
+
+
 @testset "sum_overlap_weight" begin
 
   seg1 = [1 1; 0 0]
@@ -97,5 +100,9 @@ end
   @test inds[15] == 1
 
 end
+
+
+end #@testset Overlap
+
 
 end #module UtilsTests

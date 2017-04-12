@@ -1,6 +1,13 @@
-
 module EvalTests
+
+using Base.Test
+
+@testset "Eval" begin
+
 
 include("scores.jl")
 
-end
+
+end #testset Eval
+
+end #module EvalTests

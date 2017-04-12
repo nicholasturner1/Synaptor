@@ -1,9 +1,12 @@
 
-module ScoresTests 
+module ScoresTests
 
 using Base.Test
 
 import ....Synaptor.Eval.Scores
+
+
+@testset "Scores" begin
 
 
 @testset "prec_score" begin
@@ -33,7 +36,7 @@ end
   l2 = [2,3,4]
   l3 = [1,1,2,3,4]
   l0 = []
-  
+
   @test Scores.rec_score(l1,l2) == (1,    Bool[false,false,false])
   @test Scores.rec_score(l2,l1) == (0.75, Bool[true,false,false,false])
   @test Scores.rec_score(l0,l1) == (0,    Bool[true,true,true,true])
@@ -71,11 +74,14 @@ end
   @test Scores.false_positives(l2,l1)   == [false,false,false]
   @test Scores.false_positives(lt1,lt2) == [true,false,false,false]
   @test Scores.false_positives(lt2,lt1) == [false,false,false]
- 
-  @test Scores.false_positives(lt1,l1)  == [true,true,true,true] 
+
+  @test Scores.false_positives(lt1,l1)  == [true,true,true,true]
   @test Scores.false_positives(l1,l0)   == [true,true,true,true]
 
 end
+
+
+end #@testset Scores
 
 
 end #module ScoresTests

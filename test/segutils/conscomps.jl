@@ -6,13 +6,16 @@ using Base.Test
 import ....Synaptor.SegUtils.ConsComps
 
 
+@testset "Consolidated Components" begin
+
+
 @testset "find_components_within_dist" begin
 #INCOMPLETE
 
   pt0 = [0,0]
   pt1 = [1,0]
   pt2 = [5,5]
-  
+
   res1 = [1,1]
   res0 = [0,0]
   res2 = [100,200]
@@ -39,7 +42,7 @@ end
   res3 = [0,0]
 
   d, p = ConsComps.dists_within_locs( [pt0,pt1], res1 )
-  
+
   @test d[1] == 1.0
   @test p[1] == (1,2)
   @test length(d) == length(p) == 1
@@ -87,6 +90,9 @@ end
   @test mapping[5] == 5
 
 end
+
+
+end #@testset Consolidated Components
 
 
 end #module ConsCompsTests
