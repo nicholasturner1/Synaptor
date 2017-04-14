@@ -10,6 +10,8 @@ export count_overlapping_labels, sum_overlap_weight
 export find_max_overlaps
 export connected_components3D, connected_components3D!
 export consolidated_components
+export make_semantic_assignment, make_assignment
+export neighborhood_semmaps
 #EdgeFinders
 export PrePostEdgeFinder, findedges_w_prepost
 export VesicleEdgefinder, findedges_w_ves

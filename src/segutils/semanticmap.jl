@@ -1,6 +1,9 @@
 module SemanticMap
 
 
+export make_semantic_assignment, make_assignment
+export neighborhood_semmaps
+
 """
 
     make_semantic_assignment( seg, sem_weight, classes )
@@ -79,7 +82,7 @@ end
 
 """
 
-    neighborhood_semmaps{sT,wT{( semmaps::Array{Dict{sT,Vector{wT}},3}, radius::Int )
+    neighborhood_semmaps{sT,wT}( semmaps::Array{Dict{sT,Vector{wT}},3}, radius::Int )
 
   For each index, sums the semantic maps within index distance `radius` of that location.
 """

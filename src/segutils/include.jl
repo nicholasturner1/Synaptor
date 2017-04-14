@@ -13,7 +13,8 @@ export consolidated_components, consolidated_components!
 #Dilation
 export dilate_by_k!
 #SemanticMap
-export make_semantic_assignment
+export make_semantic_assignment, make_assignment
+export neighborhood_semmaps
 
 
 include("utils.jl"); using .Utils
