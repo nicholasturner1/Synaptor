@@ -23,6 +23,7 @@ export prec_score, rec_score, f1score, f0p5score
 #Proc
 export process_single_chunk
 export grid_search, f1_grid_search, f0p5_grid_search
+#CloudUtils
 
 
 include("Types.jl")
@@ -39,6 +40,7 @@ include("segutils/include.jl"); using .SegUtils
 include("edgefinders/include.jl"); using .EdgeFinders
 include("eval/include.jl"); using .Eval
 include("proc/include.jl"); using .Proc
+include("cloudutils/include.jl");
 
 
 end # module Synaptor
