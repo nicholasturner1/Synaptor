@@ -27,7 +27,7 @@ end
 function fetch_url(env, qname)
 
   resp = AWS.SQS.GetQueueUrl(env; queueName=qname)
-  
+
   if resp.http_code < 299  resp.obj.queueUrl
   else                     error("Request for Queue URL failed")
   end
@@ -50,7 +50,7 @@ function MsgQueues.pullmsg(mq::AWSQueue)
   if resp.http_code >= 299  error("Request to Receive Message Failed")  end
 
   push!(mq.receipthandles, resp.obj.messageSet[1].receiptHandle)
-  
+
   resp.obj.messageSet[1].body
 end
 
@@ -62,6 +62,15 @@ function MsgQueues.delmsg(mq::AWSQueue)
   resp = AWS.SQS.DeleteMessage(mq.env; queueUrl=mq.qurl, receiptHandle=rh)
 
   if resp.http_code >= 299  error("Request to Delete Message Failed")  end
+
+end
+
+
+function MsgQueues.purgequeue(mq::AWSQueue)
+
+  resp = AWS.SQS.PurgeQueue(mq.env; queueUrl=mq.qurl)
+
+  if resp.http_code >= 299  error("Request to Purge Queue Failed")  end
 
 end
 

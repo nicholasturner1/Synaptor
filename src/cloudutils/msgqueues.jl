@@ -2,6 +2,7 @@ module MsgQueues
 
 export MsgQueue
 export sendmsg, pullmsg, delmsg
+export purgequeue
 
 abstract MsgQueue
 
@@ -18,6 +19,11 @@ end
 
 function delmsg(mq::MsgQueue)
   error("delmsg not implemented for MsgQueue type $(typeof(mq))")
+end
+
+
+function purgequeue(mq::MsgQueue)
+  error("purgequeue not implemented for MsgQueue type $(typeof(mq))")
 end
 
 end #module MsgQueue
