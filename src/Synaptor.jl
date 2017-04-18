@@ -20,6 +20,8 @@ export assign_aux_params!, assign_aux_vols!
 export make_ccs!, get_ccs, compute_cc_stats
 export filter_by_size!, filter_by_id!, dilate_ccs!
 export find_continuations
+#Continuations
+export find_continuations
 #Eval
 export prec_score, rec_score, f1score, f0p5score
 #Proc
@@ -38,6 +40,7 @@ include("Types.jl")
 # use in one-off REPL sessions
 include("io/include.jl"); using .IO
 include("segutils/include.jl"); using .SegUtils
+include("continuations/include.jl"); using .Continuations
 include("edgefinders/include.jl"); using .EdgeFinders
 include("eval/include.jl"); using .Eval
 include("proc/include.jl"); using .Proc

@@ -2,7 +2,8 @@ module Utils
 #all other misc segmentation utils
 
 export relabel_data!, relabel_data
-export centers_of_mass, filter_by_size!
+export segment_sizes, centers_of_mass
+export filter_segs_by_id!, filter_segs_by_size!
 
 
 function relabel_data!{T}( d::AbstractArray{T}, mapping )
@@ -60,7 +61,7 @@ function centers_of_mass{T}( d::AbstractArray{T} )
 end
 
 
-function filter_by_size!( d::AbstractArray, thresh::Integer, szs=segment_sizes(d) )
+function filter_segs_by_size!( d::AbstractArray, thresh::Integer, szs=segment_sizes(d) )
 
   to_keep = Vector{eltype(keys(szs))}()
 
@@ -98,7 +99,7 @@ end
 
   Only keeps the segments within ids
 """
-function filter_segments_by_ids!{T}( seg::AbstractArray{T}, ids )
+function filter_segs_by_id!{T}( seg::AbstractArray{T}, ids )
 
 
   z = T(0)

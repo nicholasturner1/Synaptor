@@ -9,7 +9,9 @@ module EF
 
 
 using ...Types
+using ...SegUtils
 using ...Continuations
+
 
 export findedges, filteredges
 export assign_aux_params!, assign_aux_vols!
@@ -127,9 +129,24 @@ function make_ccs!(ef::EdgeFinder, T=Int)
 
 
   ccs = zeros(T,size(psdvol))
-  ccs = SegUtils.connected_components3D!( psdvol, view(ccs,:,:,:), thr)
+  ccs = SegUtils.connected_components3D!( psdvol, view(ccs,:,:,:), cc_thr)
 
   ef.args[:ccs] = ccs
+end
+
+
+"""
+
+    findcontinuations(ef::EdgeFinder)
+
+  Finds the segments which continue to the next volume. Returns a
+  list of Continuations (see Continuation module for more details).
+"""
+function findcontinuations(ef::EdgeFinder)
+
+  assert_specified(ef, :ccs)
+
+  Continuations.find_continuations(ef)
 end
 
 
@@ -208,13 +225,13 @@ end
 
   Sometimes, an edge finding scheme will need to tinker with this.
 """
-function filter_by_id!(ef::EdgeFinder, to_keep::Set{Integer})
+function filter_by_id!(ef::EdgeFinder, to_keep::Set)
 
   assert_specified(ef, :ccs)
 
   ccs = ef.args[:ccs]
 
-  SegUtils.filter_by_id!(ccs, to_keep)
+  SegUtils.filter_segs_by_id!(ccs, to_keep)
 
 end
 
@@ -230,7 +247,12 @@ function dilate_ccs!(ef::EdgeFinder)
   assert_specified(ef, :ccs)
   assert_specified(ef, :dilation)
 
-  SegUtils.dilate_by_k!(ccs, dilation)
+  dil_ccs = copy(ef.args[:ccs])
+  dilation = ef.args[:dilation]
+
+  SegUtils.dilate_by_k!(dil_ccs, dilation)
+
+  ef.args[:dil_ccs] = dil_ccs
 
 end
 

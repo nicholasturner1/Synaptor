@@ -12,7 +12,8 @@ export SemanticEdgeFinder, findedges_w_sem
 
 # Type parameters
 reqd_args = [
-(:PSDsegs,    AbstractArray,   EF.VOL),
+(:ccs,        AbstractArray,   EF.VOL),
+(:dil_ccs,    AbstractArray,   EF.VOL),
 (:MORPHsegs,  AbstractArray,   EF.VOL),
 (:PSDvol,     AbstractArray,   EF.SUBVOL),
 (:semmap,     Dict,            EF.AUX_PARAM),
@@ -133,7 +134,7 @@ function EF.findedges(ef::SemanticEdgeFinder)
 
   EF.assert_specified(ef)
 
-  psd_segs   = ef.args[:PSDsegs]
+  psd_segs   = ef.args[:dil_ccs]
   morph_segs = ef.args[:MORPHsegs]
   semmap     = ef.args[:semmap]
   axon_label = ef.args[:axon_label]

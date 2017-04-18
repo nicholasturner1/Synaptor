@@ -1,8 +1,9 @@
 module SegUtils
 
 #Utils
-export relabel_data!, relabel_data, centers_of_mass
-export filter_by_size, segment_sizes
+export relabel_data!, relabel_data
+export segment_sizes, centers_of_mass
+export filter_segs_by_id!, filter_segs_by_size!
 #Overlap
 export count_overlapping_labels, sum_overlap_weight
 export find_max_overlaps

@@ -30,12 +30,11 @@ function process_chunk( chunk, seg, ef::EdgeFinder ; params...)
   EdgeFinders.dilate_ccs!(ef) 
 
 
-  edges, invalid, overlap = EdgeFinders.findpairs(ef)
+  edges, invalid, overlap = EdgeFinders.findedges(ef)
 
   #Formatting & Cleaning results
-  ccs = EdgeFinders.get_ccs(ef)
   to_keep_seg = Set(keys(edges))
-  SegUtils.filter_by_id!(ccs, to_keep_seg)
+  EdgeFinders.filter_by_id!(ef, to_keep_seg)
   Utils.filter_by_id!(to_keep_seg, locs, sizes)
 
 
@@ -66,7 +65,7 @@ function process_chunk_w_continuations( chunk, seg, ef::EdgeFinder; params... )
   EdgeFinders.dilate_ccs!(ef) 
 
 
-  edges, invalid, overlap = EdgeFinders.findpairs(ef)
+  edges, invalid, overlap = EdgeFinders.findedges(ef)
   Continuations.fill_overlaps!(continuations, overlap)
 
 
