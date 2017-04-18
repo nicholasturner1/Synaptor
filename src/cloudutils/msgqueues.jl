@@ -26,4 +26,10 @@ function purgequeue(mq::MsgQueue)
   error("purgequeue not implemented for MsgQueue type $(typeof(mq))")
 end
 
+
+function Base.length(mq::MsgQueue)
+  error("length not implemented for MsgQueue type $(typeof(mq))")
+end
+
+
 end #module MsgQueue

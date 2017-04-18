@@ -75,4 +75,15 @@ function MsgQueues.purgequeue(mq::AWSQueue)
 end
 
 
+function Base.length(mq::AWSQueue)
+
+  resp = AWS.SQS.GetQueueAttributes(mq.env; queueUrl=mq.qurl,
+                                    attributeNameSet=["ApproximateNumberOfMessages"])
+
+  if resp.http_code >= 299  error("Request to determine length failed")  end
+
+  parse( Int, resp.obj.attributeSet[1].value )
+end
+
+
 end #module AWSQueues
