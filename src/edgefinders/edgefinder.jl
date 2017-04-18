@@ -9,11 +9,13 @@ module EF
 
 
 using ...Types
+using ...Continuations
 
-
-export assert_specified, findedges, filteredges
-export assign_aux_params!, assign_aux_vols!, assign_ccs!
-export get_ccs
+export findedges, filteredges
+export assign_aux_params!, assign_aux_vols!
+export make_ccs!, get_ccs, compute_cc_stats
+export filter_by_size!, filter_by_id!, dilate_ccs!
+export find_continuations
 
 
 #Specifying an enumeration for where we should look for the argument
@@ -76,7 +78,7 @@ end
     assert_specified(ef::EdgeFinder)
 
   Asserts that the required volumes have been filled in before
-  any processing occurs.
+  pair processing occurs.
 """
 function assert_specified(ef::EdgeFinder)
 
@@ -92,20 +94,48 @@ end
 
 """
 
-    assign_ccs!{T}(ef::EdgeFinder, T=Int)
+    assert_specified(ef::EdgeFinder, argname)
 
-  All edge finders (so far) require connected components formed over the network
-  output. This runs connected components, and fills in the corresponding volumes
-  as arguments to the edge finder.
+  Asserts a single EFarg has been properly specified. Less efficient
+  than assert_specified for the entire set of arguments
 """
-function assign_ccs!(ef::EdgeFinder, T=Int)
-  error("assign_ccs! not implemented for type $(typeof(ef))")
+function assert_specified(ef::EdgeFinder, argname)
+
+  T = filter( x -> x.name == argname, ef.reqs )[1].T
+
+  @assert haskey( ef.args, argname ) "No $argname specified"
+  @assert typeof(ef.args[argname]) <: T "Improper $argname specified"
+
 end
 
 
 """
 
-    find_edges(ef::EdgeFinder)
+    make_ccs!{T}(ef::EdgeFinder, T=Int)
+
+  All edge finders (so far) require connected components formed over the network
+  output. This runs connected components, and fills in the corresponding volumes
+  as arguments to the edge finder.
+"""
+function make_ccs!(ef::EdgeFinder, T=Int)
+
+  assert_specified(ef, :PSDvol) 
+  assert_specified(ef, :CCthresh)
+
+  psdvol = ef.args[:PSDvol]
+  cc_thr = ef.args[:CCthresh]
+
+
+  ccs = zeros(T,size(psdvol))
+  ccs = SegUtils.connected_components3D!( psdvol, view(ccs,:,:,:), thr)
+
+  ef.args[:ccs] = ccs
+end
+
+
+"""
+
+    findedges(ef::EdgeFinder)
 
   Default "NotImplementedError" for different edge finder types
 """
@@ -116,7 +146,7 @@ end
 
 """
 
-    filter_edges(ef::EdgeFinder, es)
+    filteredges(ef::EdgeFinder, es)
 
   Default implementation
 """
@@ -124,9 +154,99 @@ filteredges(ef::EdgeFinder, es::Dict) = es
 
 
 """
+
+    compute_cc_stats(ef::EdgeFinder)
+
+  Computes the locations and sizes of `ef`'s connected components 
+"""
+function compute_cc_stats(ef::EdgeFinder)
+
+  assert_specified(ef, :ccs)
+
+  ccs = ef.args[:ccs]
+
+  locs  = SegUtils.centers_of_mass(ccs)
+  sizes = SegUtils.segment_sizes(ccs)
+
+  locs, sizes
+end
+
+
+
+"""
+
+    filter_by_size!(ef::EdgeFinder, sizes [, to_keep])
+
+  Removes the connected components within the volume which are less
+  than the size threshold (which should be specified as an aux arg before
+  this step).
+
+  If `to_keep` is specified, these extra values are preserved. This is useful
+  for multiple chunk processing, as some segments can span multiple chunks.
+"""
+function filter_by_size!(ef::EdgeFinder, sizes, to_keep::Set{Integer}=Set{Integer}())
+
+  assert_specified(ef, :ccs)
+  assert_specified(ef, :SZthresh)
+
+  ccs = ef.args[:ccs]
+  thr = ef.args[:SZthresh]
+
+
+  over_thresh = Set(keys( filter( (k,v) -> v > thr, sizes ) ))
+  
+  if length(to_keep) > 0  union!(over_thresh, to_keep)  end
+
+  filter_by_id!(ef, over_thresh)
+
+end
+
+
+"""
+
+    filter_by_id!(ef::EdgeFinder, to_keep::Set{Integer})
+
+  Sometimes, an edge finding scheme will need to tinker with this.
+"""
+function filter_by_id!(ef::EdgeFinder, to_keep::Set{Integer})
+
+  assert_specified(ef, :ccs)
+
+  ccs = ef.args[:ccs]
+
+  SegUtils.filter_by_id!(ccs, to_keep)
+
+end
+
+
+"""
+
+    dilate_ccs!(ef::EdgeFinder)
+
+  Dilates the ccs by the amount specified by the dilation argument
+"""
+function dilate_ccs!(ef::EdgeFinder)
+
+  assert_specified(ef, :ccs)
+  assert_specified(ef, :dilation)
+
+  SegUtils.dilate_by_k!(ccs, dilation)
+
+end
+
+
+"""
+
+    get_ccs(ef::EdgeFinder)
+
+  Extracts the relevant connected components
 """
 function get_ccs(ef::EdgeFinder)
-  error("get_ccs not implemented for type $(typeof(ef))")
+
+  assert_specified(ef, :ccs)
+
+  ef.args[:ccs]
 end
+
 
 end #module EF

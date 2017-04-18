@@ -143,29 +143,4 @@ function EF.findedges(ef::SemanticEdgeFinder)
 end
 
 
-function EF.assign_ccs!(ef::SemanticEdgeFinder, T=Int)
-
-  psdvol     = ef.args[:PSDvol]
-  cc_thresh  = ef.args[:CCthresh]
-  sz_thresh  = ef.args[:SZthresh]
-  dilation   = ef.args[:dilation]
-
-  psdsegs = zeros(T,size(psdvol)...)
-
-  SegUtils.connected_components3D!( psdvol, view(psdsegs,:,:,:), cc_thresh)
-
-  SegUtils.filter_by_size!( view(psdsegs,:,:,:), sz_thresh )
-
-  SegUtils.dilate_by_k!( view(psdsegs,:,:,:), dilation )
-
-  ef.args[:PSDsegs] = psdsegs
-
-end
-
-
-function EF.get_ccs(ef::SemanticEdgeFinder)
-  return ef.args[:PSDsegs]
-end
-
-
 end #module SemanticEdgeFinder

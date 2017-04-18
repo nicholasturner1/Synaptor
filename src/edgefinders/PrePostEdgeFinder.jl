@@ -115,7 +115,7 @@ function EF.findedges(ef::PrePostEdgeFinder)
 end
 
 
-function EF.assign_ccs!(ef::PrePostEdgeFinder, T=Int)
+function EF.make_ccs!(ef::PrePostEdgeFinder, T=Int)
 
   pre_vol   = ef.args[:PREvol]
   post_vol  = ef.args[:POSTvol]
