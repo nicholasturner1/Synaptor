@@ -1,4 +1,3 @@
-
 module Utils
 #all other misc segmentation utils
 
@@ -61,9 +60,7 @@ function centers_of_mass{T}( d::AbstractArray{T} )
 end
 
 
-function filter_by_size!( d::AbstractArray, thresh::Integer )
-
-  szs = segment_sizes(d)
+function filter_by_size!( d::AbstractArray, thresh::Integer, szs=segment_sizes(d) )
 
   to_keep = Vector{eltype(keys(szs))}()
 
@@ -73,11 +70,7 @@ function filter_by_size!( d::AbstractArray, thresh::Integer )
 
   if length(to_keep) == 0 warn("no segments remaining after size threshold") end
 
-  for i in eachindex(d)
-    if !(d[i] in to_keep)
-      d[i] = eltype(d)(0)
-    end
-  end
+  filter_segments_by_ids!(d, to_keep)
 
 end
 
@@ -97,5 +90,25 @@ function segment_sizes{T}( d::AbstractArray{T} )
 
   sizes
 end
+
+
+"""
+
+    filter_segments_by_ids!( seg, ids )
+
+  Only keeps the segments within ids
+"""
+function filter_segments_by_ids!{T}( seg::AbstractArray{T}, ids )
+
+
+  z = T(0)
+  for i in eachindex(seg)
+    if seg[i] == z  continue  end
+    if seg[i] in ids  continue  end
+    seg[i] = z
+  end
+
+end
+
 
 end #module Utils

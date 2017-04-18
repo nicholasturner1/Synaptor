@@ -7,6 +7,16 @@ export create_range_grid
 collect_params(p) = Dict( name => val for (name,val) in p )
 
 
+"""
+Removes dictionary entries which are not contained under `keys_to_keep`
+"""
+function filter_by_id!(keys_to_keep, dicts::Dict...)
+
+  for d in dicts  filter!( (k,v) -> k in keys_to_keep, d)  end
+
+end
+
+
 function create_range_grid(params)
 
   range_params = filter( (k,v) -> typeof(v) <: Range, params )
