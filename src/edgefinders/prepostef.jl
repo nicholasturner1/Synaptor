@@ -3,7 +3,7 @@ module PrePostEF
 
 using ...Types
 using ...SegUtils
-using ..EF
+using ..Basic
 using ..Utils
 
 
@@ -12,15 +12,15 @@ export PrePostEdgeFinder, findedges_w_prepost
 
 #Type parameters
 reqd_args = [
-(:SYNsegs,   AbstractArray, EF.VOL),
-(:MORPHsegs, AbstractArray, EF.VOL),
-(:PREvol,    AbstractArray, EF.SUBVOL),
-(:POSTvol,   AbstractArray, EF.SUBVOL),
-(:CCthresh,  Real,          EF.AUX_PARAM),
-(:SZthresh,  Real,          EF.AUX_PARAM),
-#(:dist_thr,  Real,          EF.AUX_PARAM), #distance thresh for conscomps
-#(:res,       Array,         EF.AUX_PARAM), #voxel resolution
-(:dilation,  Real,          EF.AUX_PARAM)
+(:SYNsegs,   AbstractArray, Basic.VOL),
+(:MORPHsegs, AbstractArray, Basic.VOL),
+(:PREvol,    AbstractArray, Basic.SUBVOL),
+(:POSTvol,   AbstractArray, Basic.SUBVOL),
+(:CCthresh,  Real,          Basic.AUX_PARAM),
+(:SZthresh,  Real,          Basic.AUX_PARAM),
+#(:dist_thr,  Real,          Basic.AUX_PARAM), #distance thresh for conscomps
+#(:res,       Array,         Basic.AUX_PARAM), #voxel resolution
+(:dilation,  Real,          Basic.AUX_PARAM)
 ]
 
 
@@ -84,7 +84,7 @@ CLASS DEFINITION
 ===========================================#
 
 #Explicitly wrapping the required args
-explicit_args = map( x -> EF.EFArg(x[1],x[2],x[3]), reqd_args )
+explicit_args = map( x -> Basic.EFArg(x[1],x[2],x[3]), reqd_args )
 
 
 """
@@ -94,7 +94,7 @@ explicit_args = map( x -> EF.EFArg(x[1],x[2],x[3]), reqd_args )
 Wrapper class for findedges_w_prepost (see that fn's docs for details)
 """
 type PrePostEdgeFinder <: Types.EdgeFinder
-  reqs :: Vector{EF.EFArg}
+  reqs :: Vector{Basic.EFArg}
   args :: Dict{Symbol,Any}
   findedges :: Function
 
@@ -102,9 +102,9 @@ type PrePostEdgeFinder <: Types.EdgeFinder
 end
 
 
-function EF.findedges(ef::PrePostEdgeFinder)
+function Basic.findedges(ef::PrePostEdgeFinder)
 
-  EF.assert_specified(ef)
+  Basic.assert_specified(ef)
 
   psd_segs   = ef.args[:SYNsegs]
   morph_segs = ef.args[:MORPHsegs]
@@ -115,7 +115,7 @@ function EF.findedges(ef::PrePostEdgeFinder)
 end
 
 
-function EF.make_ccs!(ef::PrePostEdgeFinder, T=Int)
+function Basic.make_ccs!(ef::PrePostEdgeFinder, T=Int)
 
   pre_vol   = ef.args[:PREvol]
   post_vol  = ef.args[:POSTvol]
@@ -146,7 +146,7 @@ function EF.make_ccs!(ef::PrePostEdgeFinder, T=Int)
 end
 
 
-function EF.filteredges(ef::PrePostEdgeFinder, es::Dict)
+function Basic.filteredges(ef::PrePostEdgeFinder, es::Dict)
 
   filtered = Dict{keytype(es),valtype(es)}();
 

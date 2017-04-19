@@ -1,5 +1,5 @@
 module Continuations
 
-include("base.jl"); using .Base
+include("basic.jl"); using .Basic
 
 end

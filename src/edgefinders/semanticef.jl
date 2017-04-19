@@ -2,7 +2,7 @@ module SemanticEF
 
 
 using ...Types
-using ..EF
+using ..Basic
 using ..Utils
 using ...SegUtils
 
@@ -12,16 +12,16 @@ export SemanticEdgeFinder, findedges_w_sem
 
 # Type parameters
 reqd_args = [
-(:ccs,        AbstractArray,   EF.VOL),
-(:dil_ccs,    AbstractArray,   EF.VOL),
-(:MORPHsegs,  AbstractArray,   EF.VOL),
-(:PSDvol,     AbstractArray,   EF.SUBVOL),
-(:semmap,     Dict,            EF.AUX_PARAM),
-(:axon_label, Integer,         EF.AUX_PARAM),
-(:dend_label, Integer,         EF.AUX_PARAM),
-(:CCthresh,   Real,            EF.AUX_PARAM),
-(:SZthresh,   Real,            EF.AUX_PARAM),
-(:dilation,   Real,            EF.AUX_PARAM)
+(:ccs,        AbstractArray,   Basic.VOL),
+(:dil_ccs,    AbstractArray,   Basic.VOL),
+(:MORPHsegs,  AbstractArray,   Basic.VOL),
+(:PSDvol,     AbstractArray,   Basic.SUBVOL),
+(:semmap,     Dict,            Basic.AUX_PARAM),
+(:axon_label, Integer,         Basic.AUX_PARAM),
+(:dend_label, Integer,         Basic.AUX_PARAM),
+(:CCthresh,   Real,            Basic.AUX_PARAM),
+(:SZthresh,   Real,            Basic.AUX_PARAM),
+(:dilation,   Real,            Basic.AUX_PARAM)
 ]
 
 
@@ -113,7 +113,7 @@ CLASS DEFINITION
 ===========================================#
 
 #Explicitly wrapping the required args
-explicit_args = map( x -> EF.EFArg(x[1],x[2],x[3]), reqd_args )
+explicit_args = map( x -> Basic.EFArg(x[1],x[2],x[3]), reqd_args )
 
 """
 
@@ -122,7 +122,7 @@ explicit_args = map( x -> EF.EFArg(x[1],x[2],x[3]), reqd_args )
 Wrapper class for findedges_w_sem (see that fn's docs for details)
 """
 type SemanticEdgeFinder <: Types.EdgeFinder
-  reqs :: Vector{EF.EFArg}
+  reqs :: Vector{Basic.EFArg}
   args :: Dict{Symbol,Any}
   findedges :: Function
 
@@ -130,9 +130,9 @@ type SemanticEdgeFinder <: Types.EdgeFinder
 end
 
 
-function EF.findedges(ef::SemanticEdgeFinder)
+function Basic.findedges(ef::SemanticEdgeFinder)
 
-  EF.assert_specified(ef)
+  Basic.assert_specified(ef)
 
   psd_segs   = ef.args[:dil_ccs]
   morph_segs = ef.args[:MORPHsegs]

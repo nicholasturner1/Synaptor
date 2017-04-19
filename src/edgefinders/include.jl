@@ -1,7 +1,7 @@
 module EdgeFinders
-#See edgefinder.jl for a description of why edge finders are useful
+#See basic.jl for a description of why edge finders are useful
 
-#EF - EdgeFinder Interface
+#Basic - Interface & Defaults
 export findedges, filteredges
 export assign_aux_params!, assign_aux_vols!
 export make_ccs!, get_ccs, compute_cc_stats
@@ -16,12 +16,12 @@ export VesicleEdgefinder, findedges_w_ves
 
 #General Utils and Interfaces
 include("utils.jl")
-include("edgefinder.jl"); using .EF
+include("basic.jl"); using .Basic
 
 
 #Specific EdgeFinders
-#include("VesicleEdgeFinder.jl"); using .VesicleEF
-include("SemanticEdgeFinder.jl"); using .SemanticEF
-include("PrePostEdgeFinder.jl"); using .PrePostEF
+#include("vesicleef.jl"); using .VesicleEF
+include("semanticef.jl"); using .SemanticEF
+include("prepostef.jl"); using .PrePostEF
 
 end

@@ -1,4 +1,4 @@
-module EF
+module Basic
 #Common functions for EdgeFinders
 #
 # It can be time consuming, annoying, and disorganized to write several distinct
