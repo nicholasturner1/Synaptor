@@ -1,4 +1,4 @@
-module Chunking
+module ChunkBounds
 
 
 using ..BBoxes

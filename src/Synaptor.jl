@@ -3,6 +3,8 @@ module Synaptor
 
 #IO
 export read_edge_file
+#Chunking
+export BBox, chunk_bounds
 #SegUtils
 export relabel_data!, relabel_data, centers_of_mass
 export filter_by_size, segment_sizes
@@ -39,6 +41,7 @@ include("Types.jl")
 #I've limited the global namespace here to fns which someone might reasonably
 # use in one-off REPL sessions
 include("io/include.jl"); using .IO
+include("chunking/include.jl"); using .Chunking
 include("segutils/include.jl"); using .SegUtils
 include("continuations/include.jl"); using .Continuations
 include("edgefinders/include.jl"); using .EdgeFinders
