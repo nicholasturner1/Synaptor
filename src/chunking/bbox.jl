@@ -98,7 +98,7 @@ function Base.getindex{T,N}(a::AbstractArray{T,N}, bbox::BBox, I...)
   indices[2] = bbox.f.y:bbox.l.y
   indices[3] = bbox.f.z:bbox.l.z
 
-  for (i,v) in I  indices[3+i] = v  end
+  for (i,v) in enumerate(I)  indices[3+i] = v  end
 
   a[indices...]
 end
