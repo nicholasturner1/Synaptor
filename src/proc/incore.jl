@@ -53,13 +53,13 @@ function process_chunk_w_continuations( chunk, seg, ef::EdgeFinder; params... )
   EdgeFinders.make_ccs!(ef)
  
 
-  continuations = EdgeFinders.find_continuations(ef) 
+  continuations = EdgeFinders.findcontinuations(ef) 
   locs, sizes = EdgeFinders.compute_cc_stats(ef)
 
 
   #Removing small segs which aren't continuations
-  c_keys = Set(keys(continuations))
-  EdgeFinders.filter_by_size!(ef, sizes, c_keys)
+  c_segids = Set([Continuations.get_segid(c) for c in continuations])
+  EdgeFinders.filter_by_size!(ef, sizes, c_segids)
 
 
   EdgeFinders.dilate_ccs!(ef) 
@@ -70,8 +70,8 @@ function process_chunk_w_continuations( chunk, seg, ef::EdgeFinder; params... )
 
 
   #Formatting & Cleaning results
-  complete_es = setdiff(Set(keys(edges)), c_keys)
-  EdgeFinders.filter_by_id!(ef, union(complete_es, c_keys))
+  complete_es = setdiff(Set(keys(edges)), c_segids)
+  EdgeFinders.filter_by_id!(ef, union(complete_es, c_segids))
   Utils.filter_by_id!(complete_es, locs, sizes)
 
 

@@ -1,7 +1,8 @@
 module OutOfCore
 
+using ...Types
 using ...Chunking
-using ...SemanticMap
+using ...SegUtils
 
 using ..Utils
 using ..InCore

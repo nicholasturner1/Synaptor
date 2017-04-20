@@ -146,7 +146,9 @@ function findcontinuations(ef::EdgeFinder)
 
   assert_specified(ef, :ccs)
 
-  Continuations.find_continuations(ef)
+  ccs = ef.args[:ccs]
+
+  Continuations.find_new_continuations(ccs)
 end
 
 
