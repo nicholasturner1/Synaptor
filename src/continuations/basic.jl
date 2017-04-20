@@ -1,19 +1,31 @@
 module Basic
+# Continuations represent segments which could pass onto the next
+# chunk in a dataset which is too large to fit in RAM
+#
+# In order to properly specify a continuation, we need to know
+# which face it contacts within a 3d chunk of data. The AXIS and
+# Face classes help to specify that information.
 
-#Continuations represent segments which could pass onto the next
-#chunk in a dataset which is too large to fit in RAM
 
-
+#Classes
 export Continuation, AXIS, Face
-export get_segid, get_voxels, get_overlaps, get_loc
+#Faces
+export get_axis, get_hi, opposite 
+#Continuations
+export get_segid, get_voxels, get_overlaps, get_loc, get_face, get_num_voxels
 export set_size!, set_loc!, push_overlap!
 
 
+#================
+CLASS DEFINITIONS: AXIS, Face
+
 #Describing which face the continuation touches
+================#
+
 @enum AXIS X=1 Y=2 Z=3
 
 
-type Face
+immutable Face
   axis::AXIS
   hi::Bool
 
@@ -21,34 +33,88 @@ type Face
   Face(a::Int,h::Bool) = new(AXIS(a),h)
 end
 
+#================
+Face Fns
+================#
 
-type Continuation{T}
-  segid::T
+get_axis(f::Face) = Int(f.axis)
+get_hi(f::Face) = f.hi
+opposite(f::Face) = Face(f.axis, !f.hi)
+
+#================
+CLASS DEFINITIONS: Continuation
+================#
+
+type Continuation
+  segid::Int
   voxels::Array{Int,2}
   overlaps::Dict 
   face::Face
   num_voxels::Int
-  location::Tuple{Int,Int,Int}
+  location::Vector{Int}
 
-  Continuation() = new(0,zeros(Int,(0,3)),Dict{Int,Int}(),Face(X,false),0,(0,0,0))
-  Continuation(s,v,f) = new(s,v,Dict{Int,Int}(),f,0,(0,0,0))
+  Continuation() = new(0,zeros(Int,(0,3)),Dict{Int,Int}(),Face(X,false),0,[0,0,0])
+  Continuation(s::Int,v::Array,f::Face) = new(s,v,Dict{Int,Int}(),f,0,[0,0,0])
   Continuation(s,v,o,f,n,l) = new(s,v,o,f,n,l)
+  Continuation(o::Dict,n::Int,l::Vector) = new(0,zeros(Int,(0,3)),o,Face(X,false),n,l)
 end
 
 
-Base.eltype{T}(c::Continuation{T}) = T
+#================
+Continuation Fns
+================#
+#Base.eltype(c::Continuation) = typeof(segid)
 
 
 get_segid(c::Continuation) = c.segid
 get_voxels(c::Continuation) = c.voxels
 get_overlaps(c::Continuation) = c.overlaps
 get_loc(c::Continuation) = c.location
+get_face(c::Continuation) = c.face
+get_num_voxels(c::Continuation) = c.num_voxels
 
 
 set_size!(c::Continuation, s::Int) = c.num_voxels = s
 set_loc!(c::Continuation, l::Tuple{Int,Int,Int}) = c.location = l
+set_overlaps!(c::Continuation, o::Dict) = c.overlaps = o
 push_overlap!(c::Continuation, k, v) = push!(c.overlaps, k => v)
 push_overlap!(c::Continuation, p::Pair) = push!(c.overlaps, p)
+
+""" Merging two continuations together """
+function Base.:+(c1::Continuation, c2::Continuation)
+  new_overlaps = sum_dicts(c1.overlaps, c2.overlaps)
+  new_num_voxels = c1.num_voxels + c2.num_voxels
+  new_loc = avg_locations(c1.location, c2.location, c1.num_voxels, c2.num_voxels)
+
+  Continuation(new_overlaps, new_num_voxels, new_loc)
+end
+
+
+function sum_dicts{S,T}(d1::Dict{S,T}, d2::Dict{S,T})
+
+  k1 = Set(keys(d1))
+  k2 = Set(keys(d2))
+  all_keys = union(k1,k2)
+
+  res = Dict{S,T}();
+
+  for k in all_keys
+    if k in k1 && k in k2  res[k] = d1[k] + d2[k]
+    elseif k in k1         res[k] = d1[k]
+    elseif k in k2         res[k] = d2[k]
+    end
+  end
+
+  res
+end
+
+
+avg_locations(l1::Vector, l2::Vector, n1, n2) = round(Int,(((l1*n1)+(l2*n2))/(n1+n2)))
+
+
+#================
+Related Utility Fns
+================#
 
 """
 
