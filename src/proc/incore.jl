@@ -55,6 +55,8 @@ function process_chunk_w_continuations( chunk, seg, ef::EdgeFinder; params... )
 
   continuations = EdgeFinders.findcontinuations(ef) 
   locs, sizes = EdgeFinders.compute_cc_stats(ef)
+  Continuations.fill_locs!(continuations, locs)
+  Continuations.fill_sizes!(continuations, sizes)
 
 
   #Removing small segs which aren't continuations

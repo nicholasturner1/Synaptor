@@ -57,11 +57,13 @@ function findedges_w_sem( psd_segs, seg, semmap, axon_label, dend_label )
 
 
   overlap = SegUtils.count_overlapping_labels( psd_segs, seg )
+  overlap = expand_sparse_matrix_cols( overlap, maximum(keys(semmap)) )
 
 
   seg_ids = Utils.extract_unique_rows(overlap)
   axons, dends = Utils.split_map_into_groups( semmap, [axon_label, dend_label] )
 
+  println("$(maximum(axons)) $(maximum(dends)) $(size(overlap))")
   axon_overlaps = overlap[:,axons]; dend_overlaps = overlap[:,dends];
 
 
@@ -80,6 +82,20 @@ function findedges_w_sem( psd_segs, seg, semmap, axon_label, dend_label )
   edges = Dict( sid => (axon_ids[sid],dend_ids[sid]) for sid in valid_edges )
 
   edges, invalid_edges, overlap
+end
+
+
+function expand_sparse_matrix_cols( sp::SparseMatrixCSC, n )
+
+  sx,sy = size(sp)
+
+  if sy == n  return sp  end
+
+  num_new_cols = n - sy
+
+  new_cols = spzeros(eltype(sp),sx,num_new_cols)
+
+  hcat(sp, new_cols)
 end
 
 

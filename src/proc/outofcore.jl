@@ -14,7 +14,7 @@ function chunked_semantic_maps( seg::AbstractArray, weight::AbstractArray, class
   chunk_bboxes = Chunking.chunk_bounds(size(seg), chunk_shape)
 
   assignments = Array{Dict{Int,Int}}(size(chunk_bboxes)); 
-  weights = Array{Dict{Int,Float64}}(size(chunk_bboxes));
+  weights = Array{Dict{Int,Vector{Float64}}}(size(chunk_bboxes));
 
   for (i,chunk) in enumerate(chunk_bboxes)
 
@@ -43,7 +43,7 @@ function chunked_edge_finding( net_output, seg, ef::EdgeFinder, chunk_shape; par
     output_chunk = net_output[chunk]
     seg_chunk    = seg[chunk]
 
-    results[i] = InCore.process_chunk_w_continuations( output_chunk, seg, 
+    results[i] = InCore.process_chunk_w_continuations( output_chunk, seg_chunk, 
                                                        ef; params... )
   end
 

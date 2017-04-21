@@ -17,7 +17,7 @@ export findedges, filteredges
 export assign_aux_params!, assign_aux_vols!
 export make_ccs!, get_ccs, compute_cc_stats
 export filter_by_size!, filter_by_id!, dilate_ccs!
-export find_continuations
+export findcontinuations
 
 
 #Specifying an enumeration for where we should look for the argument
@@ -203,7 +203,7 @@ end
   If `to_keep` is specified, these extra values are preserved. This is useful
   for multiple chunk processing, as some segments can span multiple chunks.
 """
-function filter_by_size!(ef::EdgeFinder, sizes, to_keep::Set{Integer}=Set{Integer}())
+function filter_by_size!(ef::EdgeFinder, sizes, to_keep::Set=Set{Integer}())
 
   assert_specified(ef, :ccs)
   assert_specified(ef, :SZthresh)

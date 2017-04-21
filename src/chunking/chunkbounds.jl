@@ -1,5 +1,6 @@
 module ChunkBounds
 
+export chunk_bounds
 
 using ..BBoxes
 

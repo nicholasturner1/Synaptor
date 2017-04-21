@@ -15,6 +15,8 @@ export get_axis, get_hi, opposite
 export get_segid, get_voxels, get_overlaps, get_loc, get_face, get_num_voxels
 export set_size!, set_loc!, push_overlap!
 
+export find_new_continuations, fill_overlaps!, fill_locs!, fill_sizes!
+
 
 #================
 CLASS DEFINITIONS: AXIS, Face
@@ -78,7 +80,7 @@ end
 
 
 set_size!(c::Continuation, s::Int) = c.num_voxels = s
-set_loc!(c::Continuation, l::Tuple{Int,Int,Int}) = c.location = l
+set_loc!(c::Continuation, l) = c.location = l
 set_overlaps!(c::Continuation, o::Dict) = c.overlaps = o
 push_overlap!(c::Continuation, k, v) = push!(c.overlaps, k => v)
 push_overlap!(c::Continuation, p::Pair) = push!(c.overlaps, p)
@@ -126,9 +128,9 @@ Related Utility Fns
   Traverses a segment volume over each of its faces might contact
   another chunk, and forms new Continuations where it finds them.
 """
-function find_new_continuations{T}(seg::Array{T,3})
+function find_new_continuations{T}(seg::AbstractArray{T,3})
 
-  continuations = Vector{Continuation{T}}();
+  continuations = Vector{Continuation}();
 
   for axis in 1:3, hi_face in (true,false)
 
@@ -148,7 +150,7 @@ end
 
   Finds the continuations within a particular face of the volume
 """
-function find_face_continuations{T}(seg::Array{T,3}, axis::Int, hi_face::Bool)
+function find_face_continuations{T}(seg::AbstractArray{T,3}, axis::Int, hi_face::Bool)
 
   sx,sy,sz = size(seg)
 
@@ -161,11 +163,11 @@ function find_face_continuations{T}(seg::Array{T,3}, axis::Int, hi_face::Bool)
 
   bvs = findvals_at_indices(seg, idxes)
 
-  continuations = Vector{Continuation{T}}();
+  continuations = Vector{Continuation}();
 
   for (segid,voxels) in bvs
 
-    c = Continuation{T}( segid, voxels, Face(axis, hi_face) )
+    c = Continuation( segid, voxels, Face(axis, hi_face) )
 
     push!(continuations,c)
   end
@@ -182,7 +184,7 @@ end
   and records where nonzero values exist. Returns a mapping from nonzero
   value to its voxels within the indices.
 """
-function findvals_at_indices{T}(seg::Array{T,3}, idxes)
+function findvals_at_indices{T}(seg::AbstractArray{T,3}, idxes)
 
   locs = Dict{T,Vector{Vector{Int}}}();
 
@@ -241,5 +243,13 @@ function overlap_row_dict(overlaps::SparseMatrixCSC, rowid)
   res
 end
 
+
+function fill_locs!(c_list::Vector{Continuation}, locs::Dict)
+  for c in c_list  set_loc!(c, locs[get_segid(c)])  end
+end
+
+function fill_sizes!(c_list::Vector{Continuation}, sizes::Dict)
+  for c in c_list  set_size!(c, sizes[get_segid(c)])  end
+end
 
 end #module Basic

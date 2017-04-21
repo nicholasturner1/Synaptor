@@ -6,16 +6,14 @@ using LightGraphs
 
 """
 
-    function  consolidate_continuations(c_arr::Array{Vector{Continuation},3},
-                                        semmaps::Array{Dict{Int,Int},3}, 
-                                        size_thresh::Int, next_index::Int,
-                                        chunk_shape)
-
-  
+    function consolidate_continuations(c_arr::Array{Vector{Continuation},3},
+                                       semmaps::Array{Dict{Int,Int},3}, 
+                                       size_thresh::Int, next_index::Int,
+                                       chunk_shape)
 """
 function consolidate_continuations(c_arr::Array{Vector{Continuation},3},
                                    semmaps::Array{Dict{Int,Int},3}, 
-                                   size_thresh::Int, next_index::Int,
+                                   size_thr::Int, next_index::Int,
                                    chunk_shape)
 
   merged_cs, c_locs = merge_continuations(c_arr)
@@ -239,10 +237,11 @@ function find_continuation_edges(c_arr::Array{Vector{Continuation},3}, x,y,z)
     #Find potential matches by face
     f = get_face(c)
     axis = get_axis(f); hi = get_hi(f)
+    println("$axis $hi $current_loc $sizes")
 
     #bounds checking
-    if hi  & current_loc[axis] == sizes[axis]  continue  end
-    if !hi & current_loc[axis] == 1            continue  end
+    if hi  && current_loc[axis] == sizes[axis]  continue  end
+    if !hi && current_loc[axis] == 1            continue  end
 
     index_to_check = [x,y,z]
     if hi  index_to_check[axis] += 1

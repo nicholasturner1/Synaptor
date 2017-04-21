@@ -27,7 +27,7 @@ export find_continuations
 #Eval
 export prec_score, rec_score, f1score, f0p5score
 #Proc
-export process_single_chunk
+export process_chunk
 export grid_search, f1_grid_search, f0p5_grid_search
 
 
