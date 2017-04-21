@@ -63,7 +63,6 @@ end
 #================
 Continuation Fns
 ================#
-#Base.eltype(c::Continuation) = typeof(segid)
 
 
 get_segid(c::Continuation) = c.segid
@@ -72,6 +71,10 @@ get_overlaps(c::Continuation) = c.overlaps
 get_loc(c::Continuation) = c.location
 get_face(c::Continuation) = c.face
 get_num_voxels(c::Continuation) = c.num_voxels
+
+function Base.show(io::IO, c::Continuation)
+  print(io, "Continuation{segid:$(c.segid), loc:$(c.location), #vox:$(c.num_voxels)}")
+end
 
 
 set_size!(c::Continuation, s::Int) = c.num_voxels = s
@@ -197,6 +200,45 @@ function findvals_at_indices{T}(seg::Array{T,3}, idxes)
 
   #formatting as 2D Array
   Dict( k => [ loc[i] for loc in v, i in 1:3 ] for (k,v) in locs )
+end
+
+
+function fill_overlaps!(c_list::Vector{Continuation}, overlap::SparseMatrixCSC)
+
+  segids = Set([ get_segid(c) for c in c_list ])
+
+  segid_to_overlaps = Dict{Int,Dict{Int,Int}}();
+
+  for segid in segids
+    segid_to_overlaps[segid] = overlap_row_dict(overlap, segid)
+  end
+
+  for c in c_list
+    set_overlaps!(c, segid_to_overlaps[ get_segid(c) ])
+  end
+
+end
+
+
+function overlap_row_dict(overlaps::SparseMatrixCSC, rowid)
+
+  res = Dict{Int,Int}()
+
+  rows = rowvals(overlaps)
+  vals = nonzeros(overlaps)
+
+  for i in 1:size(overlaps,2)
+    for j in nzrange(overlaps,i)
+
+      r = rows[j]
+      if r != rowid  continue  end
+
+      val = vals[j]
+      res[i] = val
+    end
+  end
+
+  res
 end
 
 
