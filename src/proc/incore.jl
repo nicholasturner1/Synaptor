@@ -42,7 +42,7 @@ function process_chunk( chunk, seg, ef::EdgeFinder ; params...)
 end
 
 
-function process_chunk_w_continuations( chunk, seg, ef::EdgeFinder; params... )
+function process_chunk_w_continuations( chunk, seg, ef::EdgeFinder; offset=[0,0,0], params... )
 
   #Handling parameters
   params = Utils.collect_params(params)
@@ -55,6 +55,8 @@ function process_chunk_w_continuations( chunk, seg, ef::EdgeFinder; params... )
 
   continuations = EdgeFinders.findcontinuations(ef) 
   locs, sizes = EdgeFinders.compute_cc_stats(ef)
+  for (k,v) in locs  locs[k] = locs[k] + offset  end
+
   Continuations.fill_locs!(continuations, locs)
   Continuations.fill_sizes!(continuations, sizes)
 

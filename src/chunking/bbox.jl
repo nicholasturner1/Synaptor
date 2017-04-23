@@ -31,7 +31,7 @@ Base.:(/)(s::Real, a::Vec3) = Vec3(s / a.x, s / a.y, s / a.z)
 Base.min(v1::Vec3,v2::Vec3) = Vec3(min(v1.x,v2.x), min(v1.y,v2.y), min(v1.z,v2.z))
 Base.max(v1::Vec3,v2::Vec3) = Vec3(max(v1.x,v2.x), max(v1.y,v2.y), max(v1.z,v2.z))
 
-collect(a::Vec3) = [a.x, a.y, a.z]
+Base.collect(a::Vec3) = [a.x, a.y, a.z]
 Base.show(io::IO, v::Vec3) = print(io, "($(v.x),$(v.y),$(v.z))")
 
 

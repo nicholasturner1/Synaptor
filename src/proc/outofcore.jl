@@ -43,8 +43,10 @@ function chunked_edge_finding( net_output, seg, ef::EdgeFinder, chunk_shape; par
     output_chunk = net_output[chunk]
     seg_chunk    = seg[chunk]
 
+    ch_offset = collect(first(chunk) - 1)
+
     results[i] = InCore.process_chunk_w_continuations( output_chunk, seg_chunk, 
-                                                       ef; params... )
+                                                       ef; params..., offset=ch_offset )
   end
 
   results
