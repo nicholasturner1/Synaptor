@@ -3,6 +3,8 @@ module BBoxes
 
 export BBox
 
+using HDF5
+
 
 immutable Vec3
   x::Int
@@ -101,6 +103,97 @@ function Base.getindex{T,N}(a::AbstractArray{T,N}, bbox::BBox, I...)
   for (i,v) in enumerate(I)  indices[3+i] = v  end
 
   a[indices...]
+end
+
+
+@inline function Base.setindex!{T}(a::AbstractArray{T,3}, X, bbox::BBox)
+  a[bbox.f.x:bbox.l.x,
+    bbox.f.y:bbox.l.y,
+    bbox.f.z:bbox.l.z] = X
+end
+
+
+function Base.setindex!{T,N}(a::AbstractArray{T,N}, X, bbox::BBox)
+
+  indices = Vector{Any}(N)
+  indices[:] = Colon()
+
+  indices[1] = bbox.f.x:bbox.l.x
+  indices[2] = bbox.f.y:bbox.l.y
+  indices[3] = bbox.f.z:bbox.l.z
+
+  a[indices...] = X
+end
+
+function Base.setindex!{T,N}(a::AbstractArray{T,N}, X, bbox::BBox, I...)
+
+  indices = Vector{Any}(N)
+  indices[:] = Colon()
+
+  indices[1] = bbox.f.x:bbox.l.x
+  indices[2] = bbox.f.y:bbox.l.y
+  indices[3] = bbox.f.z:bbox.l.z
+
+  for (i,v) in enumerate(I)  indices[3+i] = v  end
+
+  a[indices...] = X
+end
+
+
+#ditto for h5datasets
+function Base.getindex(a::HDF5Dataset, bbox::BBox)
+  
+  indices = Vector{Any}(length(size(a)))
+  indices[:] = Colon()
+
+  indices[1] = bbox.f.x:bbox.l.x
+  indices[2] = bbox.f.y:bbox.l.y
+  indices[3] = bbox.f.z:bbox.l.z
+
+  a[indices...]
+end
+
+
+function Base.getindex(a::HDF5Dataset, bbox::BBox, I...)
+
+  indices = Vector{Any}(length(size(a)))
+  indices[:] = Colon()
+
+  indices[1] = bbox.f.x:bbox.l.x
+  indices[2] = bbox.f.y:bbox.l.y
+  indices[3] = bbox.f.z:bbox.l.z
+
+  for (i,v) in enumerate(I)  indices[3+i] = v  end
+
+  a[indices...]
+end
+
+
+function Base.setindex!(a::HDF5Dataset, X, bbox::BBox)
+
+  indices = Vector{Any}(length(size(a)))
+  indices[:] = Colon()
+
+  indices[1] = bbox.f.x:bbox.l.x
+  indices[2] = bbox.f.y:bbox.l.y
+  indices[3] = bbox.f.z:bbox.l.z
+
+  a[indices...] = X
+end
+
+
+function Base.setindex!(a::HDF5Dataset, X, bbox::BBox, I...)
+
+  indices = Vector{Any}(length(size(a)))
+  indices[:] = Colon()
+
+  indices[1] = bbox.f.x:bbox.l.x
+  indices[2] = bbox.f.y:bbox.l.y
+  indices[3] = bbox.f.z:bbox.l.z
+
+  for (i,v) in enumerate(I)  indices[3+i] = v  end
+
+  a[indices...] = X
 end
 
 
