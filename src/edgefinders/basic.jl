@@ -10,7 +10,7 @@ module Basic
 
 using ...Types
 using ...SegUtils
-using ...Continuations
+using ...Consolidation
 
 
 export findedges, filteredges
@@ -140,7 +140,7 @@ end
     findcontinuations(ef::EdgeFinder)
 
   Finds the segments which continue to the next volume. Returns a
-  list of Continuations (see Continuation module for more details).
+  list of Continuations (see Consolidation module for more details).
 """
 function findcontinuations(ef::EdgeFinder)
 
@@ -148,7 +148,7 @@ function findcontinuations(ef::EdgeFinder)
 
   ccs = ef.args[:ccs]
 
-  Continuations.find_new_continuations(ccs)
+  Consolidation.find_new_continuations(ccs)
 end
 
 
@@ -269,7 +269,7 @@ function get_ccs(ef::EdgeFinder)
 
   assert_specified(ef, :ccs)
 
-  ef.args[:ccs]
+  copy(ef.args[:ccs])
 end
 
 

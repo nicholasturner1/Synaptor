@@ -63,7 +63,6 @@ function findedges_w_sem( psd_segs, seg, semmap, axon_label, dend_label )
   seg_ids = Utils.extract_unique_rows(overlap)
   axons, dends = Utils.split_map_into_groups( semmap, [axon_label, dend_label] )
 
-  println("$(maximum(axons)) $(maximum(dends)) $(size(overlap))")
   axon_overlaps = overlap[:,axons]; dend_overlaps = overlap[:,dends];
 
 
