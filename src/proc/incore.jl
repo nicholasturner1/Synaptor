@@ -3,7 +3,7 @@ module InCore
 
 using ...Types
 using ...EdgeFinders
-using ...Continuations
+using ...Consolidation
 using ..Utils
 
 
@@ -38,7 +38,7 @@ function process_chunk( chunk, seg, ef::EdgeFinder ; params...)
   Utils.filter_by_id!(to_keep_seg, locs, sizes)
 
 
-  edges, locs, sizes
+  edges, locs, sizes, get_ccs(ef)
 end
 
 
@@ -57,12 +57,12 @@ function process_chunk_w_continuations( chunk, seg, ef::EdgeFinder; offset=[0,0,
   locs, sizes = EdgeFinders.compute_cc_stats(ef)
   for (k,v) in locs  locs[k] = locs[k] + offset  end
 
-  Continuations.fill_locs!(continuations, locs)
-  Continuations.fill_sizes!(continuations, sizes)
+  Consolidation.fill_locs!(continuations, locs)
+  Consolidation.fill_sizes!(continuations, sizes)
 
 
   #Removing small segs which aren't continuations
-  c_segids = Set([Continuations.get_segid(c) for c in continuations])
+  c_segids = Set([Consolidation.get_segid(c) for c in continuations])
   EdgeFinders.filter_by_size!(ef, sizes, c_segids)
 
 
@@ -70,16 +70,16 @@ function process_chunk_w_continuations( chunk, seg, ef::EdgeFinder; offset=[0,0,
 
 
   edges, invalid, overlap = EdgeFinders.findedges(ef)
-  Continuations.fill_overlaps!(continuations, overlap)
+  Consolidation.fill_overlaps!(continuations, overlap)
 
 
   #Formatting & Cleaning results
   complete_es = setdiff(Set(keys(edges)), c_segids)
   EdgeFinders.filter_by_id!(ef, union(complete_es, c_segids))
-  Utils.filter_by_id!(complete_es, locs, sizes)
+  Utils.filter_by_id!(complete_es, edges, locs, sizes)
 
 
-  edges, locs, sizes, continuations
+  edges, locs, sizes, get_ccs(ef), continuations
 end
 
 

@@ -7,6 +7,8 @@ using ...SegUtils
 using ..Utils
 using ..InCore
 
+export chunked_semantic_maps, chunked_edge_finding
+
 
 function chunked_semantic_maps( seg::AbstractArray, weight::AbstractArray, classes,
                                 chunk_shape )

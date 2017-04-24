@@ -22,13 +22,16 @@ export assign_aux_params!, assign_aux_vols!
 export make_ccs!, get_ccs, compute_cc_stats
 export filter_by_size!, filter_by_id!, dilate_ccs!
 export find_continuations
-#Continuations
+#Consolidation
 export find_continuations
+export consolidate_ids, consolidate_continuations
+export consolidate_edge_dict, apply_id_maps
 #Eval
 export prec_score, rec_score, f1score, f0p5score
 #Proc
 export process_chunk
 export grid_search, f1_grid_search, f0p5_grid_search
+export chunked_semantic_maps, chunked_edge_finding
 
 
 include("Types.jl")
@@ -40,13 +43,13 @@ include("Types.jl")
 #
 #I've limited the global namespace here to fns which someone might reasonably
 # use in one-off REPL sessions
-include("io/include.jl"); using .IO
 include("chunking/include.jl"); using .Chunking
 include("segutils/include.jl"); using .SegUtils
-include("continuations/include.jl"); using .Continuations
+include("consolidation/include.jl"); using .Consolidation
 include("edgefinders/include.jl"); using .EdgeFinders
 include("eval/include.jl"); using .Eval
 include("proc/include.jl"); using .Proc
+include("io/include.jl");# using .InputOutput
 
 
 ##OPTIONAL CLOUD UTILITIES
