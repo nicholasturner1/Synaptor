@@ -30,7 +30,8 @@ function relabel_data{T}( d::AbstractArray{T}, mapping )
 
     if d[i] == zT continue end
 
-    d[i] = get( mapping, v, v );
+    v = d[i]
+    res[i] = get( mapping, v, v );
   end
 
   res
