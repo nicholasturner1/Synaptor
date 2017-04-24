@@ -1,4 +1,4 @@
-module Basic
+module Continuations
 # Continuations represent segments which could pass onto the next
 # chunk in a dataset which is too large to fit in RAM
 #
@@ -47,7 +47,7 @@ opposite(f::Face) = Face(f.axis, !f.hi)
 CLASS DEFINITIONS: Continuation
 ================#
 
-type Continuation
+type Continuation 
   segid::Int
   voxels::Array{Int,2}
   overlaps::Dict 
@@ -155,11 +155,12 @@ function find_face_continuations{T}(seg::AbstractArray{T,3}, axis::Int, hi_face:
   sx,sy,sz = size(seg)
 
   idxes = Vector(3)
-  idxes[1] = 1:sz; idxes[2] = 1:sy; idxes[3] = 1:sz
+  idxes[1] = 1:sx; idxes[2] = 1:sy; idxes[3] = 1:sz
 
   if hi_face    idxes[axis] = (idxes[axis]).stop
   else          idxes[axis] = 1
   end
+
 
   bvs = findvals_at_indices(seg, idxes)
 

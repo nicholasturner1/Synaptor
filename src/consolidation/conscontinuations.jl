@@ -1,8 +1,13 @@
-module Consolidation
+module ConsolidateContinuations
 
-using ..Basic
+using ..Continuations
 using LightGraphs
 
+
+export consolidate_continuations
+
+#TODO Separate consolidation from edge extraction
+# Currently, we're assuming use of the Semantic scheme here
 
 """
 
@@ -237,7 +242,6 @@ function find_continuation_edges(c_arr::Array{Vector{Continuation},3}, x,y,z)
     #Find potential matches by face
     f = get_face(c)
     axis = get_axis(f); hi = get_hi(f)
-    println("$axis $hi $current_loc $sizes")
 
     #bounds checking
     if hi  && current_loc[axis] == sizes[axis]  continue  end
