@@ -1,8 +1,9 @@
 module InputOutput
 
 #BasicIO
-export read_edge_file
+export read_edge_file, write_edge_file
 export read_semmap, write_semmap
+export write_idmap, read_idmap
 #ConsolidationIO
 export write_continuation, write_continuations
 #SegIO

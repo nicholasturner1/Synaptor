@@ -5,9 +5,10 @@ using HDF5
 using ...Consolidation.Continuations
 
 export write_continuation, write_continuations
+export read_continuation, read_continuations
 
 
-function write_continuations(output_fname, continuations::Vector{Continuation})
+function write_continuations(output_fname, continuations::Array{Continuation})
   for (i,c) in enumerate(continuations)  write_continuation(output_fname,c,i)  end
 end
 
@@ -31,7 +32,7 @@ function write_continuation( output_fname, continuation, key=-1 )
   #Less easy stuff
   write_overlaps(output_fname, keystr, continuation.overlaps)
   write_face(output_fname, keystr, continuation.face)
-  
+
 end
 
 
@@ -57,10 +58,37 @@ function write_face(output_fname, keystr, face)
 end
 
 
+function read_continuations(input_fname, ks=Int[])
+
+  res = Continuation[]
+  if length(ks) == 0
+    f = h5open(input_fname)
+    candidate_keys = names(f)
+
+    try parse(Int,first(candidate_keys))
+
+      ks = map( x -> parse(Int,x), candidate_keys )
+      res = [read_continuation(input_fname, k) for k in ks]
+
+    catch
+
+      res = [read_continuation(input_fname)]
+    end
+
+  else
+
+    res = [read_continuation(input_fname, k) for k in ks]
+
+  end
+
+  res
+end
+
+
 function read_continuation(input_fname, key=-1)
 
   if key == -1  keystr = ""
-  else          keystr = "$key"
+  else          keystr = "$key/"
   end
 
   segid      = h5read(input_fname, "$(keystr)segid")

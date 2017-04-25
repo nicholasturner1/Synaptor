@@ -1,8 +1,9 @@
 module BasicIO
 
 
-export read_edge_file
+export read_edge_file, write_edge_file
 export read_semmap, write_semmap
+export write_idmap, read_idmap
 
 
 function read_csv(fname, T::DataType)
@@ -23,7 +24,7 @@ function read_csv(fname, T::DataType)
 end
 
 
-function read_edge_file(fname)
+function read_edge_pair_file(fname)
 
   arr = read_csv(fname, Int)
 
@@ -33,6 +34,11 @@ function read_edge_file(fname)
 
   [(arr[i,1],arr[i,2]) for i in 1:size(arr,1)]
 end
+
+
+write_edge_file(edges, fname) = write_map_file(fname, edges)
+write_edge_file(edges, locs, fname) = write_map_file(fname, edges, locs)
+write_edge_file(edges, locs, sizes, fname) = write_map_file(fname, edges, locs, sizes)
 
 
 """
@@ -117,5 +123,14 @@ read_semmap(input_fname) = read_map_file(input_fname)
 write_semmap(a,w,output_fname) = write_map_file(output_fname, a,w)
 write_semmap(a,output_fname) = write_map_file(output_fname, a)
 
+"""
+
+    write_semmmap(assignment, [weights], output_fname)
+
+  Saves an id map as a semicolon-delimited csv file
+"""
+write_idmap(m, output_fname) = write_map_file(output_fname, m)
+
+read_idmap(input_fname) = read_map_file(input_fname)[1]
 
 end #module BasicIO
