@@ -53,8 +53,9 @@ include("io/include.jl");# using .InputOutput
 
 
 ##OPTIONAL CLOUD UTILITIES
-##export sendmsg, pullmsg, delmsg
-##include("cloudutils/include.jl");
+#export sendmsg, pullmsg, delmsg
+#export purgequeue
+#include("cloudutils/include.jl");
 
 
 end # module Synaptor
