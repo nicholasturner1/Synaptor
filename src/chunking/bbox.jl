@@ -2,6 +2,7 @@ module BBoxes
 
 
 export BBox
+export nearby
 
 using HDF5
 using BigArrays
@@ -258,6 +259,26 @@ function Base.setindex!(a::BigArray, X, bbox::BBox, I...)
   for (i,v) in enumerate(I)  indices[3+i] = v  end
 
   a[indices...] = X
+end
+
+@inline function Base.in(v::Vec3, bbox::BBox)
+  bbox.f.x <= v.x <= bbox.l.x &&
+  bbox.f.y <= v.y <= bbox.l.y &&
+  bbox.f.z <= v.z <= bbox.l.z
+end
+
+Base.in(v, bbox::BBox) = Base.in(Vec3(v), bbox)
+
+@inline function nearby(v::Vec3, bbox::BBox)
+  (bbox.f.x - 1) < v.x < (bbox.l.x + 1) &&
+  (bbox.f.y - 1) < v.y < (bbox.l.y + 1) &&
+  (bbox.f.z - 1) < v.z < (bbox.l.z + 1)
+end
+
+@inline function nearby(v, bbox::BBox)
+  (bbox.f.x - 1) < v[1] < (bbox.l.x + 1) &&
+  (bbox.f.y - 1) < v[2] < (bbox.l.y + 1) &&
+  (bbox.f.z - 1) < v[3] < (bbox.l.z + 1)
 end
 
 

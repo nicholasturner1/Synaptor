@@ -1,5 +1,6 @@
 module ConsolidateContinuations
 
+using ...Chunking
 using ..Continuations
 using LightGraphs
 
@@ -12,20 +13,22 @@ export consolidate_continuations
 """
 
     function consolidate_continuations(c_arr::Array{Vector{Continuation},3},
-                                       semmaps::Array{Dict{Int,Int},3}, 
+                                       semmaps::Array{Dict{Int,Int},3},
                                        size_thresh::Int, next_index::Int,
                                        chunk_shape)
 """
 function consolidate_continuations(c_arr::Array{Vector{Continuation},3},
-                                   semmaps::Array{Dict{Int,Int},3}, 
+                                   semmaps::Array{Dict{Int,Int},3},
                                    size_thr::Int, next_index::Int,
-                                   chunk_shape)
+                                   vol_shape, chunk_shape, offset, boundtype)
 
   merged_cs, c_locs = merge_continuations(c_arr)
 
+  chunk_bounds = derive_chunk_bounds(vol_shape, chunk_shape, offset, boundtype)
+
   (filtered_cs, filtered_semmaps,
-  comp_id_maps) = filter_continuations(merged_cs, semmaps, size_thr, 
-                                                   next_index, chunk_shape)
+  comp_id_maps) = filter_continuations(merged_cs, semmaps, size_thr,
+                                                   next_index, chunk_bounds)
 
   id_maps = expand_id_maps(comp_id_maps, c_locs, size(c_arr))
 
@@ -34,6 +37,15 @@ function consolidate_continuations(c_arr::Array{Vector{Continuation},3},
   edges, locs, sizes, id_maps
 end
 
+
+function derive_chunk_bounds(vol_shape, chunk_shape, offset, boundtype)
+
+  if boundtype == "standard"
+    return chunk_bounds(size(vol_shape), chunk_shape, offset)
+  elseif boundtype == "aligned"
+    return aligned_bounds(size(vol_shape), chunk_shape, offset)
+  end
+end
 
 """
 
@@ -115,23 +127,27 @@ function merge_continuations(c_arr)
 end
 
 
-function filter_continuations(merged_cs, semmaps, size_thr::Int, 
-                              next_index::Int, chunk_shape::Vector,
+function filter_continuations(merged_cs, semmaps, size_thr::Int,
+                              next_index::Int, chunk_bounds,
                               axon_label=1, dend_label=2)
 
   filtered = Continuation[];
   filtered_semmaps = Dict[];
   idmap = Vector{Int}(length(merged_cs));
 
+  locs = map(c -> get_loc(c), merged_cs)
+  chunk_is = assign_chunk_indices(locs, chunk_bounds)
+
+
   for (i,c) in enumerate(merged_cs)
 
-    chunk_i = get_chunk_index(get_loc(c), chunk_shape)
+    chunk_i = chunk_is[get_loc(c)]
     semmap = semmaps[chunk_i...]
 
     overlap_classes = Set([semmap[segid] for segid in keys(get_overlaps(c)) ])
 
-    if (get_num_voxels(c) > size_thr 
-        && axon_label in overlap_classes 
+    if (get_num_voxels(c) > size_thr
+        && axon_label in overlap_classes
         && dend_label in overlap_classes)
 
       c.segid = next_index
@@ -149,7 +165,32 @@ function filter_continuations(merged_cs, semmaps, size_thr::Int,
 end
 
 
-get_chunk_index(location, chunk_shape) = round(Int, ceil(location ./ chunk_shape))
+get_chunk_index_basic(location, chunk_shape) = round(Int, ceil(location ./ chunk_shape))
+
+function assign_chunk_indices(locations, chunk_bounds)
+
+  chunk_is = Dict{eltype(locations),Tuple{Int,Int,Int}}();
+
+  locs = Set(locations)
+
+  sx,sy,sz = size(chunk_bounds)
+
+  for z in 1:sz, y in 1:sy, x in 1:sx
+
+    cb = chunk_bounds[x,y,z]
+
+    for l in locs
+      if Chunking.nearby(l,cb)
+        delete!(locs,l)
+        chunk_is[l] = (x,y,z)
+      end
+    end
+
+  end
+
+  @assert isempty(locs) "locations exist entirely out of bounds"
+  chunk_is
+end
 
 
 function merge_components(ccs, c_arr, i_map)
@@ -163,11 +204,11 @@ function merge_components(ccs, c_arr, i_map)
     merger = Continuation()
     parts = [];
 
-    for cid in cc  
+    for cid in cc
       segid, loc = i_map[cid]
       part = find_continuation_by_seg(c_arr[loc...], segid)
 
-      merger = merger + part 
+      merger = merger + part
       push!(parts, (segid,loc))
     end
 
@@ -188,7 +229,7 @@ end
 
 function make_new_continuation_ids(c_arr::Array{Vector{Continuation},3})
 
-  seg_and_loc_to_i = Dict{Any,Int}(); 
+  seg_and_loc_to_i = Dict{Any,Int}();
   i_to_seg_and_loc = Vector();
 
   i = 1
@@ -256,7 +297,7 @@ function find_continuation_edges(c_arr::Array{Vector{Continuation},3}, x,y,z)
     possible_matches = filter( has_matching_face, c_arr[index_to_check...] )
 
     for pm in possible_matches
-      if voxel_match_exists(c,pm) 
+      if voxel_match_exists(c,pm)
         push!(edges,(get_segid(c),(get_segid(pm),index_to_check)))
       end
     end
@@ -268,7 +309,7 @@ end
 
 
 function voxel_match_exists(c1::Continuation, c2::Continuation)
-  
+
   f = get_face(c1)
   axis = get_axis(f); hi = get_hi(f)
 
