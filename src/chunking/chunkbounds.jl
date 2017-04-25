@@ -1,6 +1,6 @@
 module ChunkBounds
 
-export chunk_bounds
+export chunk_bounds, aligned_bounds
 
 using ..BBoxes
 
@@ -69,5 +69,52 @@ function bounds1D(full_width, step_size)
   bounds
 end
 
+
+function aligned_bounds(vol_size, chunk_size, offset=0)
+
+  offsets = (chunk_size .- offset .% chunk_size)
+  x_bounds = aligned1D(vol_size[1], chunk_size[1], offsets[1])
+  y_bounds = aligned1D(vol_size[2], chunk_size[2], offsets[2])
+  z_bounds = aligned1D(vol_size[3], chunk_size[3], offsets[3])
+
+  bounds = Array{BBoxes.BBox}(length(x_bounds), 
+                              length(y_bounds), 
+                              length(z_bounds))
+  sx,sy,sz = size(bounds)
+
+  for z in 1:sz, y in 1:sy, x in 1:sx
+
+    xb, yb, zb = x_bounds[x], y_bounds[y], z_bounds[z]
+    bounds[x,y,z] = BBoxes.BBox(xb.first, yb.first, zb.first,
+                                xb.second,yb.second,zb.second) + offset
+
+  end
+
+  bounds
+end
+
+function aligned1D(full_width, step_size, offset=0)
+
+  @assert step_size > 0
+  @assert full_width > 0
+
+  start = 1; ending = 0
+  if offset == 0  ending = step_size
+  else            ending = offset
+  end
+
+  bounds = Vector{Pair{Int,Int}}();
+
+  while ending < full_width
+    push!(bounds, start => ending)
+
+    start = ending+1; ending += step_size;
+  end
+
+  push!(bounds, start => full_width)
+
+  bounds
+end
+   
 
 end #module Chunking
