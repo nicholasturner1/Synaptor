@@ -40,9 +40,9 @@ function consolidate_ids( id_arr::Array{Set{Int}} )
 end
 
 
-function apply_id_maps{T}( dict_arr::Array{Dict{Int,T}}, id_maps::Array{Dict{Int,Int}} )
+function apply_id_maps( dict_arr::Array{Dict}, id_maps::Array{Dict{Int,Int}} )
 
-  consolidated_dict = Dict{Int,T}()
+  consolidated_dict = Dict()
 
   for (i,d) in enumerate(dict_arr), (k,v) in d
     consolidated_dict[id_maps[i][k]] = v
