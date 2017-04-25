@@ -14,7 +14,8 @@ cont_idmap_subdir = "cont_idmaps"
 
 
 export semantic_map, expand_semmaps, find_edges
-export consolidateids, conscontinuations, relabel_seg
+export consolidateids, conscontinuations, consolidatedups
+export relabel_seg
 
 
 #==========================
@@ -339,9 +340,49 @@ function load_next_id()
   parse(Int,String(read("next_id")))
 end
 
+#==========================
+JOB6: Consolidating Likely Duplicates
+==========================#
+
+function consolidatedups(taskdict, dist_thr=1000, res=[3.85,3.85,40])
+
+  #Extracting task args
+  base_s3_path  = taskdict["base_outpath"]
+
+  #Downloading data
+  whole_edge_fname = "consolidated_edges_wo_conts.csv"
+  s3_edges_wo_continuations = joinpath(base_s3_path,whole_edge_fname)
+  run( `aws s3 cp $s3_edges_wo_continuations .` )
+
+  cont_edge_fname = "continuation_edges.csv"
+  s3_continuation_edge_fname = joinpath(base_s3_path,cont_edge_fname)
+  run( `aws s3 cp $s3_continuation_edge_fname .`)
+
+  edges, locs, sizes = S.InputOutput.read_edge_file(whole_edge_fname, 3)
+  ec, lc, sc = S.InputOutput.read_edge_file(cont_edge_fname, 3)
+
+  merge!(edges, ec)
+  merge!(locs, lc)
+  merge!(sizes, sc)
+
+  @time new_es, new_ls, new_ss, idmap = S.consolidate_dups(edges, locs, sizes,
+                                                           dist_thr, res)
+
+  #Writing results to s3
+  final_edge_fname = "final_edges.csv"
+  S.InputOutput.write_edge_file(new_es, new_ls, new_ss, final_edge_fname)
+  s3_final_edge_fname = joinpath(base_s3_path, final_edge_fname)
+  run( `aws s3 cp $final_edge_fname $s3_final_edge_fname` )
+
+  dedup_idmap_fname = "dedup_idmap.csv"
+  S.InputOutput.write_idmap(idmap, dedup_idmap_fname)
+  s3_dedup_idmap_fname = joinpath(base_s3_path, dedup_idmap_fname)
+  run( `aws s3 cp $dedup_idmap_fname $s3_dedup_idmap_fname` )
+
+end
 
 #==========================
-JOB6: Segment Relabelling
+JOB7: Segment Relabelling
 ==========================#
 
 
@@ -363,12 +404,19 @@ function relabel_seg(taskdict)
   whole_seg_idmap_path = joinpath(base_s3_path,id_map_subdir,
                                   "chunk_$(chx)_$(chy)_$(chz)_idmap.csv")
   run( `aws s3 cp $whole_seg_idmap_path whole_seg_idmap.csv` )
+
   cont_idmap_path = joinpath(base_s3_path,cont_idmap_subdir,
                             "chunk_$(chx)_$(chy)_$(chz)_idmap.csv")
   run( `aws s3 cp $cont_idmap_path continuation_idmap.csv` )
 
+  dedup_idmap_fname = "dedup_idmap.csv"
+  s3_dedup_idmap_fname = joinpath(base_s3_path, dedup_idmap_fname)
+  run( `aws s3 cp $s3_dedup_idmap_fname $dedup_idmap_fname`)
+
+
   whole_idmap = S.InputOutput.read_idmap("whole_seg_idmap.csv")
   cont_idmap = S.InputOutput.read_idmap("continuation_idmap.csv")
+  dedup_idmap = S.InputOutput.read_idmap(dedup_idmap_fname)
 
   psdseg_BA = BigArray( S3Dict(psdseg_path) );
 
@@ -378,6 +426,7 @@ function relabel_seg(taskdict)
 
   @time S.relabel_data!(psdseg_chunk, cont_idmap)
   @time S.relabel_data!(psdseg_chunk, whole_idmap)
+  @time S.relabel_data!(psdseg_chunk, dedup_idmap)
 
   #Writing results to s3
   psdseg_BA[chunk_bbox] = psdseg_chunk

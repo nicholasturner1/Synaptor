@@ -8,7 +8,7 @@ using Synaptor; S = Synaptor;
 using JSON
 
 
-jobqueue = S.CloudUtils.AWSQueue("synaptor-tests")
+jobqueue = S.CloudUtils.AWSQueue("synaptor")
 donequeue = S.CloudUtils.AWSQueue("synaptor-done")
 
 
@@ -58,6 +58,7 @@ function perform_task(taskdict)
   elseif taskname == "perform edge finding"      find_edges(taskdict)
   elseif taskname == "consolidate edge ids"      consolidateids(taskdict)
   elseif taskname == "consolidate continuations" conscontinuations(taskdict)
+  elseif taskname == "consolidate dupliates"     consolidatedups(taskdict)
   elseif taskname == "remap segments"            relabel_seg(taskdict)
   else   warn("unknown task name - skipping...")
   end
@@ -73,5 +74,7 @@ function update_queues(jobqueue, donequeue, taskdict)
   S.CloudUtils.sendmsg(donequeue, JSON.json(taskdict))
 
 end
+
+main()
 
 end#module Worker
