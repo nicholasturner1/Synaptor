@@ -40,6 +40,7 @@ write_edge_file(edges, fname) = write_map_file(fname, edges)
 write_edge_file(edges, locs, fname) = write_map_file(fname, edges, locs)
 write_edge_file(edges, locs, sizes, fname) = write_map_file(fname, edges, locs, sizes)
 
+read_edge_file(fname, num_outputs) = safe_read_map_file(fname, num_outputs)
 
 """
 
@@ -53,6 +54,9 @@ function read_map_file( input_fname; delim=';' )
   Ts = DataType[];
 
   open(input_fname) do f
+
+    if eof(f) return [] end
+
     first_ln = readline(f)
     fields = map(x -> eval(parse(x)), split(first_ln,"$delim"))
     num_fields = length(fields)-1 #-1 for key
@@ -77,6 +81,15 @@ function read_map_file( input_fname; delim=';' )
   dicts
 end
 
+
+function safe_read_map_file(fname, num_outputs)
+  res = read_map_file(fname)
+
+  if     length(res) == num_outputs    return res
+  elseif length(res) == 0              return [Dict() for i in 1:num_outputs]
+  else                                 return res
+  end
+end
 
 """
 
@@ -111,7 +124,7 @@ end
   Reads a semicolon-delimited csv file as a pair of Dicts representing
   the result of a semantic mapping
 """
-read_semmap(input_fname) = read_map_file(input_fname)
+read_semmap(input_fname, num_outputs) = safe_read_map_file(input_fname, num_outputs)
 
 
 """
@@ -131,6 +144,6 @@ write_semmap(a,output_fname) = write_map_file(output_fname, a)
 """
 write_idmap(m, output_fname) = write_map_file(output_fname, m)
 
-read_idmap(input_fname) = read_map_file(input_fname)[1]
+read_idmap(input_fname) = safe_read_map_file(input_fname, 1)[1]
 
 end #module BasicIO
