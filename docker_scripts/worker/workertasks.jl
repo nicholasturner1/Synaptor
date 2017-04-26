@@ -148,7 +148,7 @@ function find_edges(taskdict)
   nh_semmap, weights = S.InputOutput.read_semmap("nh_semmap.csv",2)
   chunk_bbox = S.BBox(chunk_start, chunk_end)
   seg_ch = seg_BA[chunk_bbox]
-  #S.dilate_by_k!(seg_ch,7)
+  S.dilate_by_k!(seg_ch,7)
   sem_ch = sem_BA[chunk_bbox,1:4]
 
 
