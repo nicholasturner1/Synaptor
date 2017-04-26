@@ -58,7 +58,7 @@ function perform_task(taskdict)
   elseif taskname == "perform edge finding"      find_edges(taskdict)
   elseif taskname == "consolidate edge ids"      consolidateids(taskdict)
   elseif taskname == "consolidate continuations" conscontinuations(taskdict)
-  elseif taskname == "consolidate dupliates"     consolidatedups(taskdict)
+  elseif taskname == "consolidate duplicates"     consolidatedups(taskdict)
   elseif taskname == "remap segments"            relabel_seg(taskdict)
   else   warn("unknown task name - skipping...")
   end
