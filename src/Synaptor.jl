@@ -1,5 +1,6 @@
 module Synaptor
 
+include_cloud_utils = false
 
 #IO
 export read_edge_file
@@ -43,7 +44,12 @@ include("Types.jl")
 #
 #I've limited the global namespace here to fns which someone might reasonably
 # use in one-off REPL sessions
-include("chunking/include.jl"); using .Chunking
+
+if include_cloud_utils
+  include("chunking/include_cloud.jl"); using .Chunking
+else
+  include("chunking/include.jl"); using .Chunking
+end
 include("segutils/include.jl"); using .SegUtils
 include("consolidation/include.jl"); using .Consolidation
 include("edgefinders/include.jl"); using .EdgeFinders
@@ -53,9 +59,10 @@ include("io/include.jl");# using .InputOutput
 
 
 ##OPTIONAL CLOUD UTILITIES
-#export sendmsg, pullmsg, delmsg
-#export purgequeue
-#include("cloudutils/include.jl");
-
+if include_cloud_utils
+ export sendmsg, pullmsg, delmsg
+ export purgequeue
+ include("cloudutils/include.jl");
+end
 
 end # module Synaptor
