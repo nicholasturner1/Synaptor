@@ -2,7 +2,7 @@ module ContinuationsTests
 
 using Base.Test
 
-@test "Continuations" begin
+@testset "Continuations" begin
 
 
 include("consolidation.jl")
