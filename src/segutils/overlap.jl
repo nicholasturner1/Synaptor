@@ -121,4 +121,57 @@ function find_max_overlaps( overlap::SparseMatrixCSC,
 end
 
 
+"""
+
+    find_focal_points(dil_ccs::AbstractArray, seg::AbstractArray, edges)
+"""
+function find_focal_points{S,T}( dil_ccs::AbstractArray{S,3}, seg::AbstractArray{T,3}, edges )
+
+  @assert size(dil_ccs) == size(seg) "seg and ccs don't match"
+
+  presyn_pts  = Dict{Int,Vector{Tuple{Int,Int,Int}}}()
+  postsyn_pts = Dict{Int,Vector{Tuple{Int,Int,Int}}}()
+
+  for edgeid in keys(edges) 
+    presyn_pts[edgeid]  = Tuple{Int,Int,Int}[]
+    postsyn_pts[edgeid] = Tuple{Int,Int,Int}[]
+  end
+
+
+  zS = S(0); zT = T(0);
+  sx,sy,sz = size(dil_ccs)
+  for z in 1:sz, y in 1:sy, x in 1:sx
+
+    edgeid = dil_ccs[x,y,z]
+    if edgeid == zS  continue  end
+
+    segid = seg[x,y,z]
+    if segid == zT  continue  end
+
+    preseg, postseg = edges[edgeid]
+    if segid == preseg   push!(presyn_pts[edgeid],  (x,y,z))  end
+    if segid == postseg  push!(postsyn_pts[edgeid], (x,y,z))  end
+
+  end
+
+  focal_pts = Dict{Int,Tuple{Tuple{Int,Int,Int},Tuple{Int,Int,Int}}}();
+
+  for edgeid in keys(edges)
+
+    prepts  = presyn_pts[edgeid]
+    postpts = postsyn_pts[edgeid]
+
+    #default in case there are no overlaps in
+    #this chunk
+    prept = (-1,-1,-1); postpt = (-1,-1,-1);
+    if length(prepts)  > 0  prept  = rand(prepts)   end
+    if length(postpts) > 0  postpt = rand(postpts)  end
+
+    focal_pts[edgeid] = (prept, postpt)
+  end
+    
+  focal_pts
+end
+
+
 end #module Overlap

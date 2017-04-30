@@ -273,4 +273,21 @@ function get_ccs(ef::EdgeFinder)
 end
 
 
+"""
+
+    find_focal_points(ef::EdgeFinder, seg, edges)
+
+  Extracts points for which the each dilated segment overlaps
+  with it's pre and post synaptic segment (specified by edges).
+"""
+function find_focal_points(ef::EdgeFinder, seg, edges)
+
+  assert_specified(ef, :dil_ccs)
+
+  dil_ccs = ef.args[:dil_ccs]
+
+  SegUtils.find_focal_points(dil_ccs, seg, edges)
+end
+
+
 end #module EF

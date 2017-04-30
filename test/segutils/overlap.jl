@@ -102,6 +102,36 @@ end
 end
 
 
+@testset "find_focal_points" begin
+
+  ccs1 = ones(Int,(3,3,3));
+  ccs0 = zeros(Int,(3,3,3));
+
+  seg1 = ones(Int,(3,3,3));
+  seg1[:,:,3] = 2;
+
+  edges1 = Dict( 1 => (1,2), 2 => (0,0) )
+  edges2 = Dict( 1 => (1,3), 2 => (0,0) )
+
+  fps = Overlap.find_focal_points(ccs1,seg1,edges1)
+
+  @test fps[1][1][3] in (1,2)
+  @test fps[1][2][3] == 3
+  @test fps[2] == ((-1,-1,-1),(-1,-1,-1))
+
+  fps = Overlap.find_focal_points(ccs0,seg1,edges1)
+
+  @test fps[1] == ((-1,-1,-1),(-1,-1,-1))
+  @test fps[2] == ((-1,-1,-1),(-1,-1,-1))
+
+  fps = Overlap.find_focal_points(ccs1,seg1,edges2)
+
+  @test fps[1][1][3] in (1,2)
+  @test fps[1][2] == (-1,-1,-1)
+  @test fps[2] == ((-1,-1,-1),(-1,-1,-1))
+
+end
+
 end #@testset Overlap
 
 
