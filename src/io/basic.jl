@@ -3,7 +3,8 @@ module BasicIO
 
 export read_edge_file, write_edge_file
 export read_semmap, write_semmap
-export write_idmap, read_idmap
+export read_idmap, write_idmap
+export read_focal_pts, write_focal_pts
 
 
 function read_csv(fname, T::DataType)
@@ -145,5 +146,8 @@ write_semmap(a,output_fname) = write_map_file(output_fname, a)
 write_idmap(m, output_fname) = write_map_file(output_fname, m)
 
 read_idmap(input_fname) = safe_read_map_file(input_fname, 1)[1]
+
+write_focal_pts(fps, output_fname) = write_map_file(output_fname, fps)
+read_focal_pts(input_fname) = safe_read_map_file(input_fname, 1)[1]
 
 end #module BasicIO
