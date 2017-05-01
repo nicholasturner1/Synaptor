@@ -51,7 +51,7 @@ function addsemweights{sT,wT}( semweights::Dict{sT,Vector{wT}}... )
 
   all_keys = union([keys(sw) for sw in semweights]...)
 
-  nonempty_maps = filter(x -> !isempty(x), semweights )
+  nonempty_maps = collect(filter(x -> !isempty(x), semweights ))
   if length(nonempty_maps) == 0  return Dict{sT,Vector{wT}}()  end
 
   first_val = first(values(nonempty_maps[1]))
