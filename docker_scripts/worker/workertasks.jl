@@ -393,12 +393,7 @@ function relabel_seg(taskdict)
   chunk_end     = taskdict["end"]
   chx, chy, chz = taskdict["chunk_i"]
   psdseg_path   = taskdict["psdseg_path"]
-  seg_s3_path   = taskdict["seg_path"]
-  sem_s3_path   = taskdict["sem_path"]
   base_s3_path  = taskdict["base_outpath"]
-
-  seg_BA = BigArray(S3Dict( seg_s3_path ))
-  sem_BA = BigArray(S3Dict( sem_s3_path ))
 
   #Downloading data
   whole_seg_idmap_path = joinpath(base_s3_path,id_map_subdir,

@@ -1,6 +1,8 @@
 module CloudBBoxes
 #Extensions of bbox interface for types used in large/cloud applications
 
+using ..BBoxes
+
 using BigArrays
 #unfortunately, I need to write these so they're the most specific
 # or at least, I don't know a way around this
