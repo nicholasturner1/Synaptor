@@ -18,9 +18,24 @@ function main()
 
     taskdict = pulltask(jobqueue)
 
-    perform_task(taskdict)
+    try
+      perform_task(taskdict)
 
-    update_queues(jobqueue, donequeue, taskdict)
+      update_queues(jobqueue, donequeue, taskdict)
+    catch
+      println("Caught error within task. Retrying...")
+
+
+      try
+        perform_task(taskdict)
+        update_queues(jobqueue, donequeue, taskdict)
+      catch
+        println("Giving up on task...")
+        println(taskdict)
+      end
+
+
+    end
 
   end
 
@@ -54,11 +69,12 @@ function perform_task(taskdict)
   taskname = taskdict["task"]
 
   @time if taskname == "make semantic map"       semantic_map(taskdict)
+  elseif taskname == "convert semmap"            convert_semmap(taskdict)
   elseif taskname == "make expanded maps"        expand_semmaps(taskdict)
   elseif taskname == "perform edge finding"      find_edges(taskdict)
   elseif taskname == "consolidate edge ids"      consolidateids(taskdict)
   elseif taskname == "consolidate continuations" conscontinuations(taskdict)
-  elseif taskname == "consolidate duplicates"     consolidatedups(taskdict)
+  elseif taskname == "consolidate duplicates"    consolidatedups(taskdict)
   elseif taskname == "remap segments"            relabel_seg(taskdict)
   else   warn("unknown task name - skipping...")
   end

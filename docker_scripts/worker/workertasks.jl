@@ -47,7 +47,7 @@ function semantic_map(taskdict, classes=[1,2,3])
 
 
   #Writing results to s3
-  output_fname = "chunk_$(chx)_$(chy)_$(chz)_semmap.csv"
+  output_fname = "chunk_$(chx)_$(chy)_$(chz)_semmap.fth"
   s3_output_fname = joinpath(base_s3_path,semmap_subdir,output_fname)
   S.InputOutput.write_semmap(a,w,output_fname)
   run( `aws s3 mv $output_fname $s3_output_fname`)
@@ -89,7 +89,8 @@ function load_all_semmaps(sx,sy,sz)
 
   for z in 1:sz, y in 1:sy, x in 1:sx
 
-    a,w = S.InputOutput.read_semmap("chunk_$(x)_$(y)_$(z)_semmap.csv",2)
+    println((x,y,z))
+    @time a,w = S.InputOutput.read_semmap("chunk_$(x)_$(y)_$(z)_semmap.fth")
 
     semmap_arr[x,y,z] = w
   end
@@ -108,7 +109,7 @@ function save_all_semmaps(assigns,weights,output_dir)
   for z in 1:sz, y in 1:sy, x in 1:sx
     a,w = assigns[x,y,z], weights[x,y,z]
 
-    output_fname = joinpath(output_dir,"chunk_$(x)_$(y)_$(z)_nhsemmap.csv")
+    output_fname = joinpath(output_dir,"chunk_$(x)_$(y)_$(z)_nhsemmap.fth")
     S.InputOutput.write_semmap(a,w,output_fname)
   end
 
@@ -143,9 +144,9 @@ function find_edges(taskdict)
 
   #Downloading data
   nh_semmap_fname = joinpath(base_s3_path,nh_semmap_subdir,
-                             "chunk_$(chx)_$(chy)_$(chz)_nhsemmap.csv")
-  run( `aws s3 cp $nh_semmap_fname nh_semmap.csv` )
-  nh_semmap, weights = S.InputOutput.read_semmap("nh_semmap.csv",2)
+                             "chunk_$(chx)_$(chy)_$(chz)_nhsemmap.fth")
+  run( `aws s3 cp $nh_semmap_fname nh_semmap.fth` )
+  nh_semmap, weights = S.InputOutput.read_semmap("nh_semmap.fth")
   chunk_bbox = S.BBox(chunk_start, chunk_end)
   seg_ch = seg_BA[chunk_bbox]
   S.dilate_by_k!(seg_ch,7)
@@ -164,7 +165,7 @@ function find_edges(taskdict)
                                       ef_params... )
 
   #Writing results to s3
-  edge_output_fname = "chunk_$(chx)_$(chy)_$(chz)_ch_edges.csv"
+  edge_output_fname = "chunk_$(chx)_$(chy)_$(chz)_ch_edges.fth"
   s3_edge_output_fname = joinpath(base_s3_path,ch_edge_subdir,edge_output_fname)
   S.InputOutput.write_edge_file(edges, locs, sizes, edge_output_fname)
   run( `aws s3 cp $edge_output_fname $s3_edge_output_fname` )
@@ -203,7 +204,7 @@ function consolidateids(taskdict)
 
 
   #Writing results to s3
-  edge_output_fname = "consolidated_edges_wo_conts.csv"
+  edge_output_fname = "consolidated_edges_wo_conts.fth"
   s3_edge_output_fname = joinpath(base_s3_path,edge_output_fname)
   S.InputOutput.write_edge_file(edges, locs, sizes, edge_output_fname)
   run( `aws s3 cp $edge_output_fname $s3_edge_output_fname` )
@@ -235,7 +236,7 @@ function load_all_edges(sx,sy,sz)
 
   for z in 1:sz, y in 1:sy, x in 1:sx
 
-    e,l,s = S.InputOutput.read_edge_file("chunk_$(x)_$(y)_$(z)_ch_edges.csv",3)
+    e,l,s = S.InputOutput.read_edge_file("chunk_$(x)_$(y)_$(z)_ch_edges.fth")
 
     edge_arr[x,y,z] = e
     locs_arr[x,y,z] = l
@@ -255,7 +256,7 @@ function save_all_idmaps(id_maps, subdir_name)
   for z in 1:sz, y in 1:sy, x in 1:sx
     map = id_maps[x,y,z]
 
-    output_fname = joinpath(subdir_name,"chunk_$(x)_$(y)_$(z)_idmap.csv")
+    output_fname = joinpath(subdir_name,"chunk_$(x)_$(y)_$(z)_idmap.fth")
     S.InputOutput.write_idmap(map,output_fname)
   end
 
@@ -297,7 +298,7 @@ function conscontinuations(taskdict)
                                   offset, boundtype)
 
   #Writing results to s3
-  edge_output_fname = "continuation_edges.csv"
+  edge_output_fname = "continuation_edges.fth"
   s3_edge_output_fname = joinpath(base_s3_path,edge_output_fname)
   S.InputOutput.write_edge_file(edges, locs, sizes, edge_output_fname)
   run( `aws s3 cp $edge_output_fname $s3_edge_output_fname` )
@@ -328,7 +329,7 @@ function load_all_nh_semmaps(sx,sy,sz)
 
   for z in 1:sz, y in 1:sy, x in 1:sx
 
-    a,w = S.InputOutput.read_semmap("chunk_$(x)_$(y)_$(z)_nhsemmap.csv",2)
+    a,w = S.InputOutput.read_semmap("chunk_$(x)_$(y)_$(z)_nhsemmap.fth")
 
     semmap_arr[x,y,z] = a
   end
@@ -350,16 +351,16 @@ function consolidatedups(taskdict, dist_thr=1000, res=[3.85,3.85,40])
   base_s3_path  = taskdict["base_outpath"]
 
   #Downloading data
-  whole_edge_fname = "consolidated_edges_wo_conts.csv"
+  whole_edge_fname = "consolidated_edges_wo_conts.fth"
   s3_edges_wo_continuations = joinpath(base_s3_path,whole_edge_fname)
   run( `aws s3 cp $s3_edges_wo_continuations .` )
 
-  cont_edge_fname = "continuation_edges.csv"
+  cont_edge_fname = "continuation_edges.fth"
   s3_continuation_edge_fname = joinpath(base_s3_path,cont_edge_fname)
   run( `aws s3 cp $s3_continuation_edge_fname .`)
 
-  edges, locs, sizes = S.InputOutput.read_edge_file(whole_edge_fname, 3)
-  ec, lc, sc = S.InputOutput.read_edge_file(cont_edge_fname, 3)
+  edges, locs, sizes = S.InputOutput.read_edge_file(whole_edge_fname)
+  ec, lc, sc = S.InputOutput.read_edge_file(cont_edge_fname)
 
   merge!(edges, ec)
   merge!(locs, lc)
@@ -369,12 +370,12 @@ function consolidatedups(taskdict, dist_thr=1000, res=[3.85,3.85,40])
                                                            dist_thr, res)
 
   #Writing results to s3
-  final_edge_fname = "final_edges.csv"
+  final_edge_fname = "final_edges.fth"
   S.InputOutput.write_edge_file(new_es, new_ls, new_ss, final_edge_fname)
   s3_final_edge_fname = joinpath(base_s3_path, final_edge_fname)
   run( `aws s3 cp $final_edge_fname $s3_final_edge_fname` )
 
-  dedup_idmap_fname = "dedup_idmap.csv"
+  dedup_idmap_fname = "dedup_idmap.fth"
   S.InputOutput.write_idmap(idmap, dedup_idmap_fname)
   s3_dedup_idmap_fname = joinpath(base_s3_path, dedup_idmap_fname)
   run( `aws s3 cp $dedup_idmap_fname $s3_dedup_idmap_fname` )
@@ -397,20 +398,20 @@ function relabel_seg(taskdict)
 
   #Downloading data
   whole_seg_idmap_path = joinpath(base_s3_path,id_map_subdir,
-                                  "chunk_$(chx)_$(chy)_$(chz)_idmap.csv")
-  run( `aws s3 cp $whole_seg_idmap_path whole_seg_idmap.csv` )
+                                  "chunk_$(chx)_$(chy)_$(chz)_idmap.fth")
+  run( `aws s3 cp $whole_seg_idmap_path whole_seg_idmap.fth` )
 
   cont_idmap_path = joinpath(base_s3_path,cont_idmap_subdir,
-                            "chunk_$(chx)_$(chy)_$(chz)_idmap.csv")
-  run( `aws s3 cp $cont_idmap_path continuation_idmap.csv` )
+                            "chunk_$(chx)_$(chy)_$(chz)_idmap.fth")
+  run( `aws s3 cp $cont_idmap_path continuation_idmap.fth` )
 
-  dedup_idmap_fname = "dedup_idmap.csv"
+  dedup_idmap_fname = "dedup_idmap.fth"
   s3_dedup_idmap_fname = joinpath(base_s3_path, dedup_idmap_fname)
   run( `aws s3 cp $s3_dedup_idmap_fname $dedup_idmap_fname`)
 
 
-  whole_idmap = S.InputOutput.read_idmap("whole_seg_idmap.csv")
-  cont_idmap = S.InputOutput.read_idmap("continuation_idmap.csv")
+  whole_idmap = S.InputOutput.read_idmap("whole_seg_idmap.fth")
+  cont_idmap = S.InputOutput.read_idmap("continuation_idmap.fth")
   dedup_idmap = S.InputOutput.read_idmap(dedup_idmap_fname)
 
   psdseg_BA = BigArray( S3Dict(psdseg_path) );
@@ -425,6 +426,31 @@ function relabel_seg(taskdict)
 
   #Writing results to s3
   psdseg_BA[chunk_bbox] = psdseg_chunk
+end
+
+#==========================
+JOB8: Semantic Map Conversion
+==========================#
+
+
+function convert_semmap(taskdict)
+
+  #Extracting task args
+  chx, chy, chz = taskdict["chunk_i"]
+  base_s3_path  = taskdict["base_outpath"]
+
+  #Downloading data
+  s3_semmap_dir = joinpath(base_s3_path,semmap_subdir)
+  target_semmap_fname = "chunk_$(chx)_$(chy)_$(chz)_semmap.csv"
+  run( `aws s3 cp $s3_semmap_dir/$target_semmap_fname $target_semmap_fname` )
+
+  a, w = S.InputOutput.BasicIO.read_semmap( target_semmap_fname, 2 )
+
+
+  #Writing results to s3
+  output_semmap_fname = "chunk_$(chx)_$(chy)_$(chz)_semmap.fth"
+  S.InputOutput.FeatherIO.write_semmap(a,w,output_semmap_fname)
+  run( `aws s3 cp $output_semmap_fname $s3_semmap_dir/$output_semmap_fname` )
 end
 
 
