@@ -15,7 +15,7 @@ cont_idmap_subdir = "cont_idmaps"
 
 export semantic_map, expand_semmaps, find_edges
 export consolidateids, conscontinuations, consolidatedups
-export relabel_seg
+export relabel_seg, convert_semmap
 
 
 #==========================
