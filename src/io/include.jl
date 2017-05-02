@@ -10,7 +10,7 @@ export write_continuation, write_continuations
 #SegIO
 export write_in_chunks, create_seg_dset
 
-#include("basic.jl"); using .BasicIO
+include("basic.jl"); #using .BasicIO
 include("continuations.jl"); using .ContinuationIO
 include("segio.jl"); using .SegIO
 include("feather.jl"); using .FeatherIO
