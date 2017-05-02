@@ -125,7 +125,12 @@ end
   Reads a semicolon-delimited csv file as a pair of Dicts representing
   the result of a semantic mapping
 """
-read_semmap(input_fname, num_outputs) = safe_read_map_file(input_fname, num_outputs)
+function read_semmap(input_fname, num_outputs) 
+  res = safe_read_map_file(input_fname, num_outputs)
+
+  if length(res[1]) == 0  return Dict{Int,Int}(), Dict{Int,Vector{Float32}}()  end
+
+end
 
 
 """

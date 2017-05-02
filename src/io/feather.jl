@@ -15,7 +15,7 @@ function read_idmap(input_fname)
   try
     df = Feather.read(input_fname)
   catch
-    return Dict()
+    return Dict{Int,Int}()
   end
 
   colnames = names(DataFrames.index(df))
@@ -46,7 +46,7 @@ function read_edge_file(input_fname)
   try
     df = Feather.read(input_fname)
   catch
-    return Dict(), Dict(), Dict()
+    return Dict{Int,Int}(), Dict{Int,Vector{Int}}(), Dict{Int,Int}()
   end
 
   colnames = names(DataFrames.index(df))
@@ -107,7 +107,7 @@ function read_semmap(input_fname)
   try
     df = Feather.read(input_fname)
   catch
-    return Dict(), Dict()
+    return Dict{Int,Int}(), Dict{Int,Vector{Float32}}()
   end
 
   assignments = read_df_columns(df, "assignments")
@@ -122,7 +122,7 @@ function make_df_columns(keys, vals, basename)
 
   @assert length(keys) <= length(vals)
 
-  if length(keys) == 0  return (Any[[]],[Symbol(basename)])  end
+  if length(keys) == 0  return (Any[Int[]],[Symbol(basename)])  end
 
   first_val = first(values(vals))
 
