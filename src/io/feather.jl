@@ -150,7 +150,7 @@ function read_df_columns(df, basename)
 
 
   if Symbol(basename) in colnames
-    return Dict( k => v for (k,v) in zip(df[:ids],df[Symbol(basename)]) )
+    return Dict( k => v for (k,v) in zip(Array(df[:ids]),df[Symbol(basename)]) )
   end
 
 
