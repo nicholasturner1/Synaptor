@@ -40,8 +40,8 @@ end
 
 function centers_of_mass{T}( d::AbstractArray{T} )
 
-  coms = Dict{T,Vector}()
-  sizes = Dict{T,Int}()
+  coms = Dict{Int,Vector}()
+  sizes = Dict{Int,Int}()
 
   sx,sy,sz = size(d)
   zT = zero(T)
@@ -50,7 +50,7 @@ function centers_of_mass{T}( d::AbstractArray{T} )
     if d[i,j,k] == zT continue end
     segid = d[i,j,k]
 
-    coms[segid]  = get( coms, segid, [0,0,0]) + [i,j,k]
+    coms[segid]  = get( coms, segid, Int[0,0,0]) + [i,j,k]
     sizes[segid] = get( sizes, segid, 0) + 1
   end
 
@@ -79,7 +79,7 @@ end
 
 function segment_sizes{T}( d::AbstractArray{T} )
 
-  sizes = Dict{T,Int}()
+  sizes = Dict{Int,Int}()
   zT = zero(T)
 
   for i in eachindex(d)

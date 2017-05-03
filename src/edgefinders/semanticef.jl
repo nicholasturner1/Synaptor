@@ -53,7 +53,7 @@ overlaps a single segment)
 function findedges_w_sem( psd_segs, seg, semmap, axon_label, dend_label )
 
   #if no semantic mapping, return default value for everything
-  if length(keys(semmap)) == 0 return Dict(), [], spzeros(0,0) end
+  if length(keys(semmap)) == 0 return Dict{Int,Tuple{Int,Int}}(), [], spzeros(0,0) end
 
 
   overlap = SegUtils.count_overlapping_labels( psd_segs, seg )
@@ -68,7 +68,7 @@ function findedges_w_sem( psd_segs, seg, semmap, axon_label, dend_label )
 
   #if nothing overlaps, all segments are invalid
   if length(nonzeros(axon_overlaps)) == 0 || length(nonzeros(dend_overlaps)) == 0
-    return Dict(), seg_ids, overlap
+    return Dict{Int,Tuple{Int,Int}}(), seg_ids, overlap
   end
 
 
@@ -78,7 +78,7 @@ function findedges_w_sem( psd_segs, seg, semmap, axon_label, dend_label )
   #only count edges if they overlap with SOME axon or dendrite
   valid_edges, invalid_edges = _filter_edges( axon_max, dend_max )
 
-  edges = Dict( sid => (axon_ids[sid],dend_ids[sid]) for sid in valid_edges )
+  edges = Dict{Int,Tuple{Int,Int}}( sid => (axon_ids[sid],dend_ids[sid]) for sid in valid_edges )
 
   edges, invalid_edges, overlap
 end
