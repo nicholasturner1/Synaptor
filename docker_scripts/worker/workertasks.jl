@@ -148,7 +148,7 @@ function find_edges(taskdict)
 
   #Downloading data
   nh_semmap_fname = joinpath(base_s3_path,semmap_subdir,
-                             "chunk_$(chx)_$(chy)_$(chz)_nhsemmap.fth")
+                             "chunk_$(chx)_$(chy)_$(chz)_semmap.fth")
   #nh_semmap_fname = joinpath(base_s3_path,nh_semmap_subdir,
                              #"chunk_$(chx)_$(chy)_$(chz)_nhsemmap.fth")
   run( `aws s3 cp $nh_semmap_fname semmap.fth` )
@@ -174,7 +174,7 @@ function find_edges(taskdict)
   #Writing results to s3
   edge_output_fname = "chunk_$(chx)_$(chy)_$(chz)_ch_edges.fth"
   s3_edge_output_fname = joinpath(base_s3_path,ch_edge_subdir,edge_output_fname)
-  S.InputOutput.write_edge_file(edges, locs, sizes, edge_output_fname)
+  S.InputOutput.write_edge_file(edges, locs, sizes, bboxes, edge_output_fname)
   run( `aws s3 cp $edge_output_fname $s3_edge_output_fname` )
 
   psdseg_BA[chunk_bbox] = round(eltype(psdseg_BA),ccs)
@@ -301,7 +301,7 @@ function conscontinuations(taskdict)
   #Downloading data
   s3_ch_cont_dir = joinpath(base_s3_path,ch_cont_subdir)
   run( `aws s3 cp --recursive $s3_ch_cont_dir .` )
-  s3_semmap_dir = joinpath(base_s3_path,nh_semmap_subdir)
+  s3_semmap_dir = joinpath(base_s3_path,semmap_subdir)
   run( `aws s3 cp --recursive $s3_semmap_dir .` )
   next_id_fname = joinpath(base_s3_path,"next_id")
   run( `aws s3 cp $next_id_fname .` )
