@@ -32,6 +32,7 @@ function write_continuation( output_fname, continuation, key=-1 )
   h5write(output_fname, "$(keystr)voxels", continuation.voxels)
   h5write(output_fname, "$(keystr)num_voxels", continuation.num_voxels)
   h5write(output_fname, "$(keystr)loc", continuation.location)
+  h5write(output_fname, "$(keystr)bbox", collect(continuation.bbox))
 
   #Less easy stuff
   write_overlaps(output_fname, keystr, continuation.overlaps)
@@ -102,10 +103,13 @@ function read_continuation(input_fname, key=-1)
   num_voxels = h5read(input_fname, "$(keystr)num_voxels")
   loc        = h5read(input_fname, "$(keystr)loc")
 
+  bbox_inds  = h5read(input_fname, "$(keystr)bbox")
+  bbox = Continuations.BBox(bbox_inds...)
+
   overlaps = read_overlaps(input_fname, keystr)
   face     = read_face(input_fname, keystr)
 
-  Continuation(segid, voxels, overlaps, face, num_voxels, loc)
+  Continuation(segid, voxels, overlaps, face, num_voxels, loc, bbox)
 end
 
 

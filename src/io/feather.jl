@@ -55,15 +55,16 @@ function read_edge_file(input_fname)
   segs = read_df_columns(df, "segs")
   locs = read_df_columns(df, "locs")
   sizes = read_df_columns(df, "sizes")
+  bboxes = read_df_columns(df, "bboxes")
 
   #just to be sure that the other code is compatible...
   segs = Dict( k => (v...) for (k,v) in segs )
 
-  segs, locs, sizes
+  segs, locs, sizes, bboxes
 end
 
 
-function write_edge_file(segs, locs, sizes, output_fname)
+function write_edge_file(segs, locs, sizes, bboxes, output_fname)
 
   ids = collect(keys(segs))
 
@@ -78,6 +79,8 @@ function write_edge_file(segs, locs, sizes, output_fname)
   sz_cols, sz_names = make_df_columns(ids, sizes, "sizes")
   append!(cols, sz_cols); append!(colnames, sz_names)
 
+  bb_cols, bb_names = make_df_columns(ids, bboxes, "bboxes")
+  append!(cols, bb_cols); append!(colnames, bb_names)
 
   #DataFrame(cols, colnames)
   Feather.write(output_fname, DataFrame(cols, colnames))
