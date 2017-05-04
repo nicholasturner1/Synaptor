@@ -7,15 +7,18 @@ module Continuations
 # Face classes help to specify that information.
 
 
+using ...Chunking.BBoxes
+
 #Classes
 export Continuation, AXIS, Face
 #Faces
 export get_axis, get_hi, opposite 
 #Continuations
-export get_segid, get_voxels, get_overlaps, get_loc, get_face, get_num_voxels
-export set_size!, set_loc!, push_overlap!
+export get_segid, get_voxels, get_overlaps
+export get_loc, get_face, get_num_voxels, get_bbox
+export set_size!, set_loc!, push_overlap!, set_bbox!
 
-export find_new_continuations, fill_overlaps!, fill_locs!, fill_sizes!
+export find_new_continuations, fill_overlaps!, fill_locs!, fill_sizes!, fill_bboxes!
 
 
 #================
@@ -54,11 +57,16 @@ type Continuation
   face::Face
   num_voxels::Int
   location::Vector{Int}
+  bbox::BBox
 
-  Continuation() = new(0,zeros(Int,(0,3)),Dict{Int,Int}(),Face(X,false),0,[0,0,0])
-  Continuation(s::Int,v::Array,f::Face) = new(s,v,Dict{Int,Int}(),f,0,[0,0,0])
-  Continuation(s,v,o,f,n,l) = new(s,v,o,f,n,l)
-  Continuation(o::Dict,n::Int,l::Vector) = new(0,zeros(Int,(0,3)),o,Face(X,false),n,l)
+  Continuation() = new(0,zeros(Int,(0,3)),Dict{Int,Int}(),
+                       Face(X,false),0,[0,0,0], BBox(0,0,0,0,0,0))
+  Continuation(s::Int,v::Array,f::Face) = new(s,v,Dict{Int,Int}(),f,0,[0,0,0],
+                                              BBox(0,0,0,0,0,0))
+  Continuation(s,v,o,f,n,l) = new(s,v,o,f,n,l, BBox(0,0,0,0,0,0))
+  Continuation(o::Dict,n::Int,l::Vector) = new(0,zeros(Int,(0,3)),o,Face(X,false),n,l,
+                                               BBox(0,0,0,0,0,0))
+  Continuation(o::Dict,n::Int,l::Vector,b::BBox) = new(0,zeros(Int,(0,3)),o,Face(X,false),n,l,b)
 end
 
 
@@ -73,6 +81,7 @@ get_overlaps(c::Continuation) = c.overlaps
 get_loc(c::Continuation) = c.location
 get_face(c::Continuation) = c.face
 get_num_voxels(c::Continuation) = c.num_voxels
+get_bbox(c::Continuation) = c.bbox
 
 function Base.show(io::IO, c::Continuation)
   print(io, "Continuation{segid:$(c.segid), loc:$(c.location), #vox:$(c.num_voxels)}")
@@ -82,16 +91,18 @@ end
 set_size!(c::Continuation, s::Int) = c.num_voxels = s
 set_loc!(c::Continuation, l) = c.location = l
 set_overlaps!(c::Continuation, o::Dict) = c.overlaps = o
+set_bbox!(c::Continuation, b) = c.bbox = b
 push_overlap!(c::Continuation, k, v) = push!(c.overlaps, k => v)
 push_overlap!(c::Continuation, p::Pair) = push!(c.overlaps, p)
 
 """ Merging two continuations together """
-function Base.:+(c1::Continuation, c2::Continuation)
+function Base.:(+)(c1::Continuation, c2::Continuation)
   new_overlaps = sum_dicts(c1.overlaps, c2.overlaps)
   new_num_voxels = c1.num_voxels + c2.num_voxels
   new_loc = avg_locations(c1.location, c2.location, c1.num_voxels, c2.num_voxels)
+  new_bbox = c1.bbox + c2.bbox
 
-  Continuation(new_overlaps, new_num_voxels, new_loc)
+  Continuation(new_overlaps, new_num_voxels, new_loc, new_bbox)
 end
 
 
@@ -251,6 +262,10 @@ end
 
 function fill_sizes!(c_list::Vector{Continuation}, sizes::Dict)
   for c in c_list  set_size!(c, sizes[get_segid(c)])  end
+end
+
+function fill_bboxes!(c_list::Vector{Continuation}, bboxes::Dict)
+  for c in c_list  set_bbox!(c, bboxes[get_segid(c)]) end
 end
 
 end #module Basic

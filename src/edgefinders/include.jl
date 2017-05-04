@@ -4,7 +4,7 @@ module EdgeFinders
 #Basic - Interface & Defaults
 export findedges, filteredges
 export assign_aux_params!, assign_aux_vols!
-export make_ccs!, get_ccs, compute_cc_stats
+export make_ccs!, get_ccs, compute_cc_stats, cc_bboxes
 export filter_by_size!, filter_by_id!, dilate_ccs!
 export findcontinuations
 #SemanticEF

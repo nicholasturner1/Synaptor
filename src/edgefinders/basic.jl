@@ -11,11 +11,12 @@ module Basic
 using ...Types
 using ...SegUtils
 using ...Consolidation
+using ...Chunking
 
 
 export findedges, filteredges
 export assign_aux_params!, assign_aux_vols!
-export make_ccs!, get_ccs, compute_cc_stats
+export make_ccs!, get_ccs, compute_cc_stats, cc_bboxes
 export filter_by_size!, filter_by_id!, dilate_ccs!
 export findcontinuations
 
@@ -287,6 +288,20 @@ function find_focal_points(ef::EdgeFinder, seg, edges)
   dil_ccs = ef.args[:dil_ccs]
 
   SegUtils.find_focal_points(dil_ccs, seg, edges)
+end
+
+
+"""
+Returns the bounding boxes for each segment within a volume
+as a vector [xmin,ymin,zmin, xmax,ymax,zmax]
+"""
+function cc_bboxes(ef::EdgeFinder)
+
+  assert_specified(ef, :ccs)
+
+  ccs = ef.args[:ccs]
+
+  Chunking.seg_bboxes(ccs)
 end
 
 

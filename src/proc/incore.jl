@@ -35,10 +35,13 @@ function process_chunk( chunk, seg, ef::EdgeFinder ; params...)
   #Formatting & Cleaning results
   to_keep_seg = Set(keys(edges))
   EdgeFinders.filter_by_id!(ef, to_keep_seg)
-  Utils.filter_by_id!(to_keep_seg, locs, sizes)
+  bboxes = EdgeFinders.cc_bboxes(ef)
+  bboxes = Dict( k => collect(v) for (k,v) in bboxes )
+  Utils.filter_by_id!(to_keep_seg, locs, sizes, bboxes)
 
 
-  edges, locs, sizes, get_ccs(ef)
+
+  edges, locs, sizes, bboxes, get_ccs(ef)
 end
 
 
@@ -78,8 +81,14 @@ function process_chunk_w_continuations( chunk, seg, ef::EdgeFinder; offset=[0,0,
   EdgeFinders.filter_by_id!(ef, union(complete_es, c_segids))
   Utils.filter_by_id!(complete_es, edges, locs, sizes)
 
+  #Bounding Box Code
+  bboxes = EdgeFinders.cc_bboxes(ef)
+  for (k,v) in bboxes  bboxes[k] = bboxes[k] + offset  end
+  Consolidation.fill_bboxes!(continuations, bboxes)
+  bboxes = Dict( k => collect(v) for (k,v) in bboxes )
+  Utils.filter_by_id!(complete_es, bboxes)
 
-  edges, locs, sizes, get_ccs(ef), continuations
+  edges, locs, sizes, bboxes, get_ccs(ef), continuations
 end
 
 
