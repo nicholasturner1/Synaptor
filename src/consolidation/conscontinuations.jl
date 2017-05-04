@@ -5,7 +5,7 @@ using ..Continuations
 using LightGraphs
 
 
-export consolidate_continuations
+export consolidate_continuations, find_continuation_edges
 
 #TODO Separate consolidation from edge extraction
 # Currently, we're assuming use of the Semantic scheme here
@@ -22,19 +22,19 @@ function consolidate_continuations(c_arr::Array{Vector{Continuation},3},
                                    size_thr::Int, next_index::Int,
                                    vol_shape, chunk_shape, offset, boundtype)
 
-  merged_cs, c_locs = merge_continuations(c_arr)
+  @time merged_cs, c_locs = merge_continuations(c_arr)
 
-  chunk_bounds = derive_chunk_bounds(vol_shape, chunk_shape, offset, boundtype)
+  @time chunk_bounds = derive_chunk_bounds(vol_shape, chunk_shape, offset, boundtype)
 
-  (filtered_cs, filtered_semmaps,
+  @time (filtered_cs, filtered_semmaps,
   comp_id_maps) = filter_continuations(merged_cs, semmaps, size_thr,
                                                    next_index, chunk_bounds)
 
-  id_maps = expand_id_maps(comp_id_maps, c_locs, size(c_arr))
+  @time id_maps = expand_id_maps(comp_id_maps, c_locs, size(c_arr))
 
-  edges, locs, sizes = extract_info(filtered_cs, filtered_semmaps)
+  @time edges, locs, sizes, bboxes = extract_info(filtered_cs, filtered_semmaps)
 
-  edges, locs, sizes, id_maps
+  edges, locs, sizes, bboxes, id_maps
 end
 
 
@@ -59,6 +59,7 @@ function extract_info(continuations, semmaps)
   edges = Dict{Int,Tuple{Int,Int}}()
   locs = Dict{Int,Vector{Int}}()
   sizes = Dict{Int,Int}()
+  bboxes = Dict{Int,Vector{Int}}()
 
   for (c,s) in zip(continuations,semmaps)
 
@@ -66,10 +67,11 @@ function extract_info(continuations, semmaps)
     edges[segid] = find_max_overlaps(get_overlaps(c), s)
     locs[segid] = get_loc(c)
     sizes[segid] = get_num_voxels(c)
+    bboxes[segid] = get_bbox(c)
 
   end
 
-  edges, locs, sizes
+  edges, locs, sizes, bboxes
 end
 
 
@@ -117,13 +119,13 @@ end
 
 function merge_continuations(c_arr)
 
-  seg_and_loc_to_i, i_to_seg_and_loc = make_new_continuation_ids(c_arr)
+  @time seg_and_loc_to_i, i_to_seg_and_loc = make_new_continuation_ids(c_arr)
 
-  G = Graph(maximum(values(seg_and_loc_to_i)))
-  add_edges!(G, c_arr, seg_and_loc_to_i)
-  ccs = connected_components(G)
+  @time G = Graph(maximum(values(seg_and_loc_to_i)))
+  @time add_edges!(G, c_arr, seg_and_loc_to_i)
+  @time ccs = connected_components(G)
 
-  merge_components(ccs, c_arr, i_to_seg_and_loc)
+  @time merge_components(ccs, c_arr, i_to_seg_and_loc)
 end
 
 
@@ -258,8 +260,9 @@ function add_edges!(G::LightGraphs.Graph, c_arr::Array{Vector{Continuation},3}, 
 
   for z in 1:sz, y in 1:sy, x in 1:sx
 
+    println((x,y,z))
     #fmt of edges: (source, (dest,[dest_x,dest_y,dest_z]))
-    edges = find_continuation_edges(c_arr, x,y,z)
+    @time edges = find_continuation_edges(c_arr, x,y,z)
 
     for edge in edges
       source = edge[1];          source_id = c_map[ (source,[x,y,z]) ]
@@ -330,7 +333,9 @@ function row_match_exists(v1::Array{Int,2}, v2::Array{Int,2})
 
   for x1 in 1:sx1, x2 in 1:sx2
 
-    if v1[x1,:] == v2[x2,:]  return true  end
+    if (v1[x1,1] == v2[x2,1] &&
+       v1[x1,2] == v2[x2,2] &&
+       v1[x1,3] == v2[x2,3]) return true  end
   end
 
   false

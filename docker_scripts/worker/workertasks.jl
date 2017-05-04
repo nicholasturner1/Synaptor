@@ -6,12 +6,14 @@ using S3Dicts, BigArrays
 
 
 #S3 organization
-semmap_subdir     = "semmaps"
-nh_semmap_subdir  = "nh_semmaps"
-ch_edge_subdir    = "ch_edges"
-ch_cont_subdir    = "ch_continuations"
-id_map_subdir     = "idmaps"
-cont_idmap_subdir = "cont_idmaps"
+semmap_subdir      = "semmaps"
+nh_semmap_subdir   = "nh_semmaps"
+ch_edge_subdir     = "ch_edges"
+ch_cont_subdir     = "ch_continuations"
+ch_contedge_subdir = "ch_cont_edges"
+cont_merge_subdir  = "cont_mergers"
+id_map_subdir      = "idmaps"
+cont_idmap_subdir  = "cont_idmaps"
 
 
 ef_params = Dict(
@@ -198,16 +200,20 @@ function consolidateids(taskdict)
 
   #Downloading data
   s3_semmap_dir = joinpath(base_s3_path,ch_edge_subdir)
-  run( `aws s3 cp --recursive $s3_semmap_dir .` )
-  @time edge_arr, locs_arr, sizes_arr, bboxes_arr = load_all_edges(sx,sy,sz)
+  run( `aws s3 cp --recursive $s3_semmap_dir . --exclude "*.h5"` )
+  @time edge_arr, locs_arr, sizes_arr = load_all_edges(sx,sy,sz)
 
 
   @time id_maps = S.consolidate_ids( map( x -> Set(keys(x)), edge_arr) )
   edges = S.apply_id_maps(edge_arr, id_maps)
   locs  = S.apply_id_maps(locs_arr, id_maps)
   sizes = S.apply_id_maps(sizes_arr, id_maps)
-  bboxes = S.apply_id_maps(bboxes_arr, id_maps)
 
+
+  edges  = Dict{Int,Int}(k=>v for (k,v) in edges)
+  locs   = Dict{Int,Vector{Int}}(k=>v for (k,v) in locs)
+  sizes  = Dict{Int,Int}(k=>v for (k,v) in sizes)
+  bboxes = Dict{Int,Vector{Int}}();
 
   #Writing results to s3
   edge_output_fname = "consolidated_edges_wo_conts.fth"
@@ -219,7 +225,13 @@ function consolidateids(taskdict)
   s3_output_fname = joinpath(base_s3_path,id_map_subdir)
   run( `aws s3 cp --recursive $id_map_subdir $s3_output_fname` )
 
-  next_id = maximum(keys(edges)) + 1
+  local next_id
+  try
+    next_id = maximum(keys(edges)) + 1
+  catch
+    next_id = 1
+  end
+
   next_id_s3_fname = joinpath(base_s3_path,"next_id")
   write_next_id(next_id)
   run( `aws s3 cp next_id $next_id_s3_fname` )
@@ -239,16 +251,16 @@ function load_all_edges(sx,sy,sz)
   edge_arr  = Array{Dict}(sx,sy,sz)
   locs_arr  = Array{Dict}(sx,sy,sz)
   sizes_arr = Array{Dict}(sx,sy,sz)
-  bboxes_arr = Array{Dict}(sx,sy,sz)
 
   for z in 1:sz, y in 1:sy, x in 1:sx
 
-    e,l,s,b = S.InputOutput.read_edge_file("chunk_$(x)_$(y)_$(z)_ch_edges.fth")
+    println((x,y,z))
+    ch_edge_fname = "chunk_$(x)_$(y)_$(z)_ch_edges.fth"
+    @time ed,l,s = S.InputOutput.read_edge_file(ch_edge_fname)
 
-    edge_arr[x,y,z] = e
+    edge_arr[x,y,z] = ed
     locs_arr[x,y,z] = l
     sizes_arr[x,y,z] = s
-    bboxes_arr[x,y,z] = b
   end
 
   edge_arr, locs_arr, sizes_arr
@@ -287,8 +299,8 @@ function conscontinuations(taskdict)
 
 
   #Downloading data
-  s3_ch_edge_dir = joinpath(base_s3_path,ch_edge_subdir)
-  run( `aws s3 cp --recursive $s3_ch_edge_dir .` )
+  s3_ch_cont_dir = joinpath(base_s3_path,ch_cont_subdir)
+  run( `aws s3 cp --recursive $s3_ch_cont_dir .` )
   s3_semmap_dir = joinpath(base_s3_path,nh_semmap_subdir)
   run( `aws s3 cp --recursive $s3_semmap_dir .` )
   next_id_fname = joinpath(base_s3_path,"next_id")
@@ -300,8 +312,7 @@ function conscontinuations(taskdict)
   size_thr = ef_params[:SZthresh]
 
 
-  (edges, locs, sizes, bboxes, idmaps #NOT READY YET
-  #(edges, locs, sizes, idmaps
+  (edges, locs, sizes, bboxes, idmaps
   ) = S.consolidate_continuations(cont_arr, semmap_arr, size_thr,
                                   next_id, total_vol, chunk_shape,
                                   offset, boundtype)
@@ -310,7 +321,6 @@ function conscontinuations(taskdict)
   edge_output_fname = "continuation_edges.fth"
   s3_edge_output_fname = joinpath(base_s3_path,edge_output_fname)
   S.InputOutput.write_edge_file(edges, locs, sizes, bboxes, edge_output_fname)
-  #S.InputOutput.write_edge_file(edges, locs, sizes, edge_output_fname)
   run( `aws s3 cp $edge_output_fname $s3_edge_output_fname` )
 
   save_all_idmaps(idmaps, cont_idmap_subdir)
@@ -325,7 +335,8 @@ function load_all_continuations(sx,sy,sz)
 
   for z in 1:sz, y in 1:sy, x in 1:sx
 
-    cs = S.InputOutput.read_continuations("chunk_$(x)_$(y)_$(z)_ch_conts.h5")
+    println((x,y,z))
+    @time cs = S.InputOutput.read_continuations("chunk_$(x)_$(y)_$(z)_ch_conts.h5")
 
     cont_arr[x,y,z] = cs
   end
@@ -339,7 +350,7 @@ function load_all_nh_semmaps(sx,sy,sz)
 
   for z in 1:sz, y in 1:sy, x in 1:sx
 
-    a,w = S.InputOutput.read_semmap("chunk_$(x)_$(y)_$(z)_nhsemmap.fth")
+    a,w = S.InputOutput.read_semmap("chunk_$(x)_$(y)_$(z)_semmap.fth")
 
     semmap_arr[x,y,z] = a
   end
@@ -517,6 +528,142 @@ function full_find_edges(taskdict)
   run( `aws s3 cp $cont_output_fname $s3_cont_output_fname` )
 
 end
+
+#==========================
+JOB10: Find continuation edges
+==========================#
+
+
+function find_cont_edges(taskdict)
+
+  #Extracting task args
+  chx, chy, chz = taskdict["chunk_i"]
+  base_s3_path  = taskdict["base_outpath"]
+  sx,sy,sz    = taskdict["max_chunk_i"]
+
+
+  #Downloading data
+  rel_indices = relevant_indices(chx,chy,chz,sx,sy,sz)
+  s3_dir = joinpath(base_s3_path,ch_cont_subdir)
+  @time download_relevant_continuation_files(rel_indices, s3_dir)
+  @time c_arr = load_relevant_continuation_files(rel_indices)
+
+  @time cont_edges = S.Consolidation.find_continuation_edges(c_arr,2,2,2)
+  edge_segids = Dict{Int,Tuple{Int,Int}}( i => (edge[1],edge[2][1])
+                                          for (i,edge) in enumerate(cont_edges) )
+  edge_chlocs = Dict{Int,Vector{Int}}( i => edge[2][2]
+                                          for (i,edge) in enumerate(cont_edges) )
+
+  chunk_cont_segids = collect(Set([ c.segid for c in c_arr[2,2,2] ]))
+  #making sure the result is typed
+  if length(chunk_cont_segids) == 0  chunk_cont_segids = Int[]  end
+
+  #Writing results to s3
+  edge_output_fname = "chunk_$(chx)_$(chy)_$(chz)_cont_edges.fth"
+  s3_edge_output_fname = joinpath(base_s3_path,ch_contedge_subdir,edge_output_fname)
+  @time S.InputOutput.write_edge_file(edge_segids, edge_chlocs, edge_output_fname) #notimp
+  run( `aws s3 cp $edge_output_fname $s3_edge_output_fname` )
+
+  segid_output_fname = "chunk_$(chx)_$(chy)_$(chz)_cont_segids.fth"
+  s3_segid_output_fname = joinpath(base_s3_path,ch_contedge_subdir,segid_output_fname)
+  @time S.InputOutput.write_column(chunk_cont_segids, segid_output_fname)
+  run( `aws s3 cp $segid_output_fname $s3_segid_output_fname`)
+
+end
+
+function relevant_indices(chx,chy,chz,sx,sy,sz)
+
+  rel_indices = Array{Tuple{Int,Int,Int},3}(3,3,3)
+  rel_indices[:] = (-1,-1,-1)
+
+  for z in 1:3, y in 1:3, x in 1:3
+
+    new_i = (chx + x-2, chy + y-2, chz + z-2)
+    if outofbounds(new_i,sx,sy,sz)  continue  end
+    rel_indices[x,y,z] = new_i
+  end
+
+  rel_indices
+end
+
+@inline function outofbounds(new_i,sx,sy,sz)
+  new_i[1] > sx || new_i[1] < 1 ||
+  new_i[2] > sy || new_i[2] < 1 ||
+  new_i[3] > sz || new_i[3] < 1
+end
+
+function download_relevant_continuation_files(rel_indices, s3_dir_path)
+
+  chx, chy, chz = rel_indices[2,2,2]
+
+  for i in rel_indices
+    if i == (-1,-1,-1)  continue  end
+
+    x,y,z = i
+    continuations_fname = "chunk_$(x)_$(y)_$(z)_ch_conts.h5"
+
+    if !isfile(continuations_fname)
+      s3_fname = joinpath(s3_dir_path, continuations_fname)
+      run( `aws s3 cp $s3_fname $continuations_fname` )
+    end
+  end
+
+end
+
+function load_relevant_continuation_files(rel_indices)
+
+  sx,sy,sz = size(rel_indices)
+  c_arr = Array{Vector{Continuation}}((sx,sy,sz))
+
+  for z in 1:sz, y in 1:sy, x in 1:sx
+
+    if rel_indices[x,y,z] == (-1,-1,-1)  c_arr[x,y,z] = Continuation[]  end
+
+    println((x,y,z))
+    lx,ly,lz = rel_indices[x,y,z]
+    println((lx,ly,lz))
+    fname = "chunk_$(lx)_$(ly)_$(lz)_ch_conts.h5"
+    @time cs = S.InputOutput.read_continuations(fname)
+
+    c_arr[x,y,z] = cs
+
+  end
+
+  c_arr
+end
+
+#==========================
+JOB11: Merge continuation graph
+==========================#
+
+function merge_cont_edges(taskdict)
+
+  #Extracting task args
+  base_s3_path  = taskdict["base_outpath"]
+  sx,sy,sz    = taskdict["max_chunk_i"]
+
+
+  #Downloading data
+  s3dir = joinpath(base_s3_path,ch_contedge_subdir)
+  run( `aws s3 cp --recursive $s3dir .` )
+  next_id_fname = joinpath(base_s3_path,"next_id")
+  run( `aws s3 cp $next_id_fname .`)
+  next_id = load_next_id()
+
+
+  edges_arr = load_all_cont_edges(sx,sy,sz) #notimp
+  segids_arr = load_all_segids(sx,sy,sz) #notimp
+  mergers_arr = Consolidation.merge_cont_edges(edges_arr, segids_arr) #notimp
+
+  write_all_mergers(mergers_arr)
+  #Writing results to s3
+  edge_output_fname = "chunk_$(chx)_$(chy)_$(chz)_cont_edges.fth"
+  s3_edge_output_fname = joinpath(base_s3_path,ch_contedge_subdir,edge_output_fname)
+  S.InputOutput.write_edge_file(edges, locs, edge_output_fname)
+  run( `aws s3 cp $edge_output_fname $s3_edge_output_fname` )
+end
+
+
 
 
 end #module WorkerTasks

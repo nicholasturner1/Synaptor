@@ -7,6 +7,7 @@ using Feather
 export read_edge_file, write_edge_file
 export read_semmap, write_semmap
 export read_idmap, write_idmap
+export read_column, write_column
 
 
 function read_idmap(input_fname)
@@ -37,6 +38,28 @@ function write_idmap(idmap, output_fname)
   append!(cols, m_cols); append!(colnames, m_names)
 
   Feather.write(output_fname, DataFrame(cols, colnames))
+end
+
+function write_column(col, output_fname)
+
+  cols = Any[col]; colnames = Symbol[:ids]
+
+  Feather.write(output_fname, DataFrame(cols, colnames))
+end
+
+function read_column(input_fname)
+
+  local df
+  try
+    df = Feather.read(input_fname)
+  catch
+    return Int[]
+  end
+
+  colnames = names(DataFrames.index(df))
+  @assert :ids in colnames "No id column"
+
+  Array(df[:ids])
 end
 
 
@@ -83,6 +106,21 @@ function write_edge_file(segs, locs, sizes, bboxes, output_fname)
   append!(cols, bb_cols); append!(colnames, bb_names)
 
   #DataFrame(cols, colnames)
+  Feather.write(output_fname, DataFrame(cols, colnames))
+end
+
+function write_edge_file(segs, locs, output_fname)
+
+  ids = collect(keys(segs))
+
+  cols = Any[ids]; colnames = Symbol[:ids]
+
+  s_cols, s_names = make_df_columns(ids, segs, "segs")
+  append!(cols, s_cols); append!(colnames, s_names)
+
+  l_cols, l_names = make_df_columns(ids, locs, "locs")
+  append!(cols, l_cols); append!(colnames, l_names)
+
   Feather.write(output_fname, DataFrame(cols, colnames))
 end
 
@@ -166,8 +204,8 @@ function read_df_columns(df, basename)
   if length(relevant_names) == 0  return Dict()  end
 
 
-  ids = df[:ids]
-  cols = [df[n] for n in relevant_names]
+  ids = Array(df[:ids])
+  cols = [Array(df[n]) for n in relevant_names]
 
   res = Dict{Int,Vector{eltype(cols[1])}}();
 

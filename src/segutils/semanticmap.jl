@@ -56,10 +56,11 @@ function addsemweights{sT,wT}( semweights::Dict{sT,Vector{wT}}... )
 
   first_val = first(values(nonempty_maps[1]))
 
-  sumweights = Dict( k => zeros(wT, length(first_val)) for k in all_keys )
+  sumweights = Dict{eltype(all_keys),Vector{wT}}();
+  #sumweights = Dict( k => zeros(wT, length(first_val)) for k in all_keys )
 
   for sw in semweights, (k,v) in sw
-    sumweights[k] += v
+    sumweights[k] = get(sumweights, k, zeros(wT,length(first_val))) + v
   end
 
   sumweights

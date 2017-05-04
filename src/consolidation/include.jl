@@ -3,7 +3,7 @@ module Consolidation
 #Continuations
 export find_new_continuations
 #ConsolidateContinuations
-export consolidate_continuations
+export consolidate_continuations, find_continuation_edges
 #ConsolidateIDs
 export consolidate_ids, consolidate_edge_dict, apply_id_maps
 #ConsolidateDuplicates

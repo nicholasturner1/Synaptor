@@ -73,14 +73,11 @@ function assign_component!{T}(arr::AbstractArray{T}, masked::BitArray{3},
   xstart,ystart,zstart, segid)
 
   xmax, ymax, zmax = size(masked)
-  to_explore = Tuple{Int,Int,Int}[(xstart, ystart, zstart)]
-  explored   = Tuple{Int,Int,Int}[];
-  #explored = Set{Tuple{Int,Int,Int}}();
+  to_explore = Tuple{UInt32,UInt32,UInt32}[(xstart, ystart, zstart)]
 
   @inbounds while !isempty(to_explore)
 
     x,y,z = pop!(to_explore)
-    push!(explored, (x,y,z))
 
     arr[x,y,z] = segid
     masked[x,y,z] = true
