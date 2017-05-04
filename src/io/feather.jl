@@ -12,6 +12,7 @@ export read_column, write_column
 
 function read_idmap(input_fname)
 
+  @assert isfile(input_fname)
   local df
   try
     df = Feather.read(input_fname)
@@ -49,6 +50,7 @@ end
 
 function read_column(input_fname)
 
+  @assert isfile(input_fname)
   local df
   try
     df = Feather.read(input_fname)
@@ -65,6 +67,7 @@ end
 
 function read_edge_file(input_fname)
 
+  @assert isfile(input_fname)
   local df
   try
     df = Feather.read(input_fname)
@@ -144,6 +147,7 @@ end
 
 function read_semmap(input_fname)
 
+  @assert isfile(input_fname)
   local df
   try
     df = Feather.read(input_fname)
@@ -191,7 +195,7 @@ function read_df_columns(df, basename)
 
 
   if Symbol(basename) in colnames
-    return Dict( k => v for (k,v) in zip(Array(df[:ids]),df[Symbol(basename)]) )
+    return Dict( k => v for (k,v) in zip(Array(df[:ids]),Array(df[Symbol(basename)])) )
   end
 
 
