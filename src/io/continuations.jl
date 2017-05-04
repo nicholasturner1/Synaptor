@@ -9,11 +9,15 @@ export read_continuation, read_continuations
 
 
 function write_continuations(output_fname, continuations::Array{Continuation})
+  f = h5open(output_fname, "w")
+  close(f)
   for (i,c) in enumerate(continuations)  write_continuation(output_fname,c,i)  end
 end
 
 
 function write_continuations( output_fname, continuations... )
+  f = h5open(output_fname, "w")
+  close(f)
   for (i,c) in enumerate(continuations)  write_continuation(output_fname,c,i)  end
 end
 
