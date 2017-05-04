@@ -64,6 +64,7 @@ type Continuation
   Continuation(s::Int,v::Array,f::Face) = new(s,v,Dict{Int,Int}(),f,0,[0,0,0],
                                               BBox(0,0,0,0,0,0))
   Continuation(s,v,o,f,n,l) = new(s,v,o,f,n,l, BBox(0,0,0,0,0,0))
+  Continuation(s,v,o,f,n,l,b) = new(s,v,o,f,n,l,b)
   Continuation(o::Dict,n::Int,l::Vector) = new(0,zeros(Int,(0,3)),o,Face(X,false),n,l,
                                                BBox(0,0,0,0,0,0))
   Continuation(o::Dict,n::Int,l::Vector,b::BBox) = new(0,zeros(Int,(0,3)),o,Face(X,false),n,l,b)
