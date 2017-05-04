@@ -33,6 +33,8 @@ Base.:(/)(s::Real, a::Vec3) = Vec3(s / a.x, s / a.y, s / a.z)
 
 Base.min(v1::Vec3,v2::Vec3) = Vec3(min(v1.x,v2.x), min(v1.y,v2.y), min(v1.z,v2.z))
 Base.max(v1::Vec3,v2::Vec3) = Vec3(max(v1.x,v2.x), max(v1.y,v2.y), max(v1.z,v2.z))
+Base.min(v1::Vec3,v2) = min(v1,Vec3(v2))
+Base.max(v1::Vec3,v2) = max(v1,Vec3(v2))
 
 Base.collect(a::Vec3) = [a.x, a.y, a.z]
 Base.show(io::IO, v::Vec3) = print(io, "($(v.x),$(v.y),$(v.z))")
@@ -67,10 +69,16 @@ Base.:(-)(bbox::BBox, v::Vec3) = BBox(bbox.f-v, bbox.l-v)
 Base.:(+)(bbox::BBox, v) = bbox + Vec3(v)
 Base.:(-)(bbox::BBox, v) = bbox - Vec3(v)
 
+Base.:(-)(b1::BBox, b2::BBox) = BBox(max(b1.f,b2.f),min(b1.l,b2.l))
+Base.:(+)(b1::BBox, b2::BBox) = BBox(min(b1.f,b2.f),max(b1.l,b2.l))
 Base.:(&)(b1::BBox, b2::BBox) = BBox(max(b1.f,b2.f),min(b1.l,b2.l))
+Base.:(|)(b1::BBox, b2::BBox) = BBox(min(b1.f,b2.f),max(b1.l,b2.l))
 
 Base.show(io::IO, bbox::BBox) = print(io, "BBox{$(bbox.f)<->$(bbox.l)}")
 Base.size(bbox::BBox) = collect(bbox.l - bbox.f + 1)
+
+Base.collect(bbox::BBox) = [bbox.f.x,bbox.f.y,bbox.f.z,
+                            bbox.l.x,bbox.l.y,bbox.l.z]
 
 
 zipindices(bbox::BBox) = [bbox.f.x:bbox.l.x,
