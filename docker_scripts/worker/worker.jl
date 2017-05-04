@@ -22,14 +22,17 @@ function main()
       perform_task(taskdict)
 
       update_queues(jobqueue, donequeue, taskdict)
-    catch
+    catch err
+      println(err)
       println("Caught error within task. Retrying...")
 
 
       try
         perform_task(taskdict)
         update_queues(jobqueue, donequeue, taskdict)
-      catch
+      catch err
+        print("ERROR: ")
+        println(err)
         println("Giving up on task...")
         println(taskdict)
       end
@@ -76,6 +79,7 @@ function perform_task(taskdict)
   elseif taskname == "consolidate continuations" conscontinuations(taskdict)
   elseif taskname == "consolidate duplicates"    consolidatedups(taskdict)
   elseif taskname == "remap segments"            relabel_seg(taskdict)
+  elseif taskname == "full EF"                   full_find_edges(taskdict)
   else   warn("unknown task name - skipping...")
   end
 

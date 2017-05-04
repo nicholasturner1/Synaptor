@@ -9,13 +9,21 @@ using S3Dicts, BigArrays
 semmap_subdir     = "semmaps"
 nh_semmap_subdir  = "nh_semmaps"
 ch_edge_subdir    = "ch_edges"
+ch_cont_subdir    = "ch_continuations"
 id_map_subdir     = "idmaps"
 cont_idmap_subdir = "cont_idmaps"
 
 
+ef_params = Dict(
+  :volume_map => Dict( :PSDvol => 4 ),
+  :CCthresh => 0.2, :SZthresh => 700,
+  :dilation => 5, :axon_label => 1,
+  :dend_label => 2 )
+
+
 export semantic_map, expand_semmaps, find_edges
 export consolidateids, conscontinuations, consolidatedups
-export relabel_seg, convert_semmap
+export relabel_seg, convert_semmap, full_find_edges
 
 
 #==========================
@@ -120,12 +128,6 @@ end
 JOB3: Chunk Edge Finding
 ==========================#
 
-ef_params = Dict(
-  :volume_map => Dict( :PSDvol => 4 ),
-  :CCthresh => 0.2, :SZthresh => 700,
-  :dilation => 5, :axon_label => 1,
-  :dend_label => 2 )
-
 
 function find_edges(taskdict)
 
@@ -143,10 +145,13 @@ function find_edges(taskdict)
 
 
   #Downloading data
-  nh_semmap_fname = joinpath(base_s3_path,nh_semmap_subdir,
+  nh_semmap_fname = joinpath(base_s3_path,semmap_subdir,
                              "chunk_$(chx)_$(chy)_$(chz)_nhsemmap.fth")
-  run( `aws s3 cp $nh_semmap_fname nh_semmap.fth` )
-  nh_semmap, weights = S.InputOutput.read_semmap("nh_semmap.fth")
+  #nh_semmap_fname = joinpath(base_s3_path,nh_semmap_subdir,
+                             #"chunk_$(chx)_$(chy)_$(chz)_nhsemmap.fth")
+  run( `aws s3 cp $nh_semmap_fname semmap.fth` )
+  #run( `aws s3 cp $nh_semmap_fname nh_semmap.fth` )
+  nh_semmap, weights = S.InputOutput.read_semmap("semmap.fth")
   chunk_bbox = S.BBox(chunk_start, chunk_end)
   seg_ch = seg_BA[chunk_bbox]
   S.dilate_by_k!(seg_ch,7)
@@ -158,7 +163,7 @@ function find_edges(taskdict)
   psdseg_BA = BigArray( S3Dict(psdseg_path) );
 
 
-  @time (edges, locs, sizes, ccs, conts
+  @time (edges, locs, sizes, bboxes, ccs, conts
   ) = S.process_chunk_w_continuations(sem_ch, seg_ch, ef;
                                       offset=offset,
                                       semmap=nh_semmap,
@@ -194,19 +199,20 @@ function consolidateids(taskdict)
   #Downloading data
   s3_semmap_dir = joinpath(base_s3_path,ch_edge_subdir)
   run( `aws s3 cp --recursive $s3_semmap_dir .` )
-  edge_arr, locs_arr, sizes_arr = load_all_edges(sx,sy,sz)
+  @time edge_arr, locs_arr, sizes_arr, bboxes_arr = load_all_edges(sx,sy,sz)
 
 
   @time id_maps = S.consolidate_ids( map( x -> Set(keys(x)), edge_arr) )
   edges = S.apply_id_maps(edge_arr, id_maps)
   locs  = S.apply_id_maps(locs_arr, id_maps)
   sizes = S.apply_id_maps(sizes_arr, id_maps)
+  bboxes = S.apply_id_maps(bboxes_arr, id_maps)
 
 
   #Writing results to s3
   edge_output_fname = "consolidated_edges_wo_conts.fth"
   s3_edge_output_fname = joinpath(base_s3_path,edge_output_fname)
-  S.InputOutput.write_edge_file(edges, locs, sizes, edge_output_fname)
+  S.InputOutput.write_edge_file(edges, locs, sizes, bboxes, edge_output_fname)
   run( `aws s3 cp $edge_output_fname $s3_edge_output_fname` )
 
   save_all_idmaps(id_maps, id_map_subdir)
@@ -233,14 +239,16 @@ function load_all_edges(sx,sy,sz)
   edge_arr  = Array{Dict}(sx,sy,sz)
   locs_arr  = Array{Dict}(sx,sy,sz)
   sizes_arr = Array{Dict}(sx,sy,sz)
+  bboxes_arr = Array{Dict}(sx,sy,sz)
 
   for z in 1:sz, y in 1:sy, x in 1:sx
 
-    e,l,s = S.InputOutput.read_edge_file("chunk_$(x)_$(y)_$(z)_ch_edges.fth")
+    e,l,s,b = S.InputOutput.read_edge_file("chunk_$(x)_$(y)_$(z)_ch_edges.fth")
 
     edge_arr[x,y,z] = e
     locs_arr[x,y,z] = l
     sizes_arr[x,y,z] = s
+    bboxes_arr[x,y,z] = b
   end
 
   edge_arr, locs_arr, sizes_arr
@@ -292,7 +300,8 @@ function conscontinuations(taskdict)
   size_thr = ef_params[:SZthresh]
 
 
-  (edges, locs, sizes, idmaps
+  (edges, locs, sizes, bboxes, idmaps #NOT READY YET
+  #(edges, locs, sizes, idmaps
   ) = S.consolidate_continuations(cont_arr, semmap_arr, size_thr,
                                   next_id, total_vol, chunk_shape,
                                   offset, boundtype)
@@ -300,7 +309,8 @@ function conscontinuations(taskdict)
   #Writing results to s3
   edge_output_fname = "continuation_edges.fth"
   s3_edge_output_fname = joinpath(base_s3_path,edge_output_fname)
-  S.InputOutput.write_edge_file(edges, locs, sizes, edge_output_fname)
+  S.InputOutput.write_edge_file(edges, locs, sizes, bboxes, edge_output_fname)
+  #S.InputOutput.write_edge_file(edges, locs, sizes, edge_output_fname)
   run( `aws s3 cp $edge_output_fname $s3_edge_output_fname` )
 
   save_all_idmaps(idmaps, cont_idmap_subdir)
@@ -359,19 +369,20 @@ function consolidatedups(taskdict, dist_thr=1000, res=[3.85,3.85,40])
   s3_continuation_edge_fname = joinpath(base_s3_path,cont_edge_fname)
   run( `aws s3 cp $s3_continuation_edge_fname .`)
 
-  edges, locs, sizes = S.InputOutput.read_edge_file(whole_edge_fname)
-  ec, lc, sc = S.InputOutput.read_edge_file(cont_edge_fname)
+  edges, locs, sizes, bboxes = S.InputOutput.read_edge_file(whole_edge_fname)
+  ec, lc, sc, bc = S.InputOutput.read_edge_file(cont_edge_fname)
 
   merge!(edges, ec)
   merge!(locs, lc)
   merge!(sizes, sc)
+  merge!(bboxes, bc)
 
-  @time new_es, new_ls, new_ss, idmap = S.consolidate_dups(edges, locs, sizes,
+  @time new_es, new_ls, new_ss, new_bs, idmap = S.consolidate_dups(edges, locs, sizes,
                                                            dist_thr, res)
 
   #Writing results to s3
   final_edge_fname = "final_edges.fth"
-  S.InputOutput.write_edge_file(new_es, new_ls, new_ss, final_edge_fname)
+  S.InputOutput.write_edge_file(new_es, new_ls, new_ss, new_bs, final_edge_fname)
   s3_final_edge_fname = joinpath(base_s3_path, final_edge_fname)
   run( `aws s3 cp $final_edge_fname $s3_final_edge_fname` )
 
@@ -451,6 +462,60 @@ function convert_semmap(taskdict)
   output_semmap_fname = "chunk_$(chx)_$(chy)_$(chz)_semmap.fth"
   S.InputOutput.FeatherIO.write_semmap(a,w,output_semmap_fname)
   run( `aws s3 cp $output_semmap_fname $s3_semmap_dir/$output_semmap_fname` )
+end
+
+#==========================
+JOB9: EF + Semantic Map
+==========================#
+
+
+function full_find_edges(taskdict)
+
+  #Extracting task args
+  chunk_start   = taskdict["start"]
+  chunk_end     = taskdict["end"]
+  chx, chy, chz = taskdict["chunk_i"]
+  psdseg_path   = taskdict["psdseg_path"]
+  seg_s3_path   = taskdict["seg_path"]
+  sem_s3_path   = taskdict["sem_path"]
+  base_s3_path  = taskdict["base_outpath"]
+
+  seg_BA = BigArray(S3Dict( seg_s3_path ))
+  sem_BA = BigArray(S3Dict( sem_s3_path ))
+
+
+  #Downloading data
+  chunk_bbox = S.BBox(chunk_start, chunk_end)
+  seg_ch = seg_BA[chunk_bbox]
+  S.dilate_by_k!(seg_ch,7)
+  sem_ch = sem_BA[chunk_bbox,1:4]
+  psdseg_BA = BigArray( S3Dict(psdseg_path) );
+
+  @time a,w = S.make_semantic_assignment(seg_ch, sem_ch, [1,2,3])
+
+  offset = chunk_start - 1;
+  ef = S.SemanticEdgeFinder();
+
+
+  @time (edges, locs, sizes, bboxes, ccs, conts
+  ) = S.process_chunk_w_continuations(sem_ch, seg_ch, ef;
+                                      offset=offset,
+                                      semmap=nh_semmap,
+                                      ef_params... )
+
+  #Writing results to s3
+  edge_output_fname = "chunk_$(chx)_$(chy)_$(chz)_ch_edges.fth"
+  s3_edge_output_fname = joinpath(base_s3_path,ch_edge_subdir,edge_output_fname)
+  S.InputOutput.write_edge_file(edges, locs, sizes, bboxes, edge_output_fname)
+  run( `aws s3 cp $edge_output_fname $s3_edge_output_fname` )
+
+  psdseg_BA[chunk_bbox] = round(eltype(psdseg_BA),ccs)
+
+  cont_output_fname = "chunk_$(chx)_$(chy)_$(chz)_ch_conts.h5"
+  s3_cont_output_fname = joinpath(base_s3_path,ch_cont_subdir,cont_output_fname)
+  S.InputOutput.write_continuations(cont_output_fname, conts)
+  run( `aws s3 cp $cont_output_fname $s3_cont_output_fname` )
+
 end
 
 
