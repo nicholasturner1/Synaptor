@@ -49,18 +49,26 @@ end
 """
 function addsemweights{sT,wT}( semweights::Dict{sT,Vector{wT}}... )
 
-  all_keys = union([keys(sw) for sw in semweights]...)
-
   nonempty_maps = collect(filter(x -> !isempty(x), semweights ))
   if length(nonempty_maps) == 0  return Dict{sT,Vector{wT}}()  end
 
   first_val = first(values(nonempty_maps[1]))
 
-  sumweights = Dict{eltype(all_keys),Vector{wT}}();
+  sumweights = Dict{sT,Vector{wT}}();
   #sumweights = Dict( k => zeros(wT, length(first_val)) for k in all_keys )
 
+  val_len = length(first_val)
   for sw in semweights, (k,v) in sw
-    sumweights[k] = get(sumweights, k, zeros(wT,length(first_val))) + v
+    # sumweights[k] = get(sumweights, k, zeros(wT, (val_len,))) + v
+    curr_weight = get(sumweights, k, zeros(wT,(val_len,)))
+
+    for i in 1:val_len
+      curr_weight[i] += v[i]
+    end
+    # curr_weight[1] += v[1]
+    # curr_weight[2] += v[2]
+    # curr_weight[3] += v[3]
+    sumweights[k] = curr_weight
   end
 
   sumweights

@@ -18,6 +18,22 @@ export consolidate_continuations, find_continuation_edges
                                        chunk_shape)
 """
 function consolidate_continuations(c_arr::Array{Vector{Continuation},3},
+                                   semmap::Dict{Int,Int},
+                                   size_thr::Int, next_index::Int)
+
+  @time merged_cs, c_locs = merge_continuations(c_arr)
+
+  @time filtered_cs, comp_id_maps = filter_continuations(merged_cs, semmap, 
+                                                         size_thr, next_index)
+
+  @time id_maps = expand_id_maps(comp_id_maps, c_locs, size(c_arr))
+
+  @time edges, locs, sizes, bboxes = extract_info(filtered_cs, semmap)
+
+  edges, locs, sizes, bboxes, id_maps
+end
+
+function consolidate_continuations(c_arr::Array{Vector{Continuation},3},
                                    semmaps::Array{Dict{Int,Int},3},
                                    size_thr::Int, next_index::Int,
                                    vol_shape, chunk_shape, offset, boundtype)
@@ -54,11 +70,11 @@ end
   Extracts the information required for graph edges. Returns three dictionaries
   detailing the synaptic partners, location, and size of each edge.
 """
-function extract_info(continuations, semmaps)
+function extract_info(continuations, semmaps::Array)
 
-  edges = Dict{Int,Tuple{Int,Int}}()
-  locs = Dict{Int,Vector{Int}}()
-  sizes = Dict{Int,Int}()
+  edges  = Dict{Int,Tuple{Int,Int}}()
+  locs   = Dict{Int,Vector{Int}}()
+  sizes  = Dict{Int,Int}()
   bboxes = Dict{Int,Vector{Int}}()
 
   for (c,s) in zip(continuations,semmaps)
@@ -67,7 +83,28 @@ function extract_info(continuations, semmaps)
     edges[segid] = find_max_overlaps(get_overlaps(c), s)
     locs[segid] = get_loc(c)
     sizes[segid] = get_num_voxels(c)
-    bboxes[segid] = get_bbox(c)
+    bboxes[segid] = collect(get_bbox(c))
+
+  end
+
+  edges, locs, sizes, bboxes
+end
+
+
+function extract_info(continuations, semmap::Dict)
+
+  edges  = Dict{Int,Tuple{Int,Int}}()
+  locs   = Dict{Int,Vector{Int}}()
+  sizes  = Dict{Int,Int}()
+  bboxes = Dict{Int,Vector{Int}}()
+
+  for c in continuations
+
+    segid = get_segid(c)
+    edges[segid]  = find_max_overlaps(get_overlaps(c), semmap)
+    locs[segid]   = get_loc(c)
+    sizes[segid]  = get_num_voxels(c)
+    bboxes[segid] = collect(get_bbox(c))
 
   end
 
@@ -129,7 +166,37 @@ function merge_continuations(c_arr)
 end
 
 
-function filter_continuations(merged_cs, semmaps, size_thr::Int,
+function filter_continuations(merged_cs, semmap::Dict, size_thr::Int, next_index::Int,
+                              axon_label=1, dend_label=2)
+
+  filtered = Continuation[];
+  idmap = Vector{Int}(length(merged_cs));
+
+  locs = map(c -> get_loc(c), merged_cs)
+
+  for (i,c) in enumerate(merged_cs)
+
+    overlap_classes = Set([semmap[segid] for segid in keys(get_overlaps(c)) ])
+
+    if (get_num_voxels(c) > size_thr
+        && axon_label in overlap_classes
+        && dend_label in overlap_classes)
+
+      c.segid = next_index
+      idmap[i] = next_index
+      next_index += 1
+
+      push!(filtered,c)
+    else
+      idmap[i] = 0
+    end
+  end
+
+  filtered, idmap
+end
+
+
+function filter_continuations(merged_cs, semmaps::Array, size_thr::Int,
                               next_index::Int, chunk_bounds,
                               axon_label=1, dend_label=2)
 
@@ -200,8 +267,10 @@ function merge_components(ccs, c_arr, i_map)
   merged_cs = Continuation[];
   merged_parts = [];
 
+  i = 1; num_ccs = length(ccs)
   for cc in ccs
 
+    print("\rMerging continuation $i / $num_ccs")
     #fmt: num_voxels, overlaps, center_of_mass)
     merger = Continuation()
     parts = [];
@@ -216,7 +285,9 @@ function merge_components(ccs, c_arr, i_map)
 
     push!(merged_cs, merger)
     push!(merged_parts, parts)
+    i += 1
   end
+  println("")
 
   merged_cs, merged_parts
 end

@@ -104,14 +104,9 @@ function read_continuation(input_fname, key=-1)
   num_voxels = h5read(input_fname, "$(keystr)num_voxels")
   loc        = h5read(input_fname, "$(keystr)loc")
 
-  local bbox
-  try
-    bbox_inds  = h5read(input_fname, "$(keystr)bbox")
-    bbox = Continuations.BBox(bbox_inds...)
-  catch
-    println("no bbox field in hdf5 file, using default")
-    bbox = Continuations.BBox(0,0,0,0,0,0)
-  end
+  bbox_inds  = h5read(input_fname, "$(keystr)bbox")
+  bbox = Continuations.BBox(bbox_inds...)
+  #bbox = Continuations.BBox(0,0,0,0,0,0)
 
   overlaps = read_overlaps(input_fname, keystr)
   face     = read_face(input_fname, keystr)
