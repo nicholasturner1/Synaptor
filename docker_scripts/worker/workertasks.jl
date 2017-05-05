@@ -201,19 +201,22 @@ function consolidateids(taskdict)
   #Downloading data
   s3_semmap_dir = joinpath(base_s3_path,ch_edge_subdir)
   run( `aws s3 cp --recursive $s3_semmap_dir . --exclude "*.h5"` )
-  @time edge_arr, locs_arr, sizes_arr = load_all_edges(sx,sy,sz)
+  @time edge_arr, locs_arr, sizes_arr, bboxes_arr = load_all_edges(sx,sy,sz)
 
 
   @time id_maps = S.consolidate_ids( map( x -> Set(keys(x)), edge_arr) )
-  edges = S.apply_id_maps(edge_arr, id_maps)
-  locs  = S.apply_id_maps(locs_arr, id_maps)
-  sizes = S.apply_id_maps(sizes_arr, id_maps)
+  edges  = S.apply_id_maps(edge_arr, id_maps)
+  locs   = S.apply_id_maps(locs_arr, id_maps)
+  sizes  = S.apply_id_maps(sizes_arr, id_maps)
+  bboxes = S.apply_id_maps(sizes_arr, id_maps)
 
 
+  #Adding types to results
   edges  = Dict{Int,Int}(k=>v for (k,v) in edges)
   locs   = Dict{Int,Vector{Int}}(k=>v for (k,v) in locs)
   sizes  = Dict{Int,Int}(k=>v for (k,v) in sizes)
-  bboxes = Dict{Int,Vector{Int}}();
+  bboxes = Dict{Int,Vector{Int}}(k=>v for (k,v) in bboxes);
+
 
   #Writing results to s3
   edge_output_fname = "consolidated_edges_wo_conts.fth"
@@ -251,19 +254,21 @@ function load_all_edges(sx,sy,sz)
   edge_arr  = Array{Dict}(sx,sy,sz)
   locs_arr  = Array{Dict}(sx,sy,sz)
   sizes_arr = Array{Dict}(sx,sy,sz)
+  sizes_arr = Array{Dict}(sx,sy,sz)
 
   for z in 1:sz, y in 1:sy, x in 1:sx
 
     println((x,y,z))
     ch_edge_fname = "chunk_$(x)_$(y)_$(z)_ch_edges.fth"
-    @time ed,l,s = S.InputOutput.read_edge_file(ch_edge_fname)
+    @time ed,l,s,b = S.InputOutput.read_edge_file(ch_edge_fname)
 
     edge_arr[x,y,z] = ed
     locs_arr[x,y,z] = l
     sizes_arr[x,y,z] = s
+    bboxes_arr[x,y,z] = s
   end
 
-  edge_arr, locs_arr, sizes_arr
+  edge_arr, locs_arr, sizes_arr, bboxes_arr
 end
 
 
