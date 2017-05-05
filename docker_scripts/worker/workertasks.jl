@@ -268,7 +268,7 @@ function load_all_edges(sx,sy,sz)
     edge_arr[x,y,z] = ed
     locs_arr[x,y,z] = l
     sizes_arr[x,y,z] = s
-    bboxes_arr[x,y,z] = s
+    bboxes_arr[x,y,z] = b
   end
 
   edge_arr, locs_arr, sizes_arr, bboxes_arr
