@@ -674,7 +674,7 @@ function global_semmap(taskdict)
 
   #Extracting task args
   base_s3_path = taskdict["base_outpath"]
-  sx,sy.sz     = taskdict["max_chunk_i"]
+  sx,sy,sz     = taskdict["max_chunk_i"]
 
   #Downloading data
   s3dir = joinpath(base_s3_path, semmap_subdir)
