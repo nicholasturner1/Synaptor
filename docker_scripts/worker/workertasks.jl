@@ -257,7 +257,7 @@ function load_all_edges(sx,sy,sz)
   edge_arr  = Array{Dict}(sx,sy,sz)
   locs_arr  = Array{Dict}(sx,sy,sz)
   sizes_arr = Array{Dict}(sx,sy,sz)
-  sizes_arr = Array{Dict}(sx,sy,sz)
+  bboxes_arr = Array{Dict}(sx,sy,sz)
 
   for z in 1:sz, y in 1:sy, x in 1:sx
 
