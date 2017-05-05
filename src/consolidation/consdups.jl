@@ -7,14 +7,15 @@ using LightGraphs
 export consolidate_dups
 
 
-function consolidate_dups(edges, locs, sizes, dist_thr, res)
+function consolidate_dups(edges, locs, sizes, bboxes, dist_thr, res)
 
   @assert Set(keys(edges)) == Set(keys(locs)) == Set(keys(sizes))
 
-  new_edges = Dict{keytype(edges), valtype(edges)}()
-  new_locs  = Dict{keytype(locs),  valtype(locs)}()
-  new_sizes = Dict{keytype(sizes), valtype(sizes)}()
-  id_map    = Dict{keytype(edges), keytype(edges)}()
+  new_edges  = Dict{keytype(edges), valtype(edges)}()
+  new_locs   = Dict{keytype(locs),  valtype(locs)}()
+  new_sizes  = Dict{keytype(sizes), valtype(sizes)}()
+  new_bboxes = Dict{keytype(bboxes), valtype(bboxes)}()
+  id_map     = Dict{keytype(edges), keytype(edges)}()
 
   same_seg_groups = find_edges_w_same_segs(edges)
 
@@ -23,17 +24,19 @@ function consolidate_dups(edges, locs, sizes, dist_thr, res)
     group_mapping = map_dups_together(group, locs, dist_thr, res)
 
     group_locs, group_sizes = merge_locs_and_sizes(group_mapping, locs, sizes)
+    group_bboxes = merge_bboxes(group_mapping, bboxes)
     group_edges = derive_new_edges(group_mapping, edges)
 
     merge!(id_map,    group_mapping)
     merge!(new_edges, group_edges)
     merge!(new_locs,  group_locs)
     merge!(new_sizes, group_sizes)
+    merge!(new_bboxes, group_bboxes)
   end
 
-  @assert Set(keys(new_edges)) == Set(keys(new_locs)) == Set(keys(new_sizes))
+  @assert Set(keys(new_edges)) == Set(keys(new_locs)) == Set(keys(new_sizes)) == Set(keys(new_bboxes))
 
-  new_edges, new_locs, new_sizes, id_map
+  new_edges, new_locs, new_sizes, new_bboxes, id_map
 end
 
 
@@ -113,7 +116,9 @@ function compute_distances(group, locs, res)
 end
 
 
-@inline euc_distance(l1,l2,res) = norm( (l1-l2) .* res )
+@inline euc_distance(l1,l2,res) = norm([ (l1[1]-l2[1]) * res[1],
+                                         (l1[2]-l2[2]) * res[2],
+                                         (l1[3]-l2[3]) * res[3]])
 
 
 function merge_sizes{K,V}(mapping, sizes::Dict{K,V})
@@ -136,6 +141,33 @@ function merge_sizes{K,V}(mapping, sizes::Dict{K,V})
   new_sizes
 end
 
+function merge_bboxes{K,V}(mapping, bboxes::Dict{K,V})
+
+  new_bboxes = Dict{K,V}()
+  tmax = typemax(eltype(V)); tmin = typemin(eltype(V))
+  for v in values(mapping)
+
+    if v == 0 continue end
+
+    new_bboxes[v] = [tmax,tmax,tmax,tmin,tmin,tmin]
+  end
+  
+  for (k,v) in mapping
+
+    if v == 0 continue end
+
+    bbox_k = bboxes[k]
+    bbox_v = new_bboxes[v]
+
+    low  = min(bbox_k,bbox_v)
+    high = max(bbox_k,bbox_v)
+
+    new_bboxes[v] = [low[1], low[2], low[3],
+                     high[4],high[5],high[6]]
+  end
+
+  new_bboxes  
+end
 
 function merge_locs_and_sizes{lK,lV,sK,sV}(mapping, locs::Dict{lK,lV},
                                            sizes::Dict{sK,sV})
