@@ -215,7 +215,7 @@ function consolidateids(taskdict)
 
 
   #Adding types to results
-  edges  = Dict{Int,Int}(k=>v for (k,v) in edges)
+  edges  = Dict{Int,Tuple{Int,Int}}(k=>v for (k,v) in edges)
   locs   = Dict{Int,Vector{Int}}(k=>v for (k,v) in locs)
   sizes  = Dict{Int,Int}(k=>v for (k,v) in sizes)
   bboxes = Dict{Int,Vector{Int}}(k=>v for (k,v) in bboxes);
