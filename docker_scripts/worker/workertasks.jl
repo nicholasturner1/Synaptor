@@ -69,26 +69,29 @@ end
 JOB2: Semantic Map Expansion
 ==========================#
 
-function expand_semmaps(taskdict, nh_radius=1)
+function expand_semmaps(taskdict)
 
   #Extracting task args
-  sx,sy,sz    = taskdict["max_chunk_i"]
+  chx, chy, chz = taskdict["chunk_i"]
   base_s3_path  = taskdict["base_outpath"]
+  sx,sy,sz    = taskdict["max_chunk_i"]
 
 
   #Downloading data
   s3_semmap_dir = joinpath(base_s3_path,semmap_subdir)
-  run( `aws s3 cp --recursive $s3_semmap_dir .` )
+  rel_indices = relevant_indices(chx,chy,chz,sx,sy,sz)
+  @time download_relevant_semmaps(rel_indices, s3_semmap_dir)
+  @time w_arr = load_relevant_weights(rel_indices)
 
-  @time semmap_arr = load_all_semmaps(sx,sy,sz)
-  @time nh_weights = S.neighborhood_semmaps(semmap_arr, 1)
+  @time nh_weight = S.SegUtils.SemanticMap.addsemweights( w_arr... )
   # @time nh_weights = S.neighborhood_semmaps(semmap_arr, 0)
-  @time nh_assigns = map(S.make_assignment, nh_weights)
+  @time nh_assigns = S.make_assignment(nh_weight)
 
   #Writing results to s3
-  save_all_semmaps(nh_assigns, nh_weights, nh_semmap_subdir)
-  s3_output_fname = joinpath(base_s3_path, nh_semmap_subdir)
-  run( `aws s3 cp --recursive $nh_semmap_subdir $s3_output_fname` )
+  output_fname = "chunk_$(chx)_$(chy)_$(chz)_nh_semmap.fth"
+  S.InputOutput.write_semmap(nh_assigns, nh_weight, output_fname)
+  s3_output_fname = joinpath(base_s3_path, nh_semmap_subdir,output_fname)
+  run( `aws s3 cp $output_fname $s3_output_fname` )
 
 end
 
@@ -306,23 +309,26 @@ function conscontinuations(taskdict)
   #Downloading data
   s3_ch_cont_dir = joinpath(base_s3_path,ch_cont_subdir)
   run( `aws s3 cp --recursive $s3_ch_cont_dir .` )
-  full_semmap_fname = "full_semmap.fth"
-  s3_semmap_fname = joinpath(base_s3_path,full_semmap_fname)
-  run( `aws s3 cp $s3_semmap_fname .` )
+  #full_semmap_fname = "full_semmap.fth"
+  #s3_semmap_fname = joinpath(base_s3_path,full_semmap_fname)
+  #run( `aws s3 cp $s3_semmap_fname .` )
+  s3_nh_semmap_dir = joinpath(base_s3_path, nh_semmap_dir)
+  run( `aws s3 cp --recursive $s3_nh_semmap_dir .` )
   next_id_fname = joinpath(base_s3_path,"next_id")
   run( `aws s3 cp $next_id_fname .` )
 
   cont_arr = load_all_continuations(sx,sy,sz)
-  semmap, weights = S.InputOutput.read_semmap(full_semmap_fname)
+  #semmap, weights = S.InputOutput.read_semmap(full_semmap_fname)
+  semmap_arr = load_all_nh_semmaps(sx,sy,sz)
   next_id = load_next_id()
   size_thr = ef_params[:SZthresh]
 
 
   (edges, locs, sizes, bboxes, idmaps
-  ) = S.consolidate_continuations(cont_arr, semmap, size_thr, next_id)
-  #) = S.consolidate_continuations(cont_arr, semmap_arr, size_thr,
-  #                                next_id, total_vol, chunk_shape,
-  #                                offset, boundtype)
+  #) = S.consolidate_continuations(cont_arr, semmap, size_thr, next_id)
+  ) = S.consolidate_continuations(cont_arr, semmap_arr, size_thr,
+                                  next_id, total_vol, chunk_shape,
+                                  offset, boundtype)
 
   #Writing results to s3
   edge_output_fname = "continuation_edges.fth"
@@ -357,7 +363,8 @@ function load_all_nh_semmaps(sx,sy,sz)
 
   for z in 1:sz, y in 1:sy, x in 1:sx
 
-    a,w = S.InputOutput.read_semmap("chunk_$(x)_$(y)_$(z)_semmap.fth")
+    println((x,y,z))
+    @time a,w = S.InputOutput.read_semmap("chunk_$(x)_$(y)_$(z)_nh_semmap.fth")
 
     semmap_arr[x,y,z] = a
   end
@@ -396,7 +403,7 @@ function consolidatedups(taskdict, dist_thr=1000, res=[3.85,3.85,40])
   merge!(bboxes, bc)
 
   @time new_es, new_ls, new_ss, new_bs, idmap = S.consolidate_dups(edges, locs, sizes,
-                                                           dist_thr, res)
+                                                                   bboxes, dist_thr, res)
 
   #Writing results to s3
   final_edge_fname = "final_edges.fth"
@@ -687,7 +694,7 @@ function global_semmap(taskdict)
 
   @time semmap_arr = load_all_semmaps(sx,sy,sz)
 
-  @time full_semmap = S.SegUtils.SemanticMap.addsemweight( semmap_arr... )
+  @time full_semmap = S.SegUtils.SemanticMap.addsemweights( semmap_arr... )
   @time assignments = S.SegUtils.SemanticMap.make_assignment( full_semmap )
 
   output_fname = "full_semmap.fth"
@@ -713,5 +720,44 @@ function load_all_semweights(sx,sy,sz)
   semmap_arr
 end
 
+function download_relevant_semmaps(rel_indices, s3_dir_path)
+
+  chx, chy, chz = rel_indices[2,2,2]
+
+  for i in rel_indices
+    if i == (-1,-1,-1)  continue  end
+
+    x,y,z = i
+    local_fname = "chunk_$(x)_$(y)_$(z)_semmap.fth"
+
+    if !isfile(local_fname)
+      s3_fname = joinpath(s3_dir_path, local_fname)
+      run( `aws s3 cp $s3_fname $local_fname` )
+    end
+  end
+
+end
+
+function load_relevant_weights(rel_indices)
+
+  sx,sy,sz = size(rel_indices)
+  w_arr = Array{Dict{Int,Vector{Float64}}}((sx,sy,sz))
+
+  for z in 1:sz, y in 1:sy, x in 1:sx
+
+    if rel_indices[x,y,z] == (-1,-1,-1)  w_arr[x,y,z] = Dict{Int,Vector{Float64}}()  end
+
+    println((x,y,z))
+    lx,ly,lz = rel_indices[x,y,z]
+    println((lx,ly,lz))
+    fname = "chunk_$(lx)_$(ly)_$(lz)_semmap.fth"
+    @time a,w = S.InputOutput.read_semmap(fname)
+
+    w_arr[x,y,z] = w
+
+  end
+
+  w_arr
+end
 
 end #module WorkerTasks
