@@ -211,7 +211,7 @@ function consolidateids(taskdict)
   edges  = S.apply_id_maps(edge_arr, id_maps)
   locs   = S.apply_id_maps(locs_arr, id_maps)
   sizes  = S.apply_id_maps(sizes_arr, id_maps)
-  bboxes = S.apply_id_maps(sizes_arr, id_maps)
+  bboxes = S.apply_id_maps(bboxes_arr, id_maps)
 
 
   #Adding types to results
@@ -745,7 +745,10 @@ function load_relevant_weights(rel_indices)
 
   for z in 1:sz, y in 1:sy, x in 1:sx
 
-    if rel_indices[x,y,z] == (-1,-1,-1)  w_arr[x,y,z] = Dict{Int,Vector{Float64}}()  end
+    if rel_indices[x,y,z] == (-1,-1,-1)  
+      w_arr[x,y,z] = Dict{Int,Vector{Float64}}() 
+      continue 
+    end
 
     println((x,y,z))
     lx,ly,lz = rel_indices[x,y,z]
