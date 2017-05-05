@@ -72,7 +72,7 @@ function read_edge_file(input_fname)
   try
     df = Feather.read(input_fname)
   catch
-    return Dict{Int,Int}(), Dict{Int,Vector{Int}}(), Dict{Int,Int}()
+    return Dict{Int,Int}(), Dict{Int,Vector{Int}}(), Dict{Int,Int}(), Dict{Int,Vector{Int}}()
   end
 
   colnames = names(DataFrames.index(df))
