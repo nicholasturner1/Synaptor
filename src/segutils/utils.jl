@@ -20,6 +20,19 @@ function relabel_data!{T}( d::AbstractArray{T}, mapping )
 end
 
 
+function relabel_data!{T}( d::AbstractArray{T}, mapping::Vector )
+
+  zT = zero(T)
+  for i in eachindex(d)
+
+    if d[i] == zT continue end
+
+    d[i] = mapping[d[i]]
+  end
+
+end
+
+
 function relabel_data{T}( d::AbstractArray{T}, mapping )
 
   s = size(d)
@@ -40,8 +53,8 @@ end
 
 function centers_of_mass{T}( d::AbstractArray{T} )
 
-  coms = Dict{Int,Vector}()
-  sizes = Dict{Int,Int}()
+  coms = Dict{T,Vector{Int}}()
+  sizes = Dict{T,Int}()
 
   sx,sy,sz = size(d)
   zT = zero(T)
