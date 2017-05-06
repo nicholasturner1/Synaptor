@@ -39,12 +39,9 @@ Version with chunk specific semmaps
 """
 function consolidate_continuations(c_arr::Array{Vector{Continuation},3},
                                    semmaps::Array{Dict{Int,Int},3},
-                                   size_thr::Int, next_index::Int,
-                                   vol_shape, chunk_shape, offset, boundtype)
+                                   size_thr::Int, next_index::Int)
 
   @time merged_cs, parts_merged = merge_continuations(c_arr)
-
-  @time chunk_bounds = derive_chunk_bounds(vol_shape, chunk_shape, offset, boundtype)
 
   @time (filtered_cs, filtered_semmaps,
   comp_id_maps) = filter_continuations(merged_cs, semmaps, size_thr,
