@@ -173,7 +173,7 @@ function find_edges(taskdict)
   sem_ch = sem_BA[chunk_bbox,1:4]
 
   mst_rl_fname = "remap_mean_base1.h5"
-  s3_mst_rl_fname = joinpath(base_s3_path, s3_mst_rl_fname)
+  s3_mst_rl_fname = joinpath(base_s3_path, mst_rl_fname)
   download_mst_rl(s3_mst_rl_fname, mst_rl_fname)
   mst_rl = h5read(mst_rl_fname,"main");
 
