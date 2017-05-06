@@ -3,6 +3,7 @@ module WorkerTasks
 using Synaptor; S = Synaptor;
 using Synaptor.Consolidation.Continuations
 using S3Dicts, BigArrays
+using HDF5
 
 
 #S3 organization
@@ -51,6 +52,12 @@ function semantic_map(taskdict, classes=[1,2,3])
   seg_chunk = seg_BA[chunk_bbox]
   sem_chunk = sem_BA[chunk_bbox,1:3]
 
+  mst_rl_fname = "remap_mean_base1.h5"
+  s3_mst_rl_fname = joinpath(base_s3_path,mst_rl_fname)
+  download_mst_rl(s3_mst_rl_fname, mst_rl_fname)
+  mst_rl = h5read(mst_rl_fname,"main");
+
+  @time S.relabel_data!(seg_chunk, mst_rl)
 
   #Performing mapping
   @time a, w = S.make_semantic_assignment(seg_chunk, sem_chunk, classes)
@@ -64,6 +71,12 @@ function semantic_map(taskdict, classes=[1,2,3])
 
 end
 
+
+function download_mst_rl(s3_fname, local_fname)
+  if !isfile(local_fname)
+    run( `aws s3 cp $s3_fname $local_fname` )
+  end
+end
 
 #==========================
 JOB2: Semantic Map Expansion
@@ -150,18 +163,22 @@ function find_edges(taskdict)
 
 
   #Downloading data
-  nh_semmap_fname = joinpath(base_s3_path,semmap_subdir,
-                             "chunk_$(chx)_$(chy)_$(chz)_semmap.fth")
-  #nh_semmap_fname = joinpath(base_s3_path,nh_semmap_subdir,
-                             #"chunk_$(chx)_$(chy)_$(chz)_nhsemmap.fth")
-  run( `aws s3 cp $nh_semmap_fname semmap.fth` )
-  #run( `aws s3 cp $nh_semmap_fname nh_semmap.fth` )
-  nh_semmap, weights = S.InputOutput.read_semmap("semmap.fth")
+  nh_semmap_fname = joinpath(base_s3_path,nh_semmap_subdir,
+                             "chunk_$(chx)_$(chy)_$(chz)_nh_semmap.fth")
+  run( `aws s3 cp $nh_semmap_fname nh_semmap.fth` )
+  nh_semmap, weights = S.InputOutput.read_semmap("nh_semmap.fth")
   chunk_bbox = S.BBox(chunk_start, chunk_end)
   seg_ch = seg_BA[chunk_bbox]
   S.dilate_by_k!(seg_ch,7)
   sem_ch = sem_BA[chunk_bbox,1:4]
 
+  mst_rl_fname = "remap_mean_base1.h5"
+  s3_mst_rl_fname = joinpath(base_s3_path, s3_mst_rl_fname)
+  download_mst_rl(s3_mst_rl_fname, mst_rl_fname)
+  mst_rl = h5read(mst_rl_fname,"main");
+
+
+  @time S.relabel_data!(seg_ch,mst_rl);
 
   offset = chunk_start - 1;
   ef = S.SemanticEdgeFinder();
