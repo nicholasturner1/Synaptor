@@ -8,6 +8,7 @@ export read_edge_file, write_edge_file
 export read_semmap, write_semmap
 export read_idmap, write_idmap
 export read_column, write_column
+export read_assignments
 
 
 function read_idmap(input_fname)
@@ -159,6 +160,20 @@ function read_semmap(input_fname)
   weights     = read_df_columns(df, "weights")
 
   assignments, weights
+end
+
+
+function read_assignments(input_fname)
+  
+  @assert isfile(input_fname)
+  local df
+  try
+    df = Feather.read(input_fname)
+  catch
+    return Dict{Int,Int}()
+  end
+
+  read_df_columns(df, "assignments")
 end
 
 # make_base_df(ids) = DataFrame(Any[ids], [:ids])
