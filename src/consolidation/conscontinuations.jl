@@ -16,37 +16,41 @@ export consolidate_continuations, find_continuation_edges
                                        semmaps::Array{Dict{Int,Int},3},
                                        size_thresh::Int, next_index::Int,
                                        chunk_shape)
+Version with a single global semantic map
 """
 function consolidate_continuations(c_arr::Array{Vector{Continuation},3},
                                    semmap::Dict{Int,Int},
                                    size_thr::Int, next_index::Int)
 
-  @time merged_cs, c_locs = merge_continuations(c_arr)
+  @time merged_cs, parts_merged = merge_continuations(c_arr)
 
-  @time filtered_cs, comp_id_maps = filter_continuations(merged_cs, semmap, 
+  @time filtered_cs, comp_id_maps = filter_continuations(merged_cs, semmap,
                                                          size_thr, next_index)
 
-  @time id_maps = expand_id_maps(comp_id_maps, c_locs, size(c_arr))
+  @time id_maps = expand_id_maps(comp_id_maps, parts_merged, size(c_arr))
 
   @time edges, locs, sizes, bboxes = extract_info(filtered_cs, semmap)
 
   edges, locs, sizes, bboxes, id_maps
 end
 
+"""
+Version with chunk specific semmaps
+"""
 function consolidate_continuations(c_arr::Array{Vector{Continuation},3},
                                    semmaps::Array{Dict{Int,Int},3},
                                    size_thr::Int, next_index::Int,
                                    vol_shape, chunk_shape, offset, boundtype)
 
-  @time merged_cs, c_locs = merge_continuations(c_arr)
+  @time merged_cs, parts_merged = merge_continuations(c_arr)
 
   @time chunk_bounds = derive_chunk_bounds(vol_shape, chunk_shape, offset, boundtype)
 
   @time (filtered_cs, filtered_semmaps,
   comp_id_maps) = filter_continuations(merged_cs, semmaps, size_thr,
-                                                   next_index, chunk_bounds)
+                                                   next_index, parts_merged)
 
-  @time id_maps = expand_id_maps(comp_id_maps, c_locs, size(c_arr))
+  @time id_maps = expand_id_maps(comp_id_maps, parts_merged, size(c_arr))
 
   @time edges, locs, sizes, bboxes = extract_info(filtered_cs, filtered_semmaps)
 
@@ -197,21 +201,19 @@ end
 
 
 function filter_continuations(merged_cs, semmaps::Array, size_thr::Int,
-                              next_index::Int, chunk_bounds,
+                              next_index::Int, parts_merged,
                               axon_label=1, dend_label=2)
 
   filtered = Continuation[];
   filtered_semmaps = Dict[];
   idmap = Vector{Int}(length(merged_cs));
 
-  locs = map(c -> get_loc(c), merged_cs)
-  chunk_is = assign_chunk_indices(locs, chunk_bounds)
-
 
   for (i,c) in enumerate(merged_cs)
 
-    chunk_i = chunk_is[get_loc(c)]
-    semmap = semmaps[chunk_i...]
+    #take the first part's chunk index
+    first_part, first_loc = parts_merged[i][1]
+    semmap = semmaps[first_loc...]
 
     overlap_classes = Set([semmap[segid] for segid in keys(get_overlaps(c)) ])
 
@@ -265,7 +267,7 @@ end
 function merge_components(ccs, c_arr, i_map)
 
   merged_cs = Continuation[];
-  merged_parts = [];
+  parts_merged = [];
 
   i = 1; num_ccs = length(ccs)
   for cc in ccs
@@ -284,12 +286,12 @@ function merge_components(ccs, c_arr, i_map)
     end
 
     push!(merged_cs, merger)
-    push!(merged_parts, parts)
+    push!(parts_merged, parts)
     i += 1
   end
   println("")
 
-  merged_cs, merged_parts
+  merged_cs, parts_merged
 end
 
 
