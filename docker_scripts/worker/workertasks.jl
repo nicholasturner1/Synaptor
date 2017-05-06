@@ -326,9 +326,7 @@ function conscontinuations(taskdict)
 
   (edges, locs, sizes, bboxes, idmaps
   #) = S.consolidate_continuations(cont_arr, semmap, size_thr, next_id)
-  ) = S.consolidate_continuations(cont_arr, semmap_arr, size_thr,
-                                  next_id, total_vol, chunk_shape,
-                                  offset, boundtype)
+  ) = S.consolidate_continuations(cont_arr, semmap_arr, size_thr, next_id)
 
   #Writing results to s3
   edge_output_fname = "continuation_edges.fth"
