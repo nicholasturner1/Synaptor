@@ -219,8 +219,8 @@ function consolidateids(taskdict)
 
 
   #Downloading data
-  s3_semmap_dir = joinpath(base_s3_path,ch_edge_subdir)
-  run( `aws s3 cp --recursive $s3_semmap_dir . --exclude "*.h5"` )
+  s3_edge_dir = joinpath(base_s3_path,ch_edge_subdir)
+  run( `aws s3 cp --recursive $s3_edge_dir . --exclude "*.h5"` )
   @time edge_arr, locs_arr, sizes_arr, bboxes_arr = load_all_edges(sx,sy,sz)
 
 
@@ -299,10 +299,10 @@ function save_all_idmaps(id_maps, subdir_name)
   sx,sy,sz = size(id_maps)
 
   for z in 1:sz, y in 1:sy, x in 1:sx
-    map = id_maps[x,y,z]
+    idmap = id_maps[x,y,z]
 
     output_fname = joinpath(subdir_name,"chunk_$(x)_$(y)_$(z)_idmap.fth")
-    S.InputOutput.write_idmap(map,output_fname)
+    S.InputOutput.write_idmap(idmap,output_fname)
   end
 
 end
@@ -324,6 +324,7 @@ function conscontinuations(taskdict)
 
 
   #Downloading data
+  cd("/hd") #moving to a larger drive
   s3_ch_cont_dir = joinpath(base_s3_path,ch_cont_subdir)
   run( `aws s3 cp --recursive $s3_ch_cont_dir .` )
   #full_semmap_fname = "full_semmap.fth"
@@ -540,7 +541,7 @@ function full_find_edges(taskdict)
   @time (edges, locs, sizes, bboxes, ccs, conts
   ) = S.process_chunk_w_continuations(sem_ch, seg_ch, ef;
                                       offset=offset,
-                                      semmap=nh_semmap,
+                                      semmap=a,
                                       ef_params... )
 
   #Writing results to s3
