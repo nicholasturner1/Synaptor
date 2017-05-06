@@ -312,7 +312,7 @@ function conscontinuations(taskdict)
   #full_semmap_fname = "full_semmap.fth"
   #s3_semmap_fname = joinpath(base_s3_path,full_semmap_fname)
   #run( `aws s3 cp $s3_semmap_fname .` )
-  s3_nh_semmap_dir = joinpath(base_s3_path, nh_semmap_dir)
+  s3_nh_semmap_dir = joinpath(base_s3_path, nh_semmap_subdir)
   run( `aws s3 cp --recursive $s3_nh_semmap_dir .` )
   next_id_fname = joinpath(base_s3_path,"next_id")
   run( `aws s3 cp $next_id_fname .` )
@@ -655,6 +655,7 @@ function merge_cont_edges(taskdict)
   #Extracting task args
   base_s3_path  = taskdict["base_outpath"]
   sx,sy,sz    = taskdict["max_chunk_i"]
+  chx,chy,chz = taskdict["chunk_i"]
 
 
   #Downloading data
@@ -745,9 +746,9 @@ function load_relevant_weights(rel_indices)
 
   for z in 1:sz, y in 1:sy, x in 1:sx
 
-    if rel_indices[x,y,z] == (-1,-1,-1)  
-      w_arr[x,y,z] = Dict{Int,Vector{Float64}}() 
-      continue 
+    if rel_indices[x,y,z] == (-1,-1,-1)
+      w_arr[x,y,z] = Dict{Int,Vector{Float64}}()
+      continue
     end
 
     println((x,y,z))
