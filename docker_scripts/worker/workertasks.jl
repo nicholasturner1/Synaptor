@@ -324,16 +324,20 @@ function conscontinuations(taskdict)
 
 
   #Downloading data
-  cd("/hd") #moving to a larger drive
+  #cd("/hd") #moving to a larger drive
   s3_ch_cont_dir = joinpath(base_s3_path,ch_cont_subdir)
   run( `aws s3 cp --recursive $s3_ch_cont_dir .` )
+
   #full_semmap_fname = "full_semmap.fth"
   #s3_semmap_fname = joinpath(base_s3_path,full_semmap_fname)
   #run( `aws s3 cp $s3_semmap_fname .` )
+
   s3_nh_semmap_dir = joinpath(base_s3_path, nh_semmap_subdir)
   run( `aws s3 cp --recursive $s3_nh_semmap_dir .` )
+
   next_id_fname = joinpath(base_s3_path,"next_id")
   run( `aws s3 cp $next_id_fname .` )
+
 
   cont_arr = load_all_continuations(sx,sy,sz)
   #semmap, weights = S.InputOutput.read_semmap(full_semmap_fname)
@@ -343,7 +347,6 @@ function conscontinuations(taskdict)
 
 
   (edges, locs, sizes, bboxes, idmaps
-  #) = S.consolidate_continuations(cont_arr, semmap, size_thr, next_id)
   ) = S.consolidate_continuations(cont_arr, semmap_arr, size_thr, next_id)
 
   #Writing results to s3
@@ -380,7 +383,7 @@ function load_all_nh_semmaps(sx,sy,sz)
   for z in 1:sz, y in 1:sy, x in 1:sx
 
     println((x,y,z))
-    @time a,w = S.InputOutput.read_semmap("chunk_$(x)_$(y)_$(z)_nh_semmap.fth")
+    @time a = S.InputOutput.read_assignments("chunk_$(x)_$(y)_$(z)_nh_semmap.fth")
 
     semmap_arr[x,y,z] = a
   end
