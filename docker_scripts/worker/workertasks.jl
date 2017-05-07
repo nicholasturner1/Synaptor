@@ -225,10 +225,10 @@ function consolidateids(taskdict)
 
 
   @time id_maps = S.consolidate_ids( map( x -> Set(keys(x)), edge_arr) )
-  edges  = S.apply_id_maps(edge_arr, id_maps)
-  locs   = S.apply_id_maps(locs_arr, id_maps)
-  sizes  = S.apply_id_maps(sizes_arr, id_maps)
-  bboxes = S.apply_id_maps(bboxes_arr, id_maps)
+  @time edges  = S.apply_id_maps(edge_arr, id_maps)
+  @time locs   = S.apply_id_maps(locs_arr, id_maps)
+  @time sizes  = S.apply_id_maps(sizes_arr, id_maps)
+  @time bboxes = S.apply_id_maps(bboxes_arr, id_maps)
 
 
   #Adding types to results
