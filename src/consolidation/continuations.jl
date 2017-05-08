@@ -49,6 +49,8 @@ opposite(f::Face) = Face(f.axis, !f.hi)
 #================
 CLASS DEFINITIONS: Continuation
 ================#
+tmax = typemax(Int); tmin = typemin(Int);
+default_bbox = BBox(tmax,tmax,tmax,tmin,tmin,tmin)
 
 type Continuation 
   segid::Int
@@ -60,13 +62,15 @@ type Continuation
   bbox::BBox
 
   Continuation() = new(0,zeros(Int,(0,3)),Dict{Int,Int}(),
-                       Face(X,false),0,[0,0,0], BBox(0,0,0,0,0,0))
-  Continuation(s::Int,v::Array,f::Face) = new(s,v,Dict{Int,Int}(),f,0,[0,0,0],
-                                              BBox(0,0,0,0,0,0))
-  Continuation(s,v,o,f,n,l) = new(s,v,o,f,n,l, BBox(0,0,0,0,0,0))
+                       Face(X,false),0,[0,0,0], default_bbox)
+
+  Continuation(s::Int,v::Array,f::Face) = new(s,v,Dict{Int,Int}(),f,0,
+                                              [0,0,0], default_bbox)
+
+  Continuation(s,v,o,f,n,l) = new(s,v,o,f,n,l, default_bbox)
   Continuation(s,v,o,f,n,l,b) = new(s,v,o,f,n,l,b)
   Continuation(o::Dict,n::Int,l::Vector) = new(0,zeros(Int,(0,3)),o,Face(X,false),n,l,
-                                               BBox(0,0,0,0,0,0))
+                                               default_bbox)
   Continuation(o::Dict,n::Int,l::Vector,b::BBox) = new(0,zeros(Int,(0,3)),o,Face(X,false),n,l,b)
 end
 
