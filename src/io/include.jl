@@ -14,6 +14,7 @@ export write_in_chunks, create_seg_dset
 include("basic.jl"); #using .BasicIO
 include("continuations.jl"); using .ContinuationIO
 include("segio.jl"); using .SegIO
-include("feather.jl"); using .FeatherIO
+include("feather.jl");# using .FeatherIO
+include("dataframes.jl"); using .DataFramesIO
 
 end
