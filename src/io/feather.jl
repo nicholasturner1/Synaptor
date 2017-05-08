@@ -73,7 +73,7 @@ function read_edge_file(input_fname)
   try
     df = Feather.read(input_fname)
   catch
-    return Dict{Int,Int}(), Dict{Int,Vector{Int}}(), Dict{Int,Int}(), Dict{Int,Vector{Int}}()
+    return Dict{Int,Tuple{Int,Int}}(), Dict{Int,Vector{Int}}(), Dict{Int,Int}(), Dict{Int,Vector{Int}}()
   end
 
   colnames = names(DataFrames.index(df))
@@ -125,6 +125,7 @@ function write_edge_file(segs, locs, output_fname)
   l_cols, l_names = make_df_columns(ids, locs, "locs")
   append!(cols, l_cols); append!(colnames, l_names)
 
+  #DataFrame(cols,colnames)
   Feather.write(output_fname, DataFrame(cols, colnames))
 end
 
