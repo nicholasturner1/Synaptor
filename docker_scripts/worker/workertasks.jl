@@ -66,7 +66,7 @@ function semantic_map(taskdict, classes=[1,2,3])
   #Writing results to s3
   output_fname = "chunk_$(chx)_$(chy)_$(chz)_semmap.fth"
   s3_output_fname = joinpath(base_s3_path,semmap_subdir,output_fname)
-  S.InputOutput.write_semmap(a,w,output_fname)
+  S.InputOutput.FeatherIO.write_semmap(a,w,output_fname)
   run( `aws s3 mv $output_fname $s3_output_fname`)
 
 end
@@ -100,7 +100,7 @@ function expand_semmaps(taskdict)
 
   #Writing results to s3
   output_fname = "chunk_$(chx)_$(chy)_$(chz)_nh_semmap.fth"
-  S.InputOutput.write_semmap(nh_assigns, nh_weight, output_fname)
+  S.InputOutput.FeatherIO.write_semmap(nh_assigns, nh_weight, output_fname)
   s3_output_fname = joinpath(base_s3_path, nh_semmap_subdir,output_fname)
   run( `aws s3 cp $output_fname $s3_output_fname` )
 
@@ -134,7 +134,7 @@ function save_all_semmaps(assigns,weights,output_dir)
     a,w = assigns[x,y,z], weights[x,y,z]
 
     output_fname = joinpath(output_dir,"chunk_$(x)_$(y)_$(z)_nhsemmap.fth")
-    S.InputOutput.write_semmap(a,w,output_fname)
+    S.InputOutput.FeatherIO.write_semmap(a,w,output_fname)
   end
 
 end
@@ -164,7 +164,7 @@ function find_edges(taskdict)
   nh_semmap_fname = joinpath(base_s3_path,nh_semmap_subdir,
                              "chunk_$(chx)_$(chy)_$(chz)_nh_semmap.fth")
   run( `aws s3 cp $nh_semmap_fname nh_semmap.fth` )
-  nh_semmap, weights = S.InputOutput.read_semmap("nh_semmap.fth")
+  nh_semmap, weights = S.InputOutput.FeatherIO.read_semmap("nh_semmap.fth")
   chunk_bbox = S.BBox(chunk_start, chunk_end)
   seg_ch = seg_BA[chunk_bbox]
   S.dilate_by_k!(seg_ch,7)
@@ -190,7 +190,7 @@ function find_edges(taskdict)
                                       ef_params... )
 
   #Writing results to s3
-  edge_output_fname = "chunk_$(chx)_$(chy)_$(chz)_ch_edges.fth"
+  edge_output_fname = "chunk_$(chx)_$(chy)_$(chz)_ch_edges.csv"
   s3_edge_output_fname = joinpath(base_s3_path,ch_edge_subdir,edge_output_fname)
   S.InputOutput.write_edge_file(edges, locs, sizes, bboxes, edge_output_fname)
   run( `aws s3 cp $edge_output_fname $s3_edge_output_fname` )
@@ -277,8 +277,8 @@ function load_all_edges(sx,sy,sz)
   for z in 1:sz, y in 1:sy, x in 1:sx
 
     println((x,y,z))
-    ch_edge_fname = "chunk_$(x)_$(y)_$(z)_ch_edges.fth"
-    @time ed,l,s,b = S.InputOutput.FeatherIO.read_edge_file(ch_edge_fname)
+    ch_edge_fname = "chunk_$(x)_$(y)_$(z)_ch_edges.csv"
+    @time ed,l,s,b = S.InputOutput.read_edge_file(ch_edge_fname)
 
     edge_arr[x,y,z] = ed
     locs_arr[x,y,z] = l
@@ -501,7 +501,7 @@ function convert_semmap(taskdict)
 
 
   #Writing results to s3
-  output_semmap_fname = "chunk_$(chx)_$(chy)_$(chz)_semmap.csv"
+  output_semmap_fname = "chunk_$(chx)_$(chy)_$(chz)_semmap.fth"
   S.InputOutput.FeatherIO.write_semmap(a,w,output_semmap_fname)
   run( `aws s3 cp $output_semmap_fname $s3_semmap_dir/$output_semmap_fname` )
 end
@@ -546,7 +546,7 @@ function full_find_edges(taskdict)
                                       ef_params... )
 
   #Writing results to s3
-  edge_output_fname = "chunk_$(chx)_$(chy)_$(chz)_ch_edges.fth"
+  edge_output_fname = "chunk_$(chx)_$(chy)_$(chz)_ch_edges.csv"
   s3_edge_output_fname = joinpath(base_s3_path,ch_edge_subdir,edge_output_fname)
   S.InputOutput.write_edge_file(edges, locs, sizes, bboxes, edge_output_fname)
   run( `aws s3 cp $edge_output_fname $s3_edge_output_fname` )
@@ -590,12 +590,12 @@ function find_cont_edges(taskdict)
   if length(chunk_cont_segids) == 0  chunk_cont_segids = Int[]  end
 
   #Writing results to s3
-  edge_output_fname = "chunk_$(chx)_$(chy)_$(chz)_cont_edges.fth"
+  edge_output_fname = "chunk_$(chx)_$(chy)_$(chz)_cont_edges.csv"
   s3_edge_output_fname = joinpath(base_s3_path,ch_contedge_subdir,edge_output_fname)
   @time S.InputOutput.write_edge_file(edge_segids, edge_chlocs, edge_output_fname) #notimp
   run( `aws s3 cp $edge_output_fname $s3_edge_output_fname` )
 
-  segid_output_fname = "chunk_$(chx)_$(chy)_$(chz)_cont_segids.fth"
+  segid_output_fname = "chunk_$(chx)_$(chy)_$(chz)_cont_segids.csv"
   s3_segid_output_fname = joinpath(base_s3_path,ch_contedge_subdir,segid_output_fname)
   @time S.InputOutput.write_column(chunk_cont_segids, segid_output_fname)
   run( `aws s3 cp $segid_output_fname $s3_segid_output_fname`)
@@ -633,10 +633,10 @@ function download_relevant_continuation_files(rel_indices, s3_dir_path)
     x,y,z = i
     continuations_fname = "chunk_$(x)_$(y)_$(z)_ch_conts.h5"
 
-    if !isfile(continuations_fname)
+    #if !isfile(continuations_fname)
       s3_fname = joinpath(s3_dir_path, continuations_fname)
       run( `aws s3 cp $s3_fname $continuations_fname` )
-    end
+    #end
   end
 
 end
@@ -689,7 +689,7 @@ function merge_cont_edges(taskdict)
 
   write_all_mergers(mergers_arr)
   #Writing results to s3
-  edge_output_fname = "chunk_$(chx)_$(chy)_$(chz)_cont_edges.fth"
+  edge_output_fname = "chunk_$(chx)_$(chy)_$(chz)_cont_edges.csv"
   s3_edge_output_fname = joinpath(base_s3_path,ch_contedge_subdir,edge_output_fname)
   S.InputOutput.write_edge_file(edges, locs, edge_output_fname)
   run( `aws s3 cp $edge_output_fname $s3_edge_output_fname` )
@@ -717,7 +717,7 @@ function global_semmap(taskdict)
 
   output_fname = "full_semmap.fth"
   s3_output_fname = joinpath(base_s3_path,output_fname)
-  S.InputOutput.write_semmap(assignments, full_semmap, output_fname)
+  S.InputOutput.FeatherIO.write_semmap(assignments, full_semmap, output_fname)
   run( `aws s3 cp $output_fname $s3_output_fname` )
 
 end
@@ -730,7 +730,7 @@ function load_all_semweights(sx,sy,sz)
   for z in 1:sz, y in 1:sy, x in 1:sx
 
     println((x,y,z))
-    @time a,w = S.InputOutput.read_semmap("chunk_$(x)_$(y)_$(z)_semmap.fth")
+    @time a,w = S.InputOutput.FeatherIO.read_semmap("chunk_$(x)_$(y)_$(z)_semmap.fth")
 
     semmap_arr[x,y,z] = w
   end
@@ -748,10 +748,10 @@ function download_relevant_semmaps(rel_indices, s3_dir_path)
     x,y,z = i
     local_fname = "chunk_$(x)_$(y)_$(z)_semmap.fth"
 
-    if !isfile(local_fname)
+    #if !isfile(local_fname)
       s3_fname = joinpath(s3_dir_path, local_fname)
       run( `aws s3 cp $s3_fname $local_fname` )
-    end
+    #end
   end
 
 end
@@ -772,7 +772,7 @@ function load_relevant_weights(rel_indices)
     lx,ly,lz = rel_indices[x,y,z]
     println((lx,ly,lz))
     fname = "chunk_$(lx)_$(ly)_$(lz)_semmap.fth"
-    @time a,w = S.InputOutput.read_semmap(fname)
+    @time a,w = S.InputOutput.FeatherIO.read_semmap(fname)
 
     w_arr[x,y,z] = w
 
