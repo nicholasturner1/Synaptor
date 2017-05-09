@@ -73,9 +73,7 @@ end
 
 
 function download_mst_rl(s3_fname, local_fname)
-  if !isfile(local_fname)
-    run( `aws s3 cp $s3_fname $local_fname` )
-  end
+  run( `aws s3 cp $s3_fname $local_fname` )
 end
 
 #==========================
@@ -116,7 +114,7 @@ function load_all_semmaps(sx,sy,sz)
   for z in 1:sz, y in 1:sy, x in 1:sx
 
     println((x,y,z))
-    @time a,w = S.InputOutput.read_semmap("chunk_$(x)_$(y)_$(z)_semmap.fth")
+    @time a,w = S.InputOutput.FeatherIO.read_semmap("chunk_$(x)_$(y)_$(z)_semmap.fth")
 
     semmap_arr[x,y,z] = w
   end
@@ -200,7 +198,7 @@ function find_edges(taskdict)
   psdseg_BA[chunk_bbox] = round(eltype(psdseg_BA),ccs)
 
   cont_output_fname = "chunk_$(chx)_$(chy)_$(chz)_ch_conts.h5"
-  s3_cont_output_fname = joinpath(base_s3_path,ch_edge_subdir,cont_output_fname)
+  s3_cont_output_fname = joinpath(base_s3_path,ch_cont_subdir,cont_output_fname)
   S.InputOutput.write_continuations(cont_output_fname, conts)
   run( `aws s3 cp $cont_output_fname $s3_cont_output_fname` )
 
