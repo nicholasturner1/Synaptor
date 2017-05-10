@@ -16,7 +16,7 @@ function read_idmap(input_fname)
   @assert isfile(input_fname)
   local df
   try
-    df = DataFrames.read(input_fname)
+    df = DataFrames.readtable(input_fname)
   catch
     return Dict{Int,Int}()
   end
