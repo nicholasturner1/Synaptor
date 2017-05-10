@@ -151,7 +151,7 @@ function merge_bboxes{K,V}(mapping, bboxes::Dict{K,V})
 
     new_bboxes[v] = [tmax,tmax,tmax,tmin,tmin,tmin]
   end
-  
+
   for (k,v) in mapping
 
     if v == 0 continue end
@@ -166,7 +166,7 @@ function merge_bboxes{K,V}(mapping, bboxes::Dict{K,V})
                      high[4],high[5],high[6]]
   end
 
-  new_bboxes  
+  new_bboxes
 end
 
 function merge_locs_and_sizes{lK,lV,sK,sV}(mapping, locs::Dict{lK,lV},
@@ -186,14 +186,19 @@ function merge_locs_and_sizes{lK,lV,sK,sV}(mapping, locs::Dict{lK,lV},
 
     if v == 0  continue  end
 
-    new_locs[v]  += locs[k] * sizes[k]
     new_sizes[v] += sizes[k]
+  end
+
+  for (k,v) in mapping
+
+    if v == 0  continue  end
+
+    new_locs[v]  += round(Int,locs[k] * (sizes[k]/new_sizes[v]))
 
   end
 
-
-  for k in keys(new_locs)
-    new_locs[k] = round(Int,new_locs[k] / sizes[k])  end
+  #for k in keys(new_locs)
+  #  new_locs[k] = round(Int,new_locs[k] / sizes[k])  end
 
   new_locs, new_sizes
 end
