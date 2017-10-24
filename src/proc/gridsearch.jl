@@ -74,7 +74,9 @@ function ccs_at_params( psd_vol; params... )
 
   params = Utils.collect_params(params)
 
-  ccs = SegUtils.connected_components3D(psd_vol, params[:CCthresh])
+  ccs = SegUtils.dilated_components(psd_vol, params[:dil_param],
+                                    params[:CCthresh])
+                                    
   SegUtils.filter_segs_by_size!(ccs, params[:SZthresh])
 
   ccs
