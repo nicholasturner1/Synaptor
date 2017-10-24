@@ -85,7 +85,7 @@ function filter_segs_by_size!( d::AbstractArray, thresh::Integer, szs=segment_si
 
   if length(to_keep) == 0 warn("no segments remaining after size threshold") end
 
-  filter_segments_by_ids!(d, to_keep)
+  filter_segs_by_id!(d, to_keep)
 
 end
 

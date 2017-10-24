@@ -16,6 +16,8 @@ export dilate_by_k!
 #SemanticMap
 export make_semantic_assignment, make_assignment
 export neighborhood_semmaps
+#DilComps
+export dilated_components, dilated_components!
 
 
 include("utils.jl"); using .Utils
@@ -24,6 +26,7 @@ include("conncomps.jl"); using .ConnComps
 include("conscomps.jl"); using .ConsComps
 include("dilation.jl"); using .Dilation
 include("semanticmap.jl"); using .SemanticMap
+include("dilcomps.jl"); using .DilComps
 
 
 end #module SegUtils

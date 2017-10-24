@@ -109,24 +109,37 @@ function fscore( tp::Real, fp::Real, fn::Real, beta::Real )
 end
 
 
+function fscore( prec::Real, rec::Real, beta::Real )
+
+  betasq = beta^2
+
+  (1 + betasq) / ( 1/prec + betasq/rec )
+end
+
+
 """
 
     false_positives( list1, list2 )
 
   Finds the false positives within `list1`
 
-  Assumes that `list2` represents the "ground truth" and has no duplicates
+  Assumes that `list2` represents the "ground truth"
 """
-function false_positives( list1, list2 )
+function false_positives( list1, list2, gt_dups=false )
 
-  gt_set = Set(list2)
+  gt_counts = Dict{eltype(list2),Int}()
+  for v in list2
+    if !haskey(gt_counts,v)  gt_counts[v] = 1
+    else                     gt_counts[v] += 1
+    end
+  end
 
   fps = zeros(Bool,length(list1))
 
   for (i,v) in enumerate(list1)
 
-    if v in gt_set
-      delete!(gt_set,v)
+    if haskey(gt_counts,v) && gt_counts[v] > 0
+      gt_counts[v] -= 1
     else
       fps[i] = true
     end

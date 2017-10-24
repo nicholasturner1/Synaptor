@@ -7,7 +7,7 @@ using ..Scores
 export match_locs, score_locs
 
 
-function score_locs{T}(segs::AbstractArray{T,3}, gt_segs::AbstractArray{T,3}, thr, res=[1,1,1], beta=1)
+function score_locs{S,T}(segs::AbstractArray{S,3}, gt_segs::AbstractArray{T,3}, thr, res=[1,1,1], beta=1)
 
   locs1 = SegUtils.centers_of_mass(segs)
   locs2 = SegUtils.centers_of_mass(gt_segs)
@@ -17,7 +17,7 @@ end
 
 function score_locs(locs1::Dict, locs2::Dict, thr, res=[1,1,1], beta=1)
 
-  a1, a2, d1, d2, ks1, ks2 = match_locs(locs1, locs2)
+  a1, a2, d1, d2, ks1, ks2 = match_locs(locs1, locs2, res)
 
   a1, d1 = threshold_assigns!(a1, d1, thr)
   all_gt = collect(keys(locs2))
@@ -55,7 +55,7 @@ function match_locs{T}(segs1::AbstractArray{T,3}, segs2::AbstractArray{T,3}, res
   locs1 = SegUtils.centers_of_mass(segs1)
   locs2 = SegUtils.centers_of_mass(segs2)
 
-  match_locs(locs1, locs2)
+  match_locs(locs1, locs2, res)
 end
 
 function match_locs(locs1::Dict, locs2::Dict, res=[1,1,1])
@@ -68,7 +68,7 @@ function match_locs(locs1::Dict, locs2::Dict, res=[1,1,1])
 
 
   #returns the matched index and distance to that index
-  a1, a2, d1, d2 = match_locs(ord_locs1, ord_locs2)
+  a1, a2, d1, d2 = match_locs(ord_locs1, ord_locs2, res)
 
 
   #map the matching indices to dictionary keys
@@ -91,7 +91,7 @@ function match_locs{T}(locs1::Vector{Vector{T}}, locs2::Vector{Vector{T}}, res=[
   dists = dists_across_locs(locs1, locs2, res)
 
   #assign_to_closest operates over column
-  assign2, dists2 = assign_to_closest(dists)
+  assign2, dists2 = assign_to_closest(dists) #assigning locs2 items to locs1
   assign1, dists1 = reverse_assignment_vec(assign2, dists2, length(locs1))
 
   assign1, assign2, dists1, dists2
