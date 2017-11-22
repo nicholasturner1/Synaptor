@@ -1,11 +1,6 @@
-# Synaptor
-Scripts for filtering convnet output for synapses, and assigning synapse directionality using segmentation and semantic information.
+# Synaptor v3
+Processing voxelwise convnet output to predict synpatic clefts, and assigning synaptic partners using asynet
 
-Main executables are:
-
-main.jl - For when both datasets are small and can fit in memory easily
-
-main_ooc.jl - For when either dataset can't fit into memory
-
-create_seg_volume.jl - For creating a segmentation from the results of main_ooc.jl
-
+Contact
+-------
+* Nicholas Turner \<nturner@cs.princeton.edu\>
