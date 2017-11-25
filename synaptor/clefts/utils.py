@@ -1,30 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import numpy as np
 from scipy import ndimage
 
-#import box
-
-
-def connected_components3D(d, thresh=0):
-    """
-    Performs basic connected components on network
-    output given a threshold value
-    """
-    return ndimage.label(d > thresh)[0]
-
-
-def dilate_by_k(d, k):
-    """"""
-    kernel = make_dilation_kernel(k)
-    return ndimage.grey_dilation(d, structure=kernel)
-
-
-def make_dilation_kernel(k):
-    """ 2D Manhattan Distance Kernel """
-
-    kernel = ndimage.generate_binary_structure(2,1)
-    return ndimage.iterate_structure(kernel, k)[np.newaxis,:,:]
+from .. import bbox
 
 
 def relabel_data_iterative(d,mapping):
@@ -78,10 +57,7 @@ def bounding_boxes(ccs):
 
     bbox_slices = ndimage.find_objects(standardized)
 
-    # bboxes = { v : bbox.BBox(bbox_slices[i]) for (i,v) in enumerate(ids) }
-    bboxes = { v : bbox_slices[i] for (i,v) in enumerate(ids) }
-
-    return bboxes
+    return { v : bbox.BBox3d(bbox_slices[i]) for (i,v) in enumerate(ids) }
 
 
 def segment_sizes(seg):
@@ -113,3 +89,4 @@ def filter_segs_by_id(seg, ids):
     removal_mapping = { v : 0 for v in ids }
 
     return relabel_data_lookup_arr(seg, removal_mapping)
+
