@@ -57,8 +57,8 @@ class BBox3d:
     def translate(self, v):
         
         x = slice(self._x.start + v[0], self._x.stop + v[0], None)
-        y = slice(self._y.start + v[0], self._y.stop + v[0], None)
-        z = slice(self._z.start + v[0], self._z.stop + v[0], None)
+        y = slice(self._y.start + v[1], self._y.stop + v[1], None)
+        z = slice(self._z.start + v[2], self._z.stop + v[2], None)
 
         return BBox3d(x,y,z)
 
