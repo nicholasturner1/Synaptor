@@ -36,19 +36,24 @@ def nonzero_unique_ids(seg):
     return ids[ids!=0]
 
 
-def centers_of_mass(ccs, ids=None):
+def centers_of_mass(ccs, offset=(0,0,0), ids=None):
 
     if ids is None:
         ids = nonzero_unique_ids(ccs)
 
     coords = ndimage.measurements.center_of_mass(ccs,ccs,ids)
-    #not sure if I should add one or not to be consistent - will test
-    #add_one = lambda x: (x[0]+1,x[1]+1,x[2]+1)
-    #return list(map(add_one, coords))
-    return coords
+
+    if offset == (0,0,0):
+        return coords
+
+    add_offset = lambda x: (x[0]+offset[0],
+                            x[1]+offset[1],
+                            x[2]+offset[2])
+
+    return list(map(add_offset, coords))
 
 
-def bounding_boxes(ccs):
+def bounding_boxes(ccs, offset=(0,0,0)):
 
     ids = nonzero_unique_ids(ccs)
 
@@ -57,7 +62,14 @@ def bounding_boxes(ccs):
 
     bbox_slices = ndimage.find_objects(standardized)
 
-    return { v : bbox.BBox3d(bbox_slices[i]) for (i,v) in enumerate(ids) }
+    bboxes = { v : bbox.BBox3d(bbox_slices[i]) for (i,v) in enumerate(ids) }
+
+    if offset == (0,0,0):
+        return bboxes
+
+    shifted = { segid : bbox.translate(offset) for (segid,bbox) in bboxes }
+
+    return shifted
 
 
 def segment_sizes(seg):
@@ -81,7 +93,7 @@ def filter_segs_by_size(seg, thresh, szs=None):
     to_remove = list(map(lambda x: x[0],
                          filter( lambda pair: pair[1] < thresh, szs.items())))
 
-    return filter_segs_by_id(seg, to_remove)
+    return filter_segs_by_id(seg, to_remove), szs
 
 
 def filter_segs_by_id(seg, ids):
