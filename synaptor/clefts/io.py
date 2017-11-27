@@ -52,7 +52,7 @@ def infer_dims(ordered_tups):
     assert num_tups % y_times_z == 0, "grid incomplete or redundant"
     assert num_tups % x_times_z == 0, "grid incomplete or redundant"
     assert num_tups % x_times_y == 0, "grid incomplete or redundant"
-    
+
     x = num_tups  // y_times_z
     y = x_times_z // x
     z = x_times_y // x
@@ -62,10 +62,10 @@ def infer_dims(ordered_tups):
 
 def read_chunk_seg_info(fname):
     return io.read_dframe(fname)
-    
+
 
 def write_chunk_seg_info(centers, sizes, bboxes, chunk_bounds, proc_dir_path):
-    
+
     sizes_df = pd.Series(sizes, columns=["sizes"])
     centers_df = dframe_from_tuple_dict(centers, COM_SCHEMA)
 
@@ -75,7 +75,7 @@ def write_chunk_seg_info(centers, sizes, bboxes, chunk_bounds, proc_dir_path):
     full_dframe = pd.concat((sizes_df, centers_df, bbox_df), axis=1)
 
     chunk_tag = io.chunk_tag(chunk_bounds)
-    seg_info_fname = os.path.join(proc_dir_path, 
+    seg_info_fname = os.path.join(proc_dir_path,
                                   "seg_infos/seg_info_{tag}".format(tag=chunk_tag))
 
     io.save_dframe(full_dframe, seg_info_fname)
@@ -90,7 +90,7 @@ def dframe_from_tuple_dict(tuple_dict, colnames):
 
 
 def write_chunk_continuations(conts, chunk_bounds, proc_dir_path):
-    
+
     chunk_tag = io.chunk_tag(chunk_bounds)
     fname = os.path.join(proc_dir_path,
                          "continuations/conts_{tag}".format(tag=chunk_tag))
@@ -98,6 +98,7 @@ def write_chunk_continuations(conts, chunk_bounds, proc_dir_path):
     fobj = io.make_local_h5(fname)
     for c in conts:
         c.write_to_fobj(fobj)
+    fobj.close()
 
-    io.send_local_h5(fname)
-
+    if io.is_remote_pathname(fname):
+        io.send_local_file(fobj.name, fname)

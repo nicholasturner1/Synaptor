@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 
 import numpy as np
-from scipiy import ndimage
-
-from . import utils
+from scipy import ndimage
 
 
 def dilated_components(output, dil_param, cc_thresh):
-    """ 
+    """
     Performs a version of connected components with dilation
 
     Expands the voxels over threshold by dil_param in 2D
@@ -16,7 +14,7 @@ def dilated_components(output, dil_param, cc_thresh):
     """
 
     if dil_param == 0:
-        return connected_components(output, cc_thresh)
+        return connected_components3d(output, cc_thresh)
 
     mask = output > cc_thresh
 
@@ -27,9 +25,9 @@ def dilated_components(output, dil_param, cc_thresh):
     ccs[mask == 0] = 0
 
     return ccs
-    
 
-def connected_components3D(d, thresh=0):
+
+def connected_components3d(d, thresh=0):
     """
     Performs basic connected components on network
     output given a threshold value
@@ -48,4 +46,3 @@ def make_dilation_kernel(k):
 
     kernel = ndimage.generate_binary_structure(2,1)
     return ndimage.iterate_structure(kernel, k)[np.newaxis,:,:]
-
