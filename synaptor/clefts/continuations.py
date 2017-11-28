@@ -60,8 +60,17 @@ class Continuation:
 
 
     def read_all_from_fname(fname):
+
+        res = {}
         with h5py.File(fname) as f:
-            return [self.read_from_fobj(f, segid) for segid in f.keys()]
+
+            for face in Face.all_faces():
+                face_dir = face.to_dir()
+                all_conts = [ Continuation.read_from_fobj(f,face,segid)
+                              for segid in f["/"+face_dir].keys() ]
+                res[face] = all_conts
+
+        return res
 
 
     def read_from_fname(fname, segid):
@@ -69,18 +78,21 @@ class Continuation:
             return read_from_fobj(f, segid)
 
 
-    def read_from_fobj(f, segid):
-        
-        face = Face.read_from_fobj(f, segid)
-        face_coords = f["/{segid}/coords"].value
+    def read_from_fobj(f, face, segid):
+       
+        face_dir = face.to_dir() 
+        coords_path = "/{face_dir}/{segid}".format(face_dir=face_dir, 
+                                                   segid=segid)
+        face_coords = f[coords_path].value
 
         return Continuation(segid, face, face_coords)
 
 
-    def write_to_fobj(f):
+    def write_to_fobj(self, f):
 
-        self.face.write_to_fobj(f, self.segid)
-        f.create_dataset("/{segid}/coords".format(segid=self.segid),
+        face_dir = self.face.to_dir()
+        f.create_dataset("/{face_dir}/{segid}".format(
+                         face_dir=face_dir, segid=self.segid),
                          dtype=np.uint16, data=self.face_coords)
 
 
@@ -114,12 +126,15 @@ class Face:
         return Face(axis, hi_index)
 
 
-    def write_to_fobj(self, segid=0):
+    def to_dir(self):
+        hi = "high" if self.hi_index else "low"
+        return "{axis}/{hi}".format(axis=self.axis, hi=hi)
 
-        f.create_dataset("/{segid}/face_axis".format(segid=segid),
-                         dtype=np.uint8, data=self.axis)
-        f.create_dataset("/{segid}/face_hi_index".format(segid=segid),
-                         dtype=np.bool,  data=self.hi_index)
+    
+    def all_faces():
+        """ Returns a generator over all possible 3d faces """
+        return (Face(axis,hi) for axis in range(3) for hi in (True,False))
+
 
     def __repr__(self):
         hi = "high" if self.hi_index else "low"

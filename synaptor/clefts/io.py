@@ -3,8 +3,10 @@
 
 import os
 import pandas as pd
+import numpy as np
 
 
+from . import continuations
 from .. import io
 
 
@@ -16,12 +18,23 @@ BBOX_SCHEMA = ["BBOX_bx","BBOX_by","BBOX_bz",
 def read_seg_infos(proc_dir_path):
 
     seg_info_dir = os.path.join(proc_dir_path,"seg_infos")
-    fnames = io.pull_all_files(seg_info_dir, "seg_infos")
+    fnames = io.pull_all_files(seg_info_dir)
 
     starts  = [ io.bbox_from_fname(f).min() for f in fnames ]
     dframes = [ read_chunk_seg_info(f) for f in fnames ]
 
     return make_info_arr({s : df for (s,df) in zip(starts, dframes)})
+
+
+def read_all_continuations(proc_dir_path):
+
+    continuation_dir = os.path.join(proc_dir_path, "continuations")
+    fnames = io.pull_all_files(continuation_dir)
+
+    starts = [io.bbox_from_fname(f).min() for f in fnames ]
+    cont_dicts = [ read_chunk_continuations(f) for f in fnames ]
+
+    return make_info_arr({s : cd for (s,cd) in zip(starts, cont_dicts)})
 
 
 def make_info_arr(start_lookup):
@@ -31,7 +44,11 @@ def make_info_arr(start_lookup):
 
     ordered = [start_lookup[k] for k in ordering]
 
-    return np.array(ordered).reshape(dims)
+    arr = np.array([None for _ in range(len(ordered))]) #object arr
+    for i in range(len(ordered)):
+        arr[i] = ordered[i]
+
+    return arr.reshape(dims)
 
 
 def infer_dims(ordered_tups):
@@ -54,8 +71,8 @@ def infer_dims(ordered_tups):
     assert num_tups % x_times_y == 0, "grid incomplete or redundant"
 
     x = num_tups  // y_times_z
-    y = x_times_z // x
-    z = x_times_y // x
+    y = x_times_y // x
+    z = x_times_z // x
 
     return (x,y,z)
 
@@ -100,5 +117,9 @@ def write_chunk_continuations(conts, chunk_bounds, proc_dir_path):
         c.write_to_fobj(fobj)
     fobj.close()
 
-    if io.is_remote_pathname(fname):
+    if io.is_remote_path(fname):
         io.send_local_file(fobj.name, fname)
+
+
+def read_chunk_continuations(fname):
+    return continuations.Continuation.read_all_from_fname(fname)
