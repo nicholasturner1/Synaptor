@@ -54,6 +54,15 @@ class BBox3d:
         return (self._x.stop, self._y.stop, self._z.stop) 
 
 
+    def transposed(self):
+        return BBox3d(self._z, self._y, self._x)
+
+
+    def astuple(self):
+        return (self._x.start, self._y.start, self._z.start,
+                self._x.stop,  self._y.stop,  self._z.stop)
+
+
     def translate(self, v):
         
         x = slice(self._x.start + v[0], self._x.stop + v[0], None)

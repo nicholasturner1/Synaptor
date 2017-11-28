@@ -18,8 +18,8 @@ def dilated_components(output, dil_param, cc_thresh):
 
     mask = output > cc_thresh
 
-    dil_mask = dilate_by_k(mask, dil_param)
-    ccs = connected_components(dil_mask, 0)
+    dil_mask = dilate_mask_by_k(mask, dil_param)
+    ccs = connected_components3d(dil_mask, 0)
 
     #Removing dilated voxels
     ccs[mask == 0] = 0
@@ -35,10 +35,10 @@ def connected_components3d(d, thresh=0):
     return ndimage.label(d > thresh)[0]
 
 
-def dilate_by_k(d, k):
+def dilate_mask_by_k(d, k):
     """ Dilates a volume of data by k """
     kernel = make_dilation_kernel(k)
-    return ndimage.grey_dilation(d, structure=kernel)
+    return ndimage.binary_dilation(d, structure=kernel)
 
 
 def make_dilation_kernel(k):

@@ -43,14 +43,17 @@ def centers_of_mass(ccs, offset=(0,0,0), ids=None):
 
     coords = ndimage.measurements.center_of_mass(ccs,ccs,ids)
 
+    coords_dict = { i : tuple(map(int,coord))
+                    for (i,coord) in zip(ids, coords) }
+
     if offset == (0,0,0):
-        return coords
+        return coords_dict
 
     add_offset = lambda x: (x[0]+offset[0],
                             x[1]+offset[1],
                             x[2]+offset[2])
 
-    return list(map(add_offset, coords))
+    return { i : add_offset(coord) for (i,coord) in coords_dict.items() }
 
 
 def bounding_boxes(ccs, offset=(0,0,0)):
@@ -67,7 +70,8 @@ def bounding_boxes(ccs, offset=(0,0,0)):
     if offset == (0,0,0):
         return bboxes
 
-    shifted = { segid : bbox.translate(offset) for (segid,bbox) in bboxes }
+    shifted = { segid : bbox.translate(offset) 
+                for (segid,bbox) in bboxes.items() }
 
     return shifted
 
@@ -93,7 +97,9 @@ def filter_segs_by_size(seg, thresh, szs=None):
     to_remove = list(map(lambda x: x[0],
                          filter( lambda pair: pair[1] < thresh, szs.items())))
 
-    return filter_segs_by_id(seg, to_remove), szs
+    remaining_sizes = dict(filter(lambda pair : pair[1] >= thresh, szs.items()))
+
+    return filter_segs_by_id(seg, to_remove), remaining_sizes
 
 
 def filter_segs_by_id(seg, ids):

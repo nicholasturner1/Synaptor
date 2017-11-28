@@ -66,7 +66,7 @@ def read_chunk_seg_info(fname):
 
 def write_chunk_seg_info(centers, sizes, bboxes, chunk_bounds, proc_dir_path):
 
-    sizes_df = pd.Series(sizes, columns=["sizes"])
+    sizes_df = pd.Series(sizes, name="sizes")
     centers_df = dframe_from_tuple_dict(centers, COM_SCHEMA)
 
     bbox_tuples = { k : bbox.astuple() for (k,bbox) in bboxes.items() }

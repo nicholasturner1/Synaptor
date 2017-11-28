@@ -11,7 +11,7 @@ def read_cloud_volume_chunk(cv_name, bbox):
 
     cv = cloudvolume.CloudVolume(cv_name)
 
-    return cv[bbox.index()]
+    return cv[bbox.index()][:,:,:,0]
 
 
 def write_cloud_volume_chunk(data, cv_name, bbox):

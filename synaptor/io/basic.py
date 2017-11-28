@@ -19,6 +19,15 @@ def chunk_tag(chunk_bounds):
     return "{0}_{1}_{2}-{3}_{4}_{5}".format(*chunk_bounds.min(),*chunk_bounds.max())
 
 
+def make_local_h5(pathname):
+    if is_remote_pathname(pathname):
+        fname = temp_pathname(pathname)
+    else:
+        fname = pathname
+
+    return local.open_h5(fname)
+    
+
 def temp_pathname(pathname):
     no_prefix = GCLOUD_REGEXP.sub("", AWS_REGEXP.sub("", pathname))
     tag = random_tag()
@@ -47,7 +56,7 @@ def save_dframe(dframe, pathname):
     else:
         local_fname = pathname
 
-    local.save_dframe(dframe, local_pathname)
+    local.save_dframe(dframe, local_fname)
 
     if is_remote_pathname(pathname):
         send_local_file(local_fname, pathname)
