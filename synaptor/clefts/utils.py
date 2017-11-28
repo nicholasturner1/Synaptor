@@ -100,7 +100,8 @@ def filter_segs_by_size(seg, thresh, szs=None, to_ignore=None):
     if to_ignore is not None:
         to_remove = to_remove.difference(to_ignore)
 
-    remaining_sizes = dict(filter(lambda pair: pair[0] not in to_remove, szs))
+    remaining_sizes = dict(filter(lambda pair: pair[0] not in to_remove, 
+                                  szs.items()))
 
     return filter_segs_by_id(seg, to_remove), remaining_sizes
 

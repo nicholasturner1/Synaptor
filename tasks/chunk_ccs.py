@@ -23,7 +23,7 @@ def main(psd_cvname,  cc_cvname, proc_dir_path,
 
 
     #Processing
-    dil_ccs = s.dilated_components(psd_output, cc_thresh, dil_param)
+    dil_ccs = s.dilated_components(psd_output, dil_param, cc_thresh) 
 
     continuations = s.extract_continuations(dil_ccs)
     cont_ids = set(cont.segid for cont in continuations)
