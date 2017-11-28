@@ -24,13 +24,16 @@ def main(psd_cvname,  cc_cvname, proc_dir_path,
 
     #Processing
     dil_ccs = s.dilated_components(psd_output, cc_thresh, dil_param)
-    dil_ccs, sizes = s.filter_segs_by_size(dil_ccs, sz_thresh)
+
+    continuations = s.extract_continuations(dil_ccs)
+    cont_ids = set(cont.segid for cont in continuations)
+
+    dil_ccs, sizes = s.filter_segs_by_size(dil_ccs, sz_thresh, 
+                                           to_ignore=cont_ids)
 
     offset  = chunk_bounds.min()
     centers = s.centers_of_mass(dil_ccs, offset=offset)
     bboxes  = s.bounding_boxes(dil_ccs, offset=offset)
-
-    continuations = s.extract_continuations(dil_ccs)
 
     #Writing
     S.IO.write_cloud_volume_chunk(dil_ccs, cc_cvname, chunk_bounds)

@@ -89,15 +89,18 @@ def segment_sizes(seg):
     return size_dict
 
 
-def filter_segs_by_size(seg, thresh, szs=None):
+def filter_segs_by_size(seg, thresh, szs=None, to_ignore=None):
 
     if szs is None:
         szs = segment_sizes(seg)
 
-    to_remove = list(map(lambda x: x[0],
-                         filter( lambda pair: pair[1] < thresh, szs.items())))
+    to_remove = set(map(lambda x: x[0],
+                        filter( lambda pair: pair[1] < thresh, szs.items())))
 
-    remaining_sizes = dict(filter(lambda pair : pair[1] >= thresh, szs.items()))
+    if to_ignore is not None:
+        to_remove = to_remove.difference(to_ignore)
+
+    remaining_sizes = dict(filter(lambda pair: pair[0] not in to_remove, szs))
 
     return filter_segs_by_id(seg, to_remove), remaining_sizes
 
