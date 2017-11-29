@@ -103,7 +103,10 @@ def filter_segs_by_size(seg, thresh, szs=None, to_ignore=None):
     remaining_sizes = dict(filter(lambda pair: pair[0] not in to_remove, 
                                   szs.items()))
 
-    return filter_segs_by_id(seg, to_remove), remaining_sizes
+    if len(to_remove) > 0:
+        return filter_segs_by_id(seg, to_remove), remaining_sizes
+    else:
+        return seg, remaining_sizes
 
 
 def filter_segs_by_id(seg, ids):
