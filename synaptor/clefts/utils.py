@@ -113,5 +113,8 @@ def filter_segs_by_id(seg, ids):
 
     removal_mapping = { v : 0 for v in ids }
 
-    return relabel_data_lookup_arr(seg, removal_mapping)
+    if len(removal_mapping) > 0:
+        return relabel_data_lookup_arr(seg, removal_mapping)
+    else:
+        return seg
 
