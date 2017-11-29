@@ -8,15 +8,13 @@ import h5py
 def extract_all_continuations(segs):
 
     continuations = []
-    for axis in (0,1,2):
-        for hi_index in (True,False):
+    for face in Face.all_faces():
 
-            face = Face(axis, hi_index)
-            extracted = face.extract(segs)
+        extracted = face.extract(segs)
 
-            segid_lookup = make_id_lookup(extracted)
-            for (segid,coords) in segid_lookup.items():
-                continuations.append(Continuation(segid, face, np.array(coords)))
+        segid_lookup = make_id_lookup(extracted)
+        for (segid,coords) in segid_lookup.items():
+            continuations.append(Continuation(segid, face, np.array(coords)))
 
     return continuations
 
@@ -66,7 +64,12 @@ class Continuation:
 
             for face in Face.all_faces():
                 face_dir = face.to_dir()
-                all_conts = [ Continuation.read_from_fobj(f,face,segid)
+
+                if not Face.represented_in_h5(f,face):
+                     res[face] = []
+                     continue 
+
+                all_conts = [ Continuation.read_from_fobj(f,face,int(segid))
                               for segid in f["/"+face_dir].keys() ]
                 res[face] = all_conts
 
@@ -79,9 +82,9 @@ class Continuation:
 
 
     def read_from_fobj(f, face, segid):
-       
-        face_dir = face.to_dir() 
-        coords_path = "/{face_dir}/{segid}".format(face_dir=face_dir, 
+
+        face_dir = face.to_dir()
+        coords_path = "/{face_dir}/{segid}".format(face_dir=face_dir,
                                                    segid=segid)
         face_coords = f[coords_path].value
 
@@ -115,33 +118,49 @@ class Face:
         self.hi_index = hi_index
 
 
+    def opposite(self):
+        return Face(self.axis, not(self.hi_index))
+
+
     def extract(self, data):
         index = -1 if self.hi_index else 0
         return np.take(data, index, axis=self.axis)
-
-
-    def read_from_fobj(f, segid=0):
-        axis = f["/{segid}/face_axis"].value
-        hi_index = f["/{segid}/face_hi_index"].value
-        return Face(axis, hi_index)
 
 
     def to_dir(self):
         hi = "high" if self.hi_index else "low"
         return "{axis}/{hi}".format(axis=self.axis, hi=hi)
 
-    
+
+    def represented_in_h5(fobj, face):
+        hi = "high" if face.hi_index else "low"
+        axis_str = str(face.axis)
+        return (axis_str in fobj.keys() and 
+                hi in fobj[axis_str].keys())
+
+
     def all_faces():
         """ Returns a generator over all possible 3d faces """
         return (Face(axis,hi) for axis in range(3) for hi in (True,False))
 
 
+    def __eq__(self, other):
+        return self.axis == other.axis and self.hi_index == other.hi_index
+
+
+    def __ne__(self, other):
+        return not(self == other)
+
+
+    def __hash__(self):
+        return hash((self.axis,self.hi_index))
+
+
     def __repr__(self):
         hi = "high" if self.hi_index else "low"
         return "<Face {axis},{hi}>".format(axis=self.axis, hi=hi)
-    
+
 
     def __str__(self):
         hi = "high" if self.hi_index else "low"
         return "<Face {axis},{hi}>".format(axis=self.axis, hi=hi)
-
