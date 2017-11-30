@@ -32,6 +32,7 @@ def relabel_data_lookup_arr(d,mapping):
 
 
 def nonzero_unique_ids(seg):
+    """ Finds the nonzero ids in a np array """
     ids = np.unique(seg)
     return ids[ids!=0]
 
@@ -70,7 +71,7 @@ def bounding_boxes(ccs, offset=(0,0,0)):
     if offset == (0,0,0):
         return bboxes
 
-    shifted = { segid : bbox.translate(offset) 
+    shifted = { segid : bbox.translate(offset)
                 for (segid,bbox) in bboxes.items() }
 
     return shifted
@@ -100,7 +101,7 @@ def filter_segs_by_size(seg, thresh, szs=None, to_ignore=None):
     if to_ignore is not None:
         to_remove = to_remove.difference(to_ignore)
 
-    remaining_sizes = dict(filter(lambda pair: pair[0] not in to_remove, 
+    remaining_sizes = dict(filter(lambda pair: pair[0] not in to_remove,
                                   szs.items()))
 
     if len(to_remove) > 0:
@@ -117,4 +118,3 @@ def filter_segs_by_id(seg, ids):
         return relabel_data_lookup_arr(seg, removal_mapping)
     else:
         return seg
-
