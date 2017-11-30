@@ -53,9 +53,9 @@ def is_remote_path(path):
     return GCLOUD_REGEXP.match(path) or AWS_REGEXP.match(path)
 
 
-def save_dframe(dframe, path):
+def write_dframe(dframe, path):
     """
-    Saves a dataframe to a path - path can specify
+    Writes a dataframe to a path - path can specify
     remote storage in Google Cloud or AWS S3
     """
 
@@ -64,7 +64,7 @@ def save_dframe(dframe, path):
     else:
         local_fname = path
 
-    local.save_dframe(dframe, local_fname)
+    local.write_dframe(dframe, local_fname)
 
     if is_remote_path(path):
         send_local_file(local_fname, path)
@@ -97,6 +97,25 @@ def send_local_file(local_name, path):
         raise(Exception("Pathname doesn't match remote pattern"))
 
 
+def send_directory(local_dir, path):
+
+    if   GCLOUD_REGEXP.match(path):
+        gcloud.send_local_dir(local_name, path)
+    elif AWS_REGEXP.match(path):
+        aws.send_local_dir(local_name, path)
+    else:
+        raise(Exception("Pathname doesn't match remote pattern"))
+
+
+def pull_file(dir_path):
+    
+    if   GCLOUD_REGEXP.match(dir_path):
+        return gcloud.pull_file(dir_path)
+    elif AWS_REGEXP.match(dir_path):
+        return aws.pull_file(dir_path)
+    else: #local
+        return local.pull_file(dir_path)
+
 def pull_all_files(dir_path):
 
     if   GCLOUD_REGEXP.match(dir_path):
@@ -119,3 +138,11 @@ def bbox_from_fname(path):
     end = tuple(map(int,end_str.split("_")))
 
     return bbox.BBox3d(beg, end)
+
+
+def extract_sorted_bboxes(local_dir):
+
+    fnames = local.pull_all_files(local_dir)
+    bboxes = list(map(bbox_from_fname, fnames))
+
+    return sorted(bboxes, key=lambda bb: bb.min())

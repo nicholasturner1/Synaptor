@@ -6,9 +6,9 @@ import pandas as pd
 
 
 
-def save_dframe(dframe, path):
+def write_dframe(dframe, path):
     """ Simple for now """
-    dframe.to_csv(path + ".csv", index_label="psd_segid")
+    dframe.to_csv(path, index_label="psd_segid")
 
 
 def read_dframe(path):
@@ -39,6 +39,10 @@ def write_h5(data, fname, dset_name="/main", chunk_size=None):
         else:
             f.create_dataset(dset_name, data=data, chunks=chunk_size,
                              compression="gzip", compression_opts=4)
+
+def pull_file(fname):
+    assert os.path.exists
+    return fname
 
 
 def pull_all_files(dirname):

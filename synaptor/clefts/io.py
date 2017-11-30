@@ -14,27 +14,33 @@ COM_SCHEMA  = ["COM_x","COM_y","COM_z"]
 BBOX_SCHEMA = ["BBOX_bx","BBOX_by","BBOX_bz",
                "BBOX_ex","BBOX_ey","BBOX_ez"]
 
+SEG_INFO_DIRNAME     = "seg_infos"
+CONTINUATION_DIRNAME = "continuations"
+ID_MAP_DIRNAME       = "id_maps"
+
 
 def read_seg_infos(proc_dir_path):
 
-    seg_info_dir = os.path.join(proc_dir_path,"seg_infos")
+    seg_info_dir = os.path.join(proc_dir_path, SEG_INFO_DIRNAME)
     fnames = io.pull_all_files(seg_info_dir)
 
     starts  = [ io.bbox_from_fname(f).min() for f in fnames ]
     dframes = [ read_chunk_seg_info(f) for f in fnames ]
 
-    return make_info_arr({s : df for (s,df) in zip(starts, dframes)})
+    info_arr = make_info_arr({s : df for (s,df) in zip(starts, dframes)})
+    return info_arr, os.path.dirname(fnames[0])
 
 
 def read_all_continuations(proc_dir_path):
 
-    continuation_dir = os.path.join(proc_dir_path, "continuations")
+    continuation_dir = os.path.join(proc_dir_path, CONTINUATION_DIRNAME)
     fnames = io.pull_all_files(continuation_dir)
 
     starts = [io.bbox_from_fname(f).min() for f in fnames ]
     cont_dicts = [ read_chunk_continuations(f) for f in fnames ]
 
-    return make_info_arr({s : cd for (s,cd) in zip(starts, cont_dicts)})
+    info_arr = make_info_arr({s : cd for (s,cd) in zip(starts, cont_dicts)})
+    return info_arr, os.path.dirname(fnames[0])
 
 
 def make_info_arr(start_lookup):
@@ -92,10 +98,16 @@ def write_chunk_seg_info(centers, sizes, bboxes, chunk_bounds, proc_dir_path):
     full_dframe = pd.concat((sizes_df, centers_df, bbox_df), axis=1)
 
     chunk_tag = io.chunk_tag(chunk_bounds)
-    seg_info_fname = os.path.join(proc_dir_path,
-                                  "seg_infos/seg_info_{tag}".format(tag=chunk_tag))
+    seg_info_fname = os.path.join(proc_dir_path, SEG_INFO_DIRNAME,
+                                  "seg_info_{tag}.df".format(tag=chunk_tag))
 
-    io.save_dframe(full_dframe, seg_info_fname)
+    io.write_dframe(full_dframe, seg_info_fname)
+
+
+def write_full_seg_info(full_seg_info, proc_dir_path):
+
+    seg_info_fname = os.path.join(proc_dir_path, "full_seg_info.df")
+    io.write_dframe(full_seg_info, seg_info_fname)
 
 
 def dframe_from_tuple_dict(tuple_dict, colnames):
@@ -109,8 +121,8 @@ def dframe_from_tuple_dict(tuple_dict, colnames):
 def write_chunk_continuations(conts, chunk_bounds, proc_dir_path):
 
     chunk_tag = io.chunk_tag(chunk_bounds)
-    fname = os.path.join(proc_dir_path,
-                         "continuations/conts_{tag}".format(tag=chunk_tag))
+    fname = os.path.join(proc_dir_path, CONTINUATION_DIRNAME,
+                         "conts_{tag}".format(tag=chunk_tag))
 
     fobj = io.make_local_h5(fname)
     for c in conts:
@@ -123,3 +135,33 @@ def write_chunk_continuations(conts, chunk_bounds, proc_dir_path):
 
 def read_chunk_continuations(fname):
     return continuations.Continuation.read_all_from_fname(fname)
+
+
+def write_chunk_id_maps(chunk_id_maps, chunk_bounds, proc_dir_path):
+
+    for (id_map, bounds) in zip(chunk_id_maps.flat, chunk_bounds):
+
+        chunk_tag = io.chunk_tag(bounds)
+        fname = os.path.join(ID_MAP_DIRNAME,
+                             "id_map_{tag}.df".format(tag=chunk_tag))
+        write_id_map(id_map, fname)
+
+    if io.is_remote_path(proc_dir_path):
+        io.send_directory(proc_dir_path, "id_maps")
+
+
+def read_chunk_id_map(proc_dir_path, chunk_bounds):
+
+    chunk_tag = io.chunk_tag(chunk_bounds)
+    basename = "id_map_{tag}.df".format(tag=chunk_tag)
+    fname = io.pull_file(os.path.join(proc_dir_path, ID_MAP_DIRNAME, basename))
+
+    df = io.read_dframe(fname)
+
+    return dict(zip(df.index, df.new_id))
+
+
+def write_id_map(id_map, fname):
+
+    df = pd.DataFrame(pd.Series(id_map), columns=["new_id"])
+    io.write_dframe(df, fname)

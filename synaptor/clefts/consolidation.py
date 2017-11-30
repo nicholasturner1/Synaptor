@@ -182,6 +182,8 @@ def merge_cont_info(full_seg_info_df, cont_id_map):
 
     full_seg_info_df.drop(to_drop, inplace=True)
 
+    return full_seg_info_df
+
 
 def unwrap_row(df_row):
 
@@ -208,3 +210,10 @@ def weighted_sum(com1, sz1, com2, sz2):
     h2 = (com2[0]*frac2, com2[2]*frac2, com2[2]*frac2)
 
     return (h1[0]+h2[0], h1[1]+h2[1], h1[2]+h2[2])
+
+
+def enforce_size_threshold(seg_info_df, size_thr):
+    violations = seg_info_df[seg_info_df.sizes < size_thr].index.tolist()
+    seg_info_df.drop(violations, inplace=True)
+
+    return {v : 0 for v in violations}
