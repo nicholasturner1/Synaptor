@@ -3,7 +3,7 @@
 import numpy as np
 from scipy import ndimage
 
-from .. import bbox
+from . import bbox
 
 
 def relabel_data_iterative(d,mapping):
