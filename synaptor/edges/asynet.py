@@ -2,14 +2,14 @@
 
 import random, copy, operator
 
+import torch
+from torch.autograd import Variable
+from torch.nn import functional as F
+
 import numpy as np
 import scipy.ndimage as ndimage
 import scipy.ndimage.morphology as morph
 import pandas as pd
-
-import torch
-from torch.autograd import Variable
-from torch.nn import functional as F
 
 
 from .. import bbox

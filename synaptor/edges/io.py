@@ -11,6 +11,9 @@ NETWORK_DIRNAME = "network"
 NETWORK_FNAME   = "net.py"
 CHKPT_FNAME     = "net.chkpt"
 
+EDGES_DIRNAME = "chunk_edges"
+
+
 def read_network(proc_dir_path):
 
     model_fname = os.path.join(proc_dir_path, NETWORK_DIRNAME, NETWORK_FNAME)
@@ -25,13 +28,27 @@ def read_network(proc_dir_path):
     return model
 
 
-def write_chunk_edges():
-    pass
+def write_chunk_edges(edges_dframe, chunk_bounds, proc_dir_path):
+
+    chunk_tag = io.chunk_tag(chunk_bounds)
+    edges_df_fname = os.path.join(proc_dir_path, EDGES_DIRNAME,
+                                 "chunk_edges_{tag}.df".format(tag=chunk_tag))
+
+    io.write_dframe(edges_dframe, edges_df_fname)
 
 
 def read_all_edges():
-    pass
+
+    edges_dir = os.path.join(proc_dir_path, EDGES_DIRNAME)
+    fnames = io.pull_all_files(edges_dir)
+    assert len(fnames) > 0, "No filenames returned"
+
+    starts  = [ io.bbox.from_fname(f).min() for f in fnames ]
+    dframes = [ read_chunk_edges(f) for f in fnames ]
+
+    info_arr = io.utils.make_info_arr({s : df for (s,df) in zip(starts, dframes)})
+    return info_arr, os.path.dirname(fnames[0])
 
 
-def read_chunk_edges():
-    pass
+def read_chunk_edges(fname):
+    return io.read_dframe(fname)
