@@ -53,13 +53,15 @@ def infer_edges(net, img, psd, seg, offset, patchsz,
             seg_locs = update_locs(new_locs, seg_locs)
 
 
-        pre_seg, post_seg, pre_ws, post_ws = make_assignment(seg_weights)
+        pre_seg, post_seg, pre_w, post_w = make_assignment(seg_weights)
         pre_loc, post_loc = seg_locs[pre_seg], seg_locs[post_seg]
+        pre_sz,  post_sz  = seg_szs[pre_seg],  seg_szs[post_seg]
 
 
         edges.append(make_record(i, pre_seg, post_seg,
-                                 seg_locs, seg_weights,
-                                 seg_szs))
+                                 pre_loc, post_loc,
+                                 pre_w, post_w, 
+                                 pre_sz, post_sz))
 
     return make_record_dframe(edges)
 
@@ -123,7 +125,7 @@ def torch_dilation(seg, kernel, dil_param):
     seg_v = make_variable( seg, volatile=True )
     ker_v = make_variable( kernel, volatile=True )
     sz = kernel.shape
-    padding = (sz[3]//2,sz[4]//2,sz[5]//2)
+    padding = (sz[2]//2,sz[3]//2,sz[4]//2)
 
     output = torch.nn.functional.conv3d( seg_v, ker_v, padding=padding )
 
@@ -206,7 +208,7 @@ def dict_tuple_avg(d1, s1, d2, s2):
     sizes   = copy.copy(s1)
 
     for (k,v) in d2.items():
-        if weights.has_key(k):
+        if k in weights:
 
             nv, ns = d2[k],s2[k]
             ov, os = weights[k], sizes[k]
@@ -250,22 +252,26 @@ def make_assignment(weights):
     pre_seg,  pre_weight  = max(pre_weights,  key=operator.itemgetter(1))
     post_seg, post_weight = max(post_weights, key=operator.itemgetter(1))
 
-    return (pre_seg, post_seg)
+    return pre_seg, post_seg, pre_weight, post_weight
 
 
-def make_record(psdid, pre_seg, post_seg, locs, weights, sizes):
+def make_record(psdid, 
+                pre_seg, post_seg, 
+                pre_loc, post_loc, 
+                pre_weight, post_weight, 
+                pre_size, post_size):
 
     cols = ["psd_segid",     "presyn_seg", "postsyn_seg",
             "presyn_x",      "presyn_y",   "presyn_z",
             "postsyn_x",     "postsyn_y",  "postsyn_z",
             "presyn_wt",     "postsyn_wt",
-            "presyn_sz",     "postsyn_wt" ]
+            "presyn_sz",     "postsyn_sz" ]
 
     data = [psdid,            pre_seg,      post_seg,
-            *locs[pre_seg],
-            *locs[post_seg],
-            weights[pre_seg], weights[post_seg],
-            sizes[pre_seg],   sizes[post_seg]]
+            *pre_loc,
+            *post_loc,
+            pre_weight,       post_weight,
+            pre_size,         post_size]
 
     assert len(data) == len(cols)
 
