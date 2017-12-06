@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import os, glob
+import os, glob, shutil
 import h5py
 import pandas as pd
 
@@ -39,6 +39,17 @@ def write_h5(data, fname, dset_name="/main", chunk_size=None):
         else:
             f.create_dataset(dset_name, data=data, chunks=chunk_size,
                              compression="gzip", compression_opts=4)
+
+def send_local_file(src, dst):
+    shutil.copyfile(src, dst)
+
+
+def send_local_dir(dirname, dst):
+    full_dst = os.path.join(dst,dirname)
+    if os.path.exists(full_dst):
+        os.rmdir(full_dst)
+    shutil.move(dirname, dst)
+
 
 def pull_file(fname):
     assert os.path.exists

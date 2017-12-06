@@ -2,6 +2,7 @@
 
 
 import os, re, random, string, glob
+import warnings
 
 
 from . import local
@@ -34,7 +35,7 @@ def make_local_h5(path):
         fname = path
 
     return local.open_h5(fname)
-    
+
 
 def temp_path(path):
     no_prefix = GCLOUD_REGEXP.sub("", AWS_REGEXP.sub("", path))
@@ -94,27 +95,32 @@ def send_local_file(local_name, path):
     elif AWS_REGEXP.match(path):
         aws.send_local_file(local_name, path)
     else:
-        raise(Exception("Pathname doesn't match remote pattern"))
+        warnings.warn("Pathname {} doesn't match remote pattern".format(path),
+                      Warning)
+        local.send_local_file(local_name, path)
 
 
 def send_directory(local_dir, path):
 
     if   GCLOUD_REGEXP.match(path):
-        gcloud.send_local_dir(local_name, path)
+        gcloud.send_local_dir(local_dir, path)
     elif AWS_REGEXP.match(path):
-        aws.send_local_dir(local_name, path)
+        aws.send_local_dir(local_dir, path)
     else:
-        raise(Exception("Pathname doesn't match remote pattern"))
+        warnings.warn("Pathname {} doesn't match remote pattern".format(path),
+                      Warning)
+        local.send_local_dir(local_dir, path)
 
 
 def pull_file(dir_path):
-    
+
     if   GCLOUD_REGEXP.match(dir_path):
         return gcloud.pull_file(dir_path)
     elif AWS_REGEXP.match(dir_path):
         return aws.pull_file(dir_path)
     else: #local
         return local.pull_file(dir_path)
+
 
 def pull_all_files(dir_path):
 

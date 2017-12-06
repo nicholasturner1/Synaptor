@@ -85,7 +85,7 @@ def write_chunk_continuations(conts, chunk_bounds, proc_dir_path):
 
     chunk_tag = io.chunk_tag(chunk_bounds)
     fname = os.path.join(proc_dir_path, CONTINUATION_DIRNAME,
-                         "conts_{tag}".format(tag=chunk_tag))
+                         "conts_{tag}.h5".format(tag=chunk_tag))
 
     fobj = io.make_local_h5(fname)
     for c in conts:
@@ -102,6 +102,9 @@ def read_chunk_continuations(fname):
 
 def write_chunk_id_maps(chunk_id_maps, chunk_bounds, proc_dir_path):
 
+    if not os.path.exists(ID_MAP_DIRNAME):
+        os.makedirs(ID_MAP_DIRNAME)
+
     for (id_map, bounds) in zip(chunk_id_maps.flat, chunk_bounds):
 
         chunk_tag = io.chunk_tag(bounds)
@@ -109,8 +112,7 @@ def write_chunk_id_maps(chunk_id_maps, chunk_bounds, proc_dir_path):
                              "id_map_{tag}.df".format(tag=chunk_tag))
         write_id_map(id_map, fname)
 
-    if io.is_remote_path(proc_dir_path):
-        io.send_directory(proc_dir_path, "id_maps")
+    io.send_directory(ID_MAP_DIRNAME, proc_dir_path)
 
 
 def read_chunk_id_map(proc_dir_path, chunk_bounds):

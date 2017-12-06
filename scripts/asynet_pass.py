@@ -11,7 +11,7 @@ Connected Component Consolidation
 import synaptor as s
 
 
-def main(img_cvname, cc_cvname, seg_cvname,
+def main(img_fname, cc_fname, seg_fname,
          chunk_begin, chunk_end, patchsz,
          num_samples_per_cleft, dil_param,
          proc_dir_path):
@@ -20,19 +20,19 @@ def main(img_cvname, cc_cvname, seg_cvname,
     offset = chunk_bounds.min()
 
     #Reading
-    img    = s.io.read_cloud_volume_chunk(img_cvname, chunk_bounds)
-    clefts = s.io.read_cloud_volume_chunk(cc_cvname, chunk_bounds)
-    seg    = s.io.read_cloud_volume_chunk(seg_cvname, chunk_bounds)
+    img    = s.io.local.read_h5(img_fname)
+    clefts = s.io.local.read_h5(cc_fname)
+    seg    = s.io.local.read_h5(seg_fname)
     net    = s.edges.io.read_network(proc_dir_path)
 
 
     #Processing
-    edges = s.edges.infer_edges(net, img, clefts, seg,
+    edges = s.edges.infer_edges(net, img, psd, seg,
                                 offset, patchsz,
                                 num_samples_per_cleft,
                                 dil_param)
 
-    edges = s.edges.add_seg_size(edges, clefts)
+    edges = s.edges.add_seg_size(edges, psd)
 
 
     #Writing
@@ -46,9 +46,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
 
-    parser.add_argument("img_cvname")
-    parser.add_argument("cc_cvname")
-    parser.add_argument("seg_cvname")
+    parser.add_argument("img_fname")
+    parser.add_argument("cc_fname")
     parser.add_argument("num_samples_per_cleft", type=int)
     parser.add_argument("dil_param", type=int)
     parser.add_argument("proc_dir_path")

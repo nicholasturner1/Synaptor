@@ -11,16 +11,16 @@ def main(psd_fname,  cc_fname, proc_dir_path,
     chunk_bounds = s.bbox.BBox3d(chunk_begin, chunk_end)
 
     #Reading
-    psd_output = s.io.read_cloud_volume_chunk(psd_fname, chunk_bounds)
+    psd_output = s.io.local.read_h5(psd_fname)
 
 
     #Processing
-    dil_ccs = s.dilated_components(psd_output, dil_param, cc_thresh)
+    dil_ccs = s.dilated_components(psd_output, dil_param, cc_thresh) 
 
     continuations = s.extract_all_continuations(dil_ccs)
     cont_ids = set(cont.segid for cont in continuations)
 
-    dil_ccs, sizes = s.filter_segs_by_size(dil_ccs, sz_thresh,
+    dil_ccs, sizes = s.filter_segs_by_size(dil_ccs, sz_thresh, 
                                            to_ignore=cont_ids)
 
     offset  = chunk_bounds.min()
@@ -28,7 +28,7 @@ def main(psd_fname,  cc_fname, proc_dir_path,
     bboxes  = s.bounding_boxes(dil_ccs, offset=offset)
 
     #Writing
-    s.io.write_cloud_volume_chunk(dil_ccs, cc_fname, chunk_bounds)
+    s.io.local.write_h5(dil_ccs, cc_fname)
     s.clefts.io.write_chunk_continuations(continuations, chunk_bounds, proc_dir_path)
     s.clefts.io.write_chunk_seg_info(centers, sizes, bboxes, chunk_bounds, proc_dir_path)
 
