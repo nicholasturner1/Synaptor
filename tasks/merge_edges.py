@@ -13,17 +13,17 @@ def main(voxel_res, dist_thr, proc_dir_path):
 
 
     #Processing
-    full_edge_df = s.edges.consolidate_edges(edges_arr)
-    full_df = s.edges.merge_dframes(cleft_info_df, full_edge_df)
+    full_edge_df = s.consolidate_edges(edges_arr)
+    full_df = s.merge_dframes(cleft_info_df, full_edge_df)
 
-    dup_id_map = s.clefts.merge_duplicate_clefts(full_df, dist_thr, voxel_res)
-    full_df = s.edges.merge_edge_info(full_df, dup_id_map)
+    dup_id_map = s.merge_duplicate_clefts(full_df, dist_thr, voxel_res)
+    full_df = s.merge_full_df(full_df, dup_id_map)
 
 
     #Writing
-    s.edges.io.write_dup_id_map(dup_id_map, proc_dir_path)
-    s.edges.io.write_full_edge_list(full_edge_df, proc_dir_path)
-    s.edges.io.write_final_dataframe(full_df, proc_dir_path)
+    s.merge.io.write_dup_id_map(dup_id_map, proc_dir_path)
+    s.merge.io.write_cons_edge_list(full_edge_df, proc_dir_path)
+    s.merge.io.write_final_df(full_df, proc_dir_path)
 
 
 if __name__ == "__main__":

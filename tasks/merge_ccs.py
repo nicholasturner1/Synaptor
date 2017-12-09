@@ -20,12 +20,12 @@ def main(proc_dir_path, size_thr):
 
 
     #Processing
-    cons_cleft_info, chunk_id_maps = s.clefts.consolidate_cleft_info_arr(cleft_info_arr)
+    cons_cleft_info, chunk_id_maps = s.consolidate_cleft_info_arr(cleft_info_arr)
     cont_info_arr = s.apply_chunk_id_maps(cont_info_arr, chunk_id_maps)
     cont_id_map = s.merge_connected_continuations(cont_info_arr)
 
     chunk_id_maps = s.update_chunk_id_maps(chunk_id_maps, cont_id_map)
-    cons_cleft_info = s.merge_cont_df(cons_cleft_info, cont_id_map)
+    cons_cleft_info = s.merge_cleft_df(cons_cleft_info, cont_id_map)
 
     size_thr_map  = s.enforce_size_threshold(cons_cleft_info, size_thr)
     chunk_id_maps = s.update_chunk_id_maps(chunk_id_maps, size_thr_map)

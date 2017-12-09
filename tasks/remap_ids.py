@@ -21,7 +21,7 @@ def main(cv_path_in, cv_path_out, chunk_begin, chunk_end, proc_dir_path):
 
 
     #Processing
-    chunk_id_map = s.merge_update_id_map(chunk_id_map, dup_id_map)
+    chunk_id_map = s.merge.update_id_map(chunk_id_map, dup_id_map)
     cc_chunk = s.seg_utils.relabel_data_lookup_arr(cc_chunk, chunk_id_map)
 
 

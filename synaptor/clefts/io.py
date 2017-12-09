@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 
 
-from . import continuations
+from ..merge import continuations
 from .. import io
 
 
