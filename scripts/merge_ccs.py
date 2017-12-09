@@ -20,19 +20,19 @@ def main(proc_dir_path, size_thr):
 
 
     #Processing
-    full_seg_info, chunk_id_maps = s.clefts.consolidate_info_arr(seg_info_arr)
-    cont_info_arr = s.clefts.apply_chunk_id_maps(cont_info_arr, chunk_id_maps)
-    cont_id_map = s.clefts.merge_connected_continuations(cont_info_arr)
+    cons_cleft_info, chunk_id_maps = s.consolidate_cleft_info_arr(seg_info_arr)
+    cont_info_arr = s.apply_chunk_id_maps(cont_info_arr, chunk_id_maps)
+    cont_id_map = s.merge_connected_continuations(cont_info_arr)
 
-    chunk_id_maps = s.clefts.update_chunk_id_maps(chunk_id_maps, cont_id_map)
-    full_seg_info = s.clefts.merge_cont_info(full_seg_info, cont_id_map)
+    chunk_id_maps = s.update_chunk_id_maps(chunk_id_maps, cont_id_map)
+    cons_cleft_info = s.merge_cleft_df(cons_cleft_info, cont_id_map)
 
-    size_thr_map  = s.clefts.enforce_size_threshold(full_seg_info, size_thr)
-    chunk_id_maps = s.clefts.update_chunk_id_maps(chunk_id_maps, size_thr_map)
+    size_thr_map  = s.enforce_size_threshold(cons_cleft_info, size_thr)
+    chunk_id_maps = s.update_chunk_id_maps(chunk_id_maps, size_thr_map)
 
 
     #Writing
-    s.clefts.io.write_full_seg_info(full_seg_info, proc_dir_path)
+    s.clefts.io.write_cons_cleft_info(cons_cleft_info, proc_dir_path)
     s.clefts.io.write_chunk_id_maps(chunk_id_maps, chunk_bounds, proc_dir_path)
 
 
