@@ -4,6 +4,7 @@ import numpy as np
 from scipy import ndimage
 
 from . import bbox
+import time
 
 
 def relabel_data_iterative(d,mapping):
@@ -61,12 +62,9 @@ def bounding_boxes(ccs, offset=(0,0,0)):
 
     ids = nonzero_unique_ids(ccs)
 
-    std_mapping = { v : i+1 for (i,v) in enumerate(ids) }
-    standardized = relabel_data_iterative(ccs, std_mapping)
+    bbox_slices = ndimage.find_objects(ccs)
 
-    bbox_slices = ndimage.find_objects(standardized)
-
-    bboxes = { v : bbox.BBox3d(bbox_slices[i]) for (i,v) in enumerate(ids) }
+    bboxes = { i : bbox.BBox3d(bbox_slices[i-1]) for i in ids }
 
     if offset == (0,0,0):
         return bboxes
