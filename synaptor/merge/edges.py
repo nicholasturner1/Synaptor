@@ -34,8 +34,6 @@ def merge_dframes(dframe1, dframe2):
 
     dframe1 = dframe1.drop(not_larger_in_1, axis=0)
     dframe2 = dframe2.drop(larger_in_1,     axis=0)
-    print("larger: {}".format(len(larger_in_1)))
-    print("not larger: {}".format(len(not_larger_in_1)))
 
     return pd.concat((dframe1, dframe2), copy=False)
 

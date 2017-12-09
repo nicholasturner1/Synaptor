@@ -52,7 +52,7 @@ def read_chunk_seg_info(fname):
 
 def write_chunk_seg_info(centers, sizes, bboxes, chunk_bounds, proc_dir_path):
 
-    sizes_df = pd.Series(sizes, name="sizes")
+    sizes_df = pd.Series(sizes, name="size")
     centers_df = dframe_from_tuple_dict(centers, COM_SCHEMA)
 
     bbox_tuples = { k : bbox.astuple() for (k,bbox) in bboxes.items() }
@@ -67,10 +67,18 @@ def write_chunk_seg_info(centers, sizes, bboxes, chunk_bounds, proc_dir_path):
     io.write_dframe(full_dframe, seg_info_fname)
 
 
-def write_full_seg_info(full_seg_info, proc_dir_path):
+def read_cons_cleft_info(proc_dir_path):
 
-    seg_info_fname = os.path.join(proc_dir_path, "full_seg_info.df")
-    io.write_dframe(full_seg_info, seg_info_fname)
+    full_fname = os.path.join(proc_dir_path, "cons_cleft_info.df")
+    fname = io.pull_file(full_fname)
+
+    return io.read_dframe(fname)
+
+
+def write_cons_cleft_info(cons_cleft_info, proc_dir_path):
+
+    fname = os.path.join(proc_dir_path, "cons_cleft_info.df")
+    io.write_dframe(cons_cleft_info, fname)
 
 
 def dframe_from_tuple_dict(tuple_dict, colnames):

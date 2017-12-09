@@ -1,24 +1,23 @@
 #!/usr/bin/env python3
 
-import copy, itertools
 import numpy as np
 import pandas as pd
-import igraph
 
-
+from . import utils
 from . import continuations
 from .. import bbox
 
 
-def consolidate_info_arr(seg_info_arr):
+def consolidate_cleft_info_arr(cleft_info_arr):
+    """ Assigns new ids to every cleft segment """
 
-    chunk_id_maps = empty_info_array(seg_info_arr.shape)
+    chunk_id_maps = utils.empty_obj_array(cleft_info_arr.shape)
     full_df = None
     next_id = 1
 
-    for (x,y,z) in np.ndindex(seg_info_arr.shape):
+    for (x,y,z) in np.ndindex(cleft_info_arr.shape):
 
-        new_df = seg_info_arr[x,y,z]
+        new_df = cleft_info_arr[x,y,z]
         chunk_id_maps[x,y,z], next_id = new_id_map(new_df, next_id)
 
         if full_df is None:
@@ -32,6 +31,8 @@ def consolidate_info_arr(seg_info_arr):
 
 
 def new_id_map(df, next_id):
+    """ Creates a new id for each record in df, starting with next_id """
+
     segids = df.index.tolist()
 
     id_map = { segid : n for (segid,n) in
@@ -41,13 +42,9 @@ def new_id_map(df, next_id):
 
 
 def remap_ids(df, id_map):
+    """ Remaps the index ids of a dataframe """
     df.rename(id_map, inplace=True)
     return df
-
-
-def empty_info_array(shape):
-    size = np.prod(shape)
-    return np.array([None for _ in range(size)]).reshape(shape)
 
 
 def apply_chunk_id_maps(continuation_arr, chunk_id_maps):
@@ -68,8 +65,8 @@ def apply_id_map(cont_dict, id_map):
 def merge_connected_continuations(continuation_arr):
 
     matches = find_connected_continuations(continuation_arr)
-    ccs = find_connected_components(matches)
-    return  make_id_map(ccs)
+    ccs = utils.find_connected_components(matches)
+    return  utils.make_id_map(ccs)
 
 
 def find_connected_continuations(continuation_arr):
@@ -105,39 +102,6 @@ def find_connected_continuations(continuation_arr):
     return matches
 
 
-def find_connected_components(matches):
-    
-    all_ids = list(set(itertools.chain(*matches)))
-    vertex_mapping = { segid: i for (i,segid) in enumerate(all_ids) }
-
-    g = igraph.Graph(len(all_ids))
-    g.vs["ids"] = all_ids
-
-    mapped_edges = map(lambda x: (vertex_mapping[x[0]],vertex_mapping[x[1]]),
-                       matches)
-
-    g.add_edges(mapped_edges)
-
-    vertex_ccs = g.components()
-
-    orig_ccs = [g.vs[cc]["ids"] for cc in vertex_ccs]
-
-    return orig_ccs
-
-
-def make_id_map(ccs):
-
-    mapping = {}
-
-    for cc in ccs:
-        target = min(cc)
-
-        for i in cc:
-            mapping[i] = target
-
-    return mapping
-
-
 def match_continuations(conts1, conts2):
 
     arr_to_row_set = lambda arr: set(tuple(row) for row in arr)
@@ -163,32 +127,26 @@ def update_chunk_id_maps(chunk_id_maps, cont_id_map):
     return chunk_id_maps
 
 
-def merge_cont_info(full_seg_info_df, cont_id_map):
+def merge_cleft_df(cleft_info_df, id_map):
+    return utils.merge_info_df(cleft_info_df, id_map, merge_cleft_rows)
 
-    to_drop = []
-    for (k,v) in cont_id_map.items():
-        if k == v:
-            continue
 
-        k_sz, k_com, k_bbox = unwrap_row(full_seg_info_df.loc[k])
-        v_sz, v_com, v_bbox = unwrap_row(full_seg_info_df.loc[v])
+def merge_cleft_rows(row1, row2):
 
-        sz = k_sz + v_sz
-        com = weighted_sum(k_com, k_sz, v_com, v_sz)
-        bb = k_bbox.merge(v_bbox)
+    sz1, com1, bbox1 = unwrap_row(row1)
+    sz2, com2, bbox2 = unwrap_row(row2)
 
-        full_seg_info_df.loc[v] = wrap_row(sz, com, bb)
-        to_drop.append(k)
+    sz  = sz1 + sz2
+    com = utils.weighted_avg(com1, sz1, com2, sz2)
+    bb  = bbox1.merge(bbox2)
 
-    full_seg_info_df.drop(to_drop, inplace=True)
-
-    return full_seg_info_df
-
+    return wrap_row(sz, com, bb)
+     
 
 def unwrap_row(df_row):
 
-    sz = df_row["sizes"]
-    
+    sz = df_row["size"]
+
     com = (df_row["COM_x"], df_row["COM_y"], df_row["COM_z"])
 
     bb = bbox.BBox3d((df_row["BBOX_bx"], df_row["BBOX_by"], df_row["BBOX_bz"]),
@@ -201,19 +159,17 @@ def wrap_row(sz, com, bb):
     return list(map(int, (sz, *com, *bb.astuple())))
 
 
-def weighted_sum(com1, sz1, com2, sz2):
-    
-    frac1 = sz1 / (sz1+sz2)
-    frac2 = sz2 / (sz1+sz2)
-
-    h1 = (com1[0]*frac1, com1[1]*frac1, com1[2]*frac1)
-    h2 = (com2[0]*frac2, com2[2]*frac2, com2[2]*frac2)
-
-    return (h1[0]+h2[0], h1[1]+h2[1], h1[2]+h2[2])
-
-
 def enforce_size_threshold(seg_info_df, size_thr):
-    violations = seg_info_df[seg_info_df.sizes < size_thr].index.tolist()
+    violations = seg_info_df[seg_info_df["size"] < size_thr].index.tolist()
     seg_info_df.drop(violations, inplace=True)
 
     return {v : 0 for v in violations}
+
+
+def update_id_map(map1, map2):
+
+    for (k,v) in map1.items():
+        map1[k] = map2.get(v,v)
+
+    return map1
+
