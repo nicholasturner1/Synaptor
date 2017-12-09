@@ -15,9 +15,10 @@ import pandas as pd
 from .. import bbox
 from .. import seg_utils
 
+import time
 
-def infer_edges(net, img, psd, seg, offset, patchsz,
-                num_samples_per_psd=2, dil_param=5, psdids=None ):
+def infer_edges(net, img, cleft, seg, offset, patchsz,
+                samples_per_cleft=2, dil_param=5, cleft_ids=None ):
     """
     Runs a trained network over the psds within the valid range
     of the dataset and infers the synaptic partners involved at each synapse
@@ -27,54 +28,90 @@ def infer_edges(net, img, psd, seg, offset, patchsz,
     """
 
 
-    if psdids is None:
-        psdids = seg_utils.nonzero_unique_ids(psd)
+    if cleft_ids is None:
+        cleft_ids = seg_utils.nonzero_unique_ids(cleft)
+
+    
+    cleft_locs = pick_cleft_locs(cleft, cleft_ids, samples_per_cleft)
 
 
     edges = [] #list of dict records
-    for i in psdids:
+    for (cid, locs) in cleft_locs.items():
+
+        #start = time.time()
 
         seg_weights, seg_szs, seg_locs = {}, {}, {}
-        for n in range(num_samples_per_psd):
-            box = random_box(patchsz, psd, i)
+        for loc in locs:
+            #box_start = time.time()
+            box = random_box(patchsz, cleft, loc)
             box_offset = tuple(map(operator.add, box.min(), offset))
-            img_p, psd_p, seg_p = get_patches(img, psd, seg, box, i)
+            #print("Box stuff in {} seconds".format(time.time() - box_start))
 
-            segids = find_close_segments(psd_p, seg_p, dil_param)
+            #patch_start = time.time()
+            img_p, clf_p, seg_p = get_patches(img, cleft, seg, box, cid)
+            #print("Fetching patches in {} seconds".format(time.time() - patch_start))
 
-            new_weights, new_szs = infer_patch_weights(net, img_p, psd_p,
+            #close_start = time.time()
+            segids = find_close_segments(clf_p, seg_p, dil_param)
+            #print("Close segments in {} seconds".format(time.time() - close_start))
+
+            #inf_start = time.time()
+            new_weights, new_szs = infer_patch_weights(net, img_p, clf_p,
                                                        seg_p, segids)
+            #inf_end = time.time()
+            #print("Patch inf complete in {} seconds".format(inf_end - inf_start))
             seg_weights, seg_szs = dict_tuple_avg(new_weights, new_szs,
                                                   seg_weights, seg_szs)
 
-
+            #locs_start = time.time()
             new_locs = random_locs(seg_p[0,0,:].transpose((2,1,0)),
                                    segids, offset=box_offset)
             seg_locs = update_locs(new_locs, seg_locs)
+            #print("Locs in {} seconds".format(time.time() - locs_start))
 
+        #print("Samples complete in {} seconds".format(time.time() - start))
 
         pre_seg, post_seg, pre_w, post_w = make_assignment(seg_weights)
         pre_loc, post_loc = seg_locs[pre_seg], seg_locs[post_seg]
         pre_sz,  post_sz  = seg_szs[pre_seg],  seg_szs[post_seg]
 
 
-        edges.append(make_record(i, pre_seg, post_seg,
+        edges.append(make_record(cid, pre_seg, post_seg,
                                  pre_loc, post_loc,
-                                 pre_w, post_w, 
+                                 pre_w, post_w,
                                  pre_sz, post_sz))
+        #print("Edge complete in {} seconds".format(time.time() - start))
 
     return make_record_dframe(edges)
 
 
-def random_box(box_shape, seg, i):
-    """ Returns a BBox3d containing segment i within a segmentation """
-    loc = random_loc(seg, i)
+def pick_cleft_locs(cleft, cleft_ids, num_locs):
+
+    order = np.argsort(cleft.flat)
+
+    first = np.searchsorted(cleft.flat, cleft_ids, "left", order)
+    last  = np.searchsorted(cleft.flat, cleft_ids, "right", order)
+    bounds = list(zip(first, last))
+
+    indices = { i : list() for i in cleft_ids }
+    for (i,cid) in enumerate(cleft_ids):
+        lo, hi = bounds[i]
+        for j in range(num_locs):
+            linear_index = order[random.randint(lo, hi-1)]
+            indices[cid].append( np.unravel_index(linear_index, cleft.shape) )
+
+    return indices
+
+
+def random_box(box_shape, seg, loc):
+    """ Returns a BBox3d containing loc within a segmentation """
     return bbox.BBox3d.containing_box(loc, box_shape, seg.shape)
 
 
 def random_loc(seg, i, offset=(0,0,0)):
     """ Finds a random location where (np array) seg == i """
 
+    start = time.time()
     xs,ys,zs = np.nonzero(seg == i)
     assert len(xs) > 0, "{} not contained in volume".format(i)
 
@@ -219,6 +256,7 @@ def dict_tuple_avg(d1, s1, d2, s2):
                            (ov[1]*os+nv[1]*ns)/sz )
         else:
             weights[k] = v
+            sizes[k]   = s2[k]
 
     return weights, sizes
 
@@ -255,10 +293,10 @@ def make_assignment(weights):
     return pre_seg, post_seg, pre_weight, post_weight
 
 
-def make_record(psdid, 
-                pre_seg, post_seg, 
-                pre_loc, post_loc, 
-                pre_weight, post_weight, 
+def make_record(psdid,
+                pre_seg, post_seg,
+                pre_loc, post_loc,
+                pre_weight, post_weight,
                 pre_size, post_size):
 
     cols = ["psd_segid",     "presyn_seg", "postsyn_seg",
