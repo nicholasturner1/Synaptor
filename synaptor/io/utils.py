@@ -1,7 +1,25 @@
 #!/usr/bin/env python3
 
 
+import os
 import numpy as np
+
+from . import base
+
+
+def write_single_df(df, proc_dir_path, basename):
+
+    full_fname = os.path.join(proc_dir_path, basename)
+
+    base.write_dframe(df, full_fname)
+
+
+def read_single_df(proc_dir_path, basename):
+
+    full_fname = os.path.join(proc_dir_path, basename)
+    fname = base.pull_file(full_fname)
+
+    return base.read_dframe(fname)
 
 
 def make_info_arr(start_lookup):
