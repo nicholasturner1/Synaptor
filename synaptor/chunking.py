@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import itertools
+import itertools, operator
 
 from . import bbox
 
@@ -40,3 +40,11 @@ def bounds1D(full_width, step_size):
     return bounds
 
 
+def find_closest_chunk_boundary(pt, offset, chunk_size):
+
+    diff = tuple(map(operator.sub, pt,offset))
+    index = tuple(map(operator.truediv, diff,chunk_size))
+    closest = tuple(map(round, index))
+    
+    shift = tuple(map(operator.mul, closest,chunk_size))
+    return tuple(map(operator.add, shift,offset))
