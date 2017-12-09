@@ -1,12 +1,6 @@
 #!/usr/bin/env python3
 __doc__ = """
-Connected Component Consolidation
-
--Read continuations in each chunk
--Read info for psd segments in each chunk
--Find out which continuations are connected, and generate a full list of seg ids
--Write full psd segment info file to proc directory
--Write id mapping for each chunk
+Merge Edges
 """
 import synaptor as s
 

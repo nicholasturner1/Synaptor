@@ -4,14 +4,14 @@ __doc__ = """
 import synaptor as s
 
 
-def main(psd_fname,  cc_fname, proc_dir_path,
+def main(psd_cvname,  cc_cvname, proc_dir_path,
          chunk_begin, chunk_end, cc_thresh,
          sz_thresh,   dil_param):
 
     chunk_bounds = s.bbox.BBox3d(chunk_begin, chunk_end)
 
     #Reading
-    psd_output = s.io.read_cloud_volume_chunk(psd_fname, chunk_bounds)
+    psd_output = s.io.read_cloud_volume_chunk(psd_cvname, chunk_bounds)
 
 
     #Processing
@@ -28,7 +28,7 @@ def main(psd_fname,  cc_fname, proc_dir_path,
     bboxes  = s.bounding_boxes(dil_ccs, offset=offset)
 
     #Writing
-    s.io.write_cloud_volume_chunk(dil_ccs, cc_fname, chunk_bounds)
+    s.io.write_cloud_volume_chunk(dil_ccs, cc_cvname, chunk_bounds)
     s.clefts.io.write_chunk_continuations(continuations, chunk_bounds, proc_dir_path)
     s.clefts.io.write_chunk_seg_info(centers, sizes, bboxes, chunk_bounds, proc_dir_path)
 
@@ -41,8 +41,8 @@ if __name__ == "__main__":
 
 
     # Input & Outputs
-    parser.add_argument("psd_fname")
-    parser.add_argument("cc_fname")
+    parser.add_argument("psd_cvname")
+    parser.add_argument("cc_cvname")
     parser.add_argument("proc_dir_path")
 
     #Chunk Bounds

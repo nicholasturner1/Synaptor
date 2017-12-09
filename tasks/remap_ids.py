@@ -16,10 +16,12 @@ def main(cv_path_in, cv_path_out, chunk_begin, chunk_end, proc_dir_path):
 
     #Reading
     chunk_id_map = s.clefts.io.read_chunk_id_map(proc_dir_path, chunk_bounds)
+    dup_id_map = s.merge.io.read_dup_id_map(proc_dir_path)
     cc_chunk = s.io.read_cloud_volume_chunk(cv_path_in, chunk_bounds)
 
 
     #Processing
+    chunk_id_map = s.merge_update_id_map(chunk_id_map, dup_id_map)
     cc_chunk = s.seg_utils.relabel_data_lookup_arr(cc_chunk, chunk_id_map)
 
 

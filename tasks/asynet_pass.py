@@ -1,12 +1,6 @@
 #!/usr/bin/env python3
 __doc__ = """
-Connected Component Consolidation
-
--Read continuations in each chunk
--Read info for psd segments in each chunk
--Find out which continuations are connected, and generate a full list of seg ids
--Write full psd segment info file to proc directory
--Write id mapping for each chunk
+Asynet Pass
 """
 import synaptor as s
 
@@ -25,13 +19,15 @@ def main(img_cvname, cc_cvname, seg_cvname,
     seg    = s.io.read_cloud_volume_chunk(seg_cvname, chunk_bounds)
     net    = s.edges.io.read_network(proc_dir_path)
 
+    chunk_id_map = s.clefts.io.read_chunk_id_map(proc_dir_path, chunk_bounds)
+
 
     #Processing
+    clefts = s.seg_utils.relabel_data_lookup_arr(clefts, chunk_id_map)
     edges = s.edges.infer_edges(net, img, clefts, seg,
                                 offset, patchsz,
                                 num_samples_per_cleft,
                                 dil_param)
-
     edges = s.edges.add_seg_size(edges, clefts)
 
 
