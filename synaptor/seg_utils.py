@@ -24,6 +24,10 @@ def relabel_data_lookup_arr(d,mapping):
     Best when modifying several ids at once and ids are approximately dense
     within 1:max
     """
+
+    if len(mapping) == 0:
+        return d
+
     map_keys = np.array(list(mapping.keys()))
     map_vals = np.array(list(mapping.values()))
 

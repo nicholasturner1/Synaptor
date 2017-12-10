@@ -156,7 +156,10 @@ def unwrap_row(df_row):
 
 
 def wrap_row(sz, com, bb):
-    return list(map(int, (sz, *com, *bb.astuple())))
+    return dict(zip(["size","COM_x","COM_y","COM_z",
+                     "BBOX_bx","BBOX_by","BBOX_bz",
+                     "BBOX_ex","BBOX_ey","BBOX_ez"],
+                    map(int, (sz, *com, *bb.astuple()))))
 
 
 def enforce_size_threshold(seg_info_df, size_thr):

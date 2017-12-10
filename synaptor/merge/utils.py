@@ -3,19 +3,34 @@
 import copy, itertools
 
 import numpy as np
+import pandas as pd
 import igraph
 
 
 def merge_info_df(df, id_map, merge_fn):
 
     to_drop = []
+    new_rows = {}
+    indices = set([])
+    
     for (k,v) in id_map.items():
         if k == v:
             continue
 
-        df.loc[v] = merge_fn(df.loc[k], df.loc[v])
-        to_drop.append(k)
+        if v in new_rows:
+            row_v = new_rows[v]
+        else:
+            row_v = df.loc[v]
 
+        new_rows[v] = merge_fn(df.loc[k], row_v)
+
+        to_drop.append(k)
+        indices.add(v)
+
+    index = sorted(list(indices))
+    replacements = pd.DataFrame.from_dict(new_rows, orient="index")
+
+    df.loc[index] = replacements
     df.drop(to_drop, inplace=True)
 
     return df
