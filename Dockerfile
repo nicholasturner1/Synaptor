@@ -8,6 +8,8 @@ RUN apt-get update
 RUN apt-get install build-essential libxml2-dev zlib1g-dev -y
 RUN apt-get install pkg-config libffi-dev libcairo-dev -y
 
+RUN apt-get install gsutil -y
+
 #Fixes a conda bug - https://github.com/conda/conda/issues/6030
 RUN conda update python
 
@@ -19,4 +21,4 @@ RUN git clone https://github.com/nicholasturner1/Synaptor.git
 RUN pip install -e /workspace/Synaptor
 
 WORKDIR /workspace/Synaptor/tasks
-CMD ./dispatcher.sh 
+ENTRYPOINT ["bash","dispatcher.sh"]
