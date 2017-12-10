@@ -31,7 +31,7 @@ def read_network(proc_dir_path):
     local_model = io.pull_file(model_fname)
     local_chkpt = io.pull_file(chkpt_fname)
 
-    model = imp.load_source("Model",model_fname).InstantiatedModel
+    model = imp.load_source("Model",local_model).InstantiatedModel
     model.load_state_dict(torch.load(local_chkpt))
 
     return model

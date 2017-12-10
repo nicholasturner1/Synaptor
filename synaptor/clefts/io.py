@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 
-import os
+import os, itertools
 import pandas as pd
 import numpy as np
 
@@ -52,6 +52,16 @@ def read_chunk_seg_info(fname):
 
 def write_chunk_seg_info(centers, sizes, bboxes, chunk_bounds, proc_dir_path):
 
+    assert len(centers) == len(sizes) == len(bboxes)
+
+    chunk_tag = io.chunk_tag(chunk_bounds)
+    seg_info_fname = os.path.join(proc_dir_path, SEG_INFO_DIRNAME,
+                                  "seg_info_{tag}.df".format(tag=chunk_tag))
+
+    if len(centers) == 0:
+        df = empty_seg_df()
+        return io.write_dframe(df, seg_info_fname)
+
     sizes_df = pd.Series(sizes, name="size")
     centers_df = dframe_from_tuple_dict(centers, COM_SCHEMA)
 
@@ -60,11 +70,13 @@ def write_chunk_seg_info(centers, sizes, bboxes, chunk_bounds, proc_dir_path):
 
     full_dframe = pd.concat((sizes_df, centers_df, bbox_df), axis=1)
 
-    chunk_tag = io.chunk_tag(chunk_bounds)
-    seg_info_fname = os.path.join(proc_dir_path, SEG_INFO_DIRNAME,
-                                  "seg_info_{tag}.df".format(tag=chunk_tag))
-
     io.write_dframe(full_dframe, seg_info_fname)
+
+
+def empty_seg_df():
+    return pd.DataFrame({k : [] for k in itertools.chain(("size",),
+                                                         COM_SCHEMA,
+                                                         BBOX_SCHEMA) })
 
 
 def read_cons_cleft_info(proc_dir_path):
@@ -96,12 +108,13 @@ def write_chunk_continuations(conts, chunk_bounds, proc_dir_path):
                          "conts_{tag}.h5".format(tag=chunk_tag))
 
     fobj = io.make_local_h5(fname)
+    local_fname = fobj.filename
     for c in conts:
         c.write_to_fobj(fobj)
     fobj.close()
 
     if io.is_remote_path(fname):
-        io.send_local_file(fobj.name, fname)
+        io.send_local_file(local_fname, fname)
 
 
 def read_chunk_continuations(fname):

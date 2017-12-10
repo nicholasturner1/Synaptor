@@ -12,7 +12,6 @@ from . import gcloud
 from .. import bbox
 
 
-random.seed(9999) #for testing
 GCLOUD_REGEXP = re.compile("gs://")
 AWS_REGEXP    = re.compile("s3://")
 
