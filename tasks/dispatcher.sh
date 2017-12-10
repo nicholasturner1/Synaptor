@@ -6,5 +6,5 @@ case $1 in
     asynet_pass) python3 asynet_pass.py ${@:2} ;;
     merge_edges) python3 merge_edges.py ${@:2} ;;
     remap_ids)   python3 remap_ids.py ${@:2} ;;
-    *)  echo "invalid task name"
+    *)  echo "invalid task name $1"
 esac
