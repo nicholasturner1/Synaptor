@@ -77,7 +77,7 @@ def read_dframe(path):
     """
 
     if is_remote_path(path):
-        local_fname = temp_path(path)
+        local_fname = pull_file(path)
     else:
         local_fname = path
 
@@ -111,14 +111,14 @@ def send_directory(local_dir, path):
         local.send_local_dir(local_dir, path)
 
 
-def pull_file(dir_path):
+def pull_file(path):
 
-    if   GCLOUD_REGEXP.match(dir_path):
-        return gcloud.pull_file(dir_path)
-    elif AWS_REGEXP.match(dir_path):
-        return aws.pull_file(dir_path)
+    if   GCLOUD_REGEXP.match(path):
+        return gcloud.pull_file(path)
+    elif AWS_REGEXP.match(path):
+        return aws.pull_file(path)
     else: #local
-        return local.pull_file(dir_path)
+        return local.pull_file(path)
 
 
 def pull_all_files(dir_path):
