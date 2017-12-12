@@ -28,7 +28,7 @@ RUN apt-get update && \
     git clone https://github.com/nicholasturner1/Synaptor.git && \
     pip install -e /Synaptor && \
     conda clean -t -p && \
-    apt-get purge -y --auto-remove $pytorchDeps $igraphDeps $condaDeps
+    apt-get purge -y --auto-remove $pytorchDeps $condaDeps #$igraphDeps #need these
 
 
 WORKDIR /Synaptor/tasks
