@@ -9,24 +9,41 @@ Remap IDs
 """
 import synaptor as s
 
+import time
+
 
 def main(cv_path_in, cv_path_out, chunk_begin, chunk_end, proc_dir_path):
 
     chunk_bounds = s.BBox3d(chunk_begin, chunk_end)
 
     #Reading
+    print("Reading chunk id map")
     chunk_id_map = s.clefts.io.read_chunk_id_map(proc_dir_path, chunk_bounds)
+    print("Complete in {0:.3f} seconds\n".format(time.time() - start))
+
+    print("Reading dup id map")
     dup_id_map = s.merge.io.read_dup_id_map(proc_dir_path)
+    print("Complete in {0:.3f} seconds\n".format(time.time() - start))
+
+    print("Reading data chunk")
     cc_chunk = s.io.read_cloud_volume_chunk(cv_path_in, chunk_bounds)
+    print("Complete in {0:.3f} seconds\n".format(time.time() - start))
 
 
     #Processing
+    print("Updating id map (duplicates)")
     chunk_id_map = s.merge.update_id_map(chunk_id_map, dup_id_map)
+    print("Complete in {0:.3f} seconds\n".format(time.time() - start))
+
+    print("Relabelling data")
     cc_chunk = s.seg_utils.relabel_data_lookup_arr(cc_chunk, chunk_id_map)
+    print("Complete in {0:.3f} seconds\n".format(time.time() - start))
 
 
     #Writing
+    print("Writing final chunk")
     s.io.write_cloud_volume_chunk(cc_chunk, cv_path_out, chunk_bounds)
+    print("Complete in {0:.3f} seconds\n".format(time.time() - start))
 
 
 if __name__ == "__main__":

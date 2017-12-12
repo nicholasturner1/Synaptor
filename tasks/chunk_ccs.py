@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 __doc__ = """
+Chunkwise Connected Components
 """
 import synaptor as s
 
@@ -13,40 +14,43 @@ def main(out_cvname,  cc_cvname, proc_dir_path,
     chunk_bounds = s.bbox.BBox3d(chunk_begin, chunk_end)
 
     #Reading
-    start = time.time()
+    print("Reading network output chunk"); start = time.time()
     output = s.io.read_cloud_volume_chunk(out_cvname, chunk_bounds)
-    print("Reading in {} seconds".format(time.time() - start))
+    print("Complete in {0:.3f} seconds\n".format(time.time() - start))
 
 
     #Processing
-    start = time.time()
+    print("Computing dilated connected components"); start = time.time()
     dil_ccs = s.dilated_components(output, dil_param, cc_thresh)
-    print("dilccs in {} seconds".format(time.time() - start))
+    print("Complete in {0:.3f} seconds\n".format(time.time() - start))
 
-    start = time.time()
+    print("Extracting continuations"); start = time.time()
     continuations = s.extract_all_continuations(dil_ccs)
     cont_ids = set(cont.segid for cont in continuations)
-    print("continuations in {} seconds".format(time.time() - start))
+    print("Complete in {0:.3f} seconds\n".format(time.time() - start))
 
-    start = time.time()
+
+    print("Filtering complete clefts by size"); start = time.time()
     dil_ccs, sizes = s.filter_segs_by_size(dil_ccs, sz_thresh,
                                            to_ignore=cont_ids)
-    print("filter in {} seconds".format(time.time() - start))
+    print("Complete in {0:.3f} seconds\n".format(time.time() - start))
+
 
     offset  = chunk_bounds.min()
-    start = time.time()
+    print("Computing centers of mass"); start = time.time()
     centers = s.centers_of_mass(dil_ccs, offset=offset)
-    print("centers in {} seconds".format(time.time() - start))
-    start = time.time()
+    print("Complete in {0:.3f} seconds\n".format(time.time() - start))
+
+    print("Computing bounding boxes"); start = time.time()
     bboxes  = s.bounding_boxes(dil_ccs, offset=offset)
-    print("bboxes in {} seconds".format(time.time() - start))
+    print("Complete in {0:.3f} seconds\n".format(time.time() - start))
 
     #Writing
-    start = time.time()
+    print("Writing outputs"); start = time.time()
     s.io.write_cloud_volume_chunk(dil_ccs, cc_cvname, chunk_bounds)
     s.clefts.io.write_chunk_continuations(continuations, chunk_bounds, proc_dir_path)
     s.clefts.io.write_chunk_seg_info(centers, sizes, bboxes, chunk_bounds, proc_dir_path)
-    print("writing in {} seconds".format(time.time() - start))
+    print("Complete in {0:.3f} seconds\n".format(time.time() - start))
 
 
 if __name__ == "__main__":
