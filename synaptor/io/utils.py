@@ -7,6 +7,35 @@ import numpy as np
 from . import base
 
 
+def check_slash(path):
+    if path[-1] == "/":
+        return path
+    else:
+        return path + "/"
+
+
+def check_no_slash(path):
+    if path[-1] == "/":
+        return path[:-1]
+    else:
+        return path
+
+
+def parse_remote_path(remote_path):
+    """ Simple, but should work """
+
+    fields = remote_path.split("/")
+
+    assert len(fields) > 3, "Improper remote path (needs more fields)"
+
+    protocol = fields[0]
+    assert fields[1] == ""
+    bucket   = fields[2]
+    key      = "/".join(fields[3:])
+
+    return protocol, bucket, key
+
+
 def write_single_df(df, proc_dir_path, basename):
 
     full_fname = os.path.join(proc_dir_path, basename)

@@ -1,55 +1,85 @@
 #!/usr/bin/env python3
 
-#I'm going to do this in the dumbest way possible
-# will revisit this if necessary
-#
-#Also the aws and gcloud modules are copies at this point, though
-# I'm keeping them separate in case I do something fancier later
-import os, subprocess
 
-from . import local
+import os
 
+#Piggybacking on cloudvolume's secrets
+import cloudvolume
+from google.cloud import storage
 
-def check_slash(path):
-    if path[-1] == "/":
-        return path
-    else:
-        return path + "/"
+from . import utils
 
 
-def check_no_slash(path):
-    if path[-1] == "/":
-        return path[:-1]
-    else:
-        return path
+PROJECT_NAME = cloudvolume.secrets.PROJECT_NAME
+CREDS        = cloudvolume.secrets.google_credentials
 
 
-def send_local_file(local_name, remote_name):
-    print(["gsutil", "cp", local_name, remote_name])
-    subprocess.check_call(["gsutil", "cp", local_name, remote_name])
+def send_local_file(local_name, remote_path):
+    bucket, key = parse_remote_path(remote_path)
+
+    blob = open_bucket(bucket).blob(key)
+
+    blob.upload_from_filename(local_name)
 
 
 def send_local_dir(local_dir, remote_dir):
-    print(["gsutil","-m","cp","-r", 
-           check_no_slash(local_dir), 
-           check_slash(remote_dir)])
-    subprocess.check_call(["gsutil","-m","cp","-r", 
-                           check_no_slash(local_dir), 
-                           check_slash(remote_dir)])
+    bucket, key = parse_remote_path(remote_dir)
+
+    #Sending directory to a subdirectory of remote dir
+    key = os.path.join(os.path.basename(utils.check_no_slash(local_dir)))
+
+    fnames = os.listdir(local_dir)
+    remote_keys = [os.path.join(key, f) for f in fnames]
+
+    active_bucket = open_bucket(bucket)
+
+    for (f,key) in zip(fnames, remote_keys):
+        blob = active_bucket.blob(key)
+        blob.upload_from_filename(os.path.join(local_dir, f))
 
 
 def pull_file(remote_path):
-    print(["gsutil","cp",remote_path,"."])
-    subprocess.check_call(["gsutil","cp",remote_path,"."])
-    return local.pull_file(os.path.basename(remote_path))
-    
+    bucket, key = parse_remote_path(remote_path)
+
+    local_fname = os.path.basename(remote_path)
+
+    blob = open_bucket(bucket).blob(key)
+
+    blob.download_to_filename(local_fname)
+
+    return local_fname
+
 
 def pull_all_files(remote_dir):
-    print(["gsutil","-m","cp","-r",
-           check_no_slash(remote_dir),
-           "."])
-    subprocess.check_call(["gsutil","-m","cp","-r",
-                           check_no_slash(remote_dir),
-                           "."])
-    return local.pull_all_files(os.path.basename(remote_dir))
+    """ This will currently break if the remote dir has subdirectories """
+    bucket, key = parse_remote_path(remote_dir)
 
+    active_bucket = open_bucket(bucket)
+
+    remote_blobs = list(active_bucket.list_blobs(prefix = utils.check_slash(key)))
+    local_dir    = os.path.basename(utils.check_no_slash(key))
+    local_fnames = [os.path.join(local_dir, os.path.basename(b.name))
+                    for b in remote_blobs]
+
+    if not os.path.isdir(local_dir):
+        os.makedirs(local_dir)
+
+    for (f,b) in zip(local_fnames, remote_blobs):
+        b.download_to_filename(f)
+
+    return local_fnames
+
+
+def parse_remote_path(remote_path):
+    protocol, bucket, key = utils.parse_remote_path(remote_path)
+
+    assert protocol == "gs:", "Mismatched protocol (expected Google Storage)"
+
+    return bucket, key
+
+
+def open_bucket(bucket):
+    client = storage.Client(project=PROJECT_NAME,
+                            credentials=CREDS)
+
+    return client.get_bucket(bucket)
