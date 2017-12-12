@@ -26,7 +26,7 @@ def send_local_dir(local_dir, remote_dir):
     bucket, key = parse_remote_path(remote_dir)
 
     #Sending directory to a subdirectory of remote dir
-    key = os.path.join(os.path.basename(utils.check_no_slash(local_dir)))
+    key = os.path.join(key, os.path.basename(utils.check_no_slash(local_dir)))
 
     fnames = os.listdir(local_dir)
     remote_keys = [os.path.join(key, f) for f in fnames]
