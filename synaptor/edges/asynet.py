@@ -17,6 +17,12 @@ from .. import seg_utils
 
 import time
 
+RECORD_SCHEMA = ["psd_segid",     "presyn_seg", "postsyn_seg",
+                 "presyn_x",      "presyn_y",   "presyn_z",
+                 "postsyn_x",     "postsyn_y",  "postsyn_z",
+                 "presyn_wt",     "postsyn_wt",
+                 "presyn_sz",     "postsyn_sz" ]
+
 def infer_edges(net, img, cleft, seg, offset, patchsz,
                 samples_per_cleft=2, dil_param=5, cleft_ids=None ):
     """
@@ -31,7 +37,7 @@ def infer_edges(net, img, cleft, seg, offset, patchsz,
     if cleft_ids is None:
         cleft_ids = seg_utils.nonzero_unique_ids(cleft)
 
-    
+
     cleft_locs = pick_cleft_locs(cleft, cleft_ids, samples_per_cleft)
 
 
@@ -299,25 +305,23 @@ def make_record(psdid,
                 pre_weight, post_weight,
                 pre_size, post_size):
 
-    cols = ["psd_segid",     "presyn_seg", "postsyn_seg",
-            "presyn_x",      "presyn_y",   "presyn_z",
-            "postsyn_x",     "postsyn_y",  "postsyn_z",
-            "presyn_wt",     "postsyn_wt",
-            "presyn_sz",     "postsyn_sz" ]
-
     data = [psdid,            pre_seg,      post_seg,
             *pre_loc,
             *post_loc,
             pre_weight,       post_weight,
             pre_size,         post_size]
 
-    assert len(data) == len(cols)
+    assert len(data) == len(RECORD_SCHEMA)
 
-    return dict(zip(cols, data))
+    return dict(zip(RECORD_SCHEMA, data))
 
 
 def make_record_dframe(record_list):
-    return pd.DataFrame.from_records(record_list, index="psd_segid")
+
+    if len(record_list) == 0:
+        return pd.DataFrame({k : [] for k in RECORD_SCHEMA})
+    else:
+        return pd.DataFrame.from_records(record_list, index="psd_segid")
 
 
 def make_variable(np_arr, requires_grad=True, volatile=False):
