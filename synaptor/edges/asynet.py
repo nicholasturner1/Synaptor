@@ -69,13 +69,13 @@ def infer_edges(net, img, cleft, seg, offset, patchsz,
             seg_weights, seg_szs = dict_tuple_avg(new_weights, new_szs,
                                                   seg_weights, seg_szs)
 
-            #locs_start = time.time()
             new_locs = random_locs(seg_p[0,0,:].transpose((2,1,0)),
                                    segids, offset=box_offset)
             seg_locs = update_locs(new_locs, seg_locs)
-            #print("Locs in {} seconds".format(time.time() - locs_start))
 
         #print("Samples complete in {} seconds".format(time.time() - start))
+        if len(seg_weights) == 0: #hallucinated?
+            continue
 
         pre_seg, post_seg, pre_w, post_w = make_assignment(seg_weights)
         pre_loc, post_loc = seg_locs[pre_seg], seg_locs[post_seg]
