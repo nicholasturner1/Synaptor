@@ -40,6 +40,7 @@ def write_h5(data, fname, dset_name="/main", chunk_size=None):
             f.create_dataset(dset_name, data=data, chunks=chunk_size,
                              compression="gzip", compression_opts=4)
 
+
 def send_local_file(src, dst):
     shutil.copyfile(src, dst)
 

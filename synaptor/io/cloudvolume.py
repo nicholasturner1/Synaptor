@@ -9,6 +9,7 @@ from ..bbox import BBox3d
 
 def read_cloud_volume_chunk(cv_name, bbox):
 
+    cv.fill_missing = True #ensuring that we always read something
     cv = cloudvolume.CloudVolume(cv_name)
 
     return cv[bbox.index()][:,:,:,0]
