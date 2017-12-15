@@ -118,7 +118,7 @@ def filter_segs_by_id(seg, ids):
 
     if len(removal_mapping) > 0:
         #too memory intensive for right now
-        return relabel_data_iterative(seg, removal_mapping)
+        return relabel_data_lookup_arr(seg, removal_mapping)
         #return relabel_data_lookup_arr(seg, removal_mapping)
     else:
         return seg
