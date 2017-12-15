@@ -36,7 +36,7 @@ def main(cv_path_in, cv_path_out, chunk_begin, chunk_end, proc_dir_path):
     print("Complete in {0:.3f} seconds\n".format(time.time() - start))
 
     print("Relabelling data"); start = time.time()
-    cc_chunk = s.seg_utils.relabel_data_lookup_arr(cc_chunk, chunk_id_map)
+    cc_chunk = s.seg_utils.relabel_data_iterative(cc_chunk, chunk_id_map)
     print("Complete in {0:.3f} seconds\n".format(time.time() - start))
 
 

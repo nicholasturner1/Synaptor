@@ -34,7 +34,7 @@ def main(img_cvname, cc_cvname, seg_cvname,
 
     #Processing
     print("Relabelling clefts"); start = time.time()
-    clefts = s.seg_utils.relabel_data_lookup_arr(clefts, chunk_id_map)
+    clefts = s.seg_utils.relabel_data_iterative(clefts, chunk_id_map)
     print("Complete in {0:.3f} seconds\n".format(time.time() - start))
 
     print("Performing Asynet inference"); start = time.time()
