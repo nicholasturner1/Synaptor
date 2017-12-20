@@ -12,7 +12,7 @@ def merge_info_df(df, id_map, merge_fn):
     to_drop = []
     new_rows = {}
     indices = set([])
-    
+
     for (k,v) in id_map.items():
         if k == v:
             continue
@@ -30,7 +30,8 @@ def merge_info_df(df, id_map, merge_fn):
     index = sorted(list(indices))
     replacements = pd.DataFrame.from_dict(new_rows, orient="index")
 
-    df.loc[index] = replacements
+    # indexing by columns ensures that they have the same order
+    df.loc[index] = replacements[df.columns]
     df.drop(to_drop, inplace=True)
 
     return df
@@ -92,5 +93,3 @@ def weighted_avg(com1, sz1, com2, sz2):
     h2 = (com2[0]*frac2, com2[1]*frac2, com2[2]*frac2)
 
     return (h1[0]+h2[0], h1[1]+h2[1], h1[2]+h2[2])
-
-
