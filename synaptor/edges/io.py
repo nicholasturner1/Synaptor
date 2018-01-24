@@ -31,6 +31,11 @@ def read_network(proc_dir_path):
     local_model = io.pull_file(model_fname)
     local_chkpt = io.pull_file(chkpt_fname)
 
+    return read_local_network(local_model, local_chkpt)
+
+
+def read_local_network(local_model, local_chkpt):
+
     model = imp.load_source("Model",local_model).InstantiatedModel
     model.load_state_dict(torch.load(local_chkpt))
 
