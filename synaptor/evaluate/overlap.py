@@ -9,7 +9,7 @@ import scipy.sparse as sp
 from .. import seg_utils
 
 
-def score_overlaps(pred_clefts, gt_clefts, liberal=True):
+def score_overlaps(pred_clefts, gt_clefts, mode="liberal"):
     """ Compute object-wise precision and recall scores """
 
     overlaps = count_overlaps(pred_clefts, gt_clefts)
@@ -17,10 +17,14 @@ def score_overlaps(pred_clefts, gt_clefts, liberal=True):
     pred_ids = seg_utils.nonzero_unique_ids(pred_clefts)
     gt_ids = seg_utils.nonzero_unique_ids(gt_clefts)
 
-    if liberal:
+    assert mode in ["bare","liberal","conservative"], "invalid mode"
+
+    if mode == "liberal":
         overlaps = ensure_many_to_one(overlaps)
-    else:
+    elif mode == "conservative":
         overlaps = ensure_one_to_one(overlaps)
+    else: #"bare"
+        pass
 
     return precision(overlaps, pred_ids), recall(overlaps, gt_ids)
 
@@ -95,7 +99,7 @@ def precision(overlaps, ids=None):
     If ids aren't dense (each row represents a object in the orig volume),
     can pass a list/np.array of ids to handle that.
     """
-    return matched_id_rate(overlaps, axis=1, ids=ids)
+    return matched_id_rate(overlaps, axis=1, ids=ids, default_rate=1.)
 
 
 def recall(overlaps, ids=None):
@@ -106,18 +110,24 @@ def recall(overlaps, ids=None):
     If ids aren't dense (each row represents a object in the orig volume),
     can pass a list/np.array of ids to handle that.
     """
-    return matched_id_rate(overlaps, axis=0, ids=ids)
+    return matched_id_rate(overlaps, axis=0, ids=ids, default_rate=0.)
 
 
-def matched_id_rate(overlaps, axis, ids=None):
+def matched_id_rate(overlaps, axis, ids=None, default_rate=None):
     """
     Computes how often a row/col id is matched with a col/row.
     This corresponds to precision or recall when mapped to the
-    appropriate axis
+    appropriate axis.
 
     If ids aren't dense (each row represents a object in the orig volume),
     can pass a list/np.array of ids to handle that.
+
+    If the possibility exists that one axis of comparison will be 0
+    (e.g. high CC thresholds), pass in a default value to return
     """
+
+    if overlaps.shape[0] == 0: #no predicted clefts
+        return default_rate, []
 
     maxima = overlaps.max(axis).toarray().ravel()
 
@@ -125,7 +135,13 @@ def matched_id_rate(overlaps, axis, ids=None):
         inds = np.array(ids) - 1
         maxima = maxima[inds]
 
-    return (maxima != 0).sum() / maxima.size
+    score = (maxima != 0).sum() / maxima.size
+    inds  = np.nonzero(maxima == 0)
+
+    if ids is not None:
+        inds = np.array(ids)[inds]
+
+    return score, inds
 
 
 def find_new_comps(old_clefts, new_clefts):
