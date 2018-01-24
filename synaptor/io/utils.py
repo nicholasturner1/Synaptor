@@ -1,10 +1,16 @@
 #!/usr/bin/env python3
 
 
+from __future__ import unicode_literals
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from builtins import filter
+from builtins import range
+from future import standard_library
+standard_library.install_aliases()
 import os
 import numpy as np
-
-from . import base
 
 
 def check_slash(path):
@@ -34,21 +40,6 @@ def parse_remote_path(remote_path):
     key      = "/".join(fields[3:])
 
     return protocol, bucket, key
-
-
-def write_single_df(df, proc_dir_path, basename):
-
-    full_fname = os.path.join(proc_dir_path, basename)
-
-    base.write_dframe(df, full_fname)
-
-
-def read_single_df(proc_dir_path, basename):
-
-    full_fname = os.path.join(proc_dir_path, basename)
-    fname = base.pull_file(full_fname)
-
-    return base.read_dframe(fname)
 
 
 def make_info_arr(start_lookup):
