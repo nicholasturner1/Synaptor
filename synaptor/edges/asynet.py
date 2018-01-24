@@ -1,5 +1,18 @@
 #!/usr/bin/env python
 
+#Pasteurize
+from __future__ import division
+from __future__ import unicode_literals
+from __future__ import print_function
+from __future__ import absolute_import
+from builtins import dict
+from builtins import range
+from builtins import zip
+from builtins import map
+from future import standard_library
+standard_library.install_aliases()
+
+
 import random, copy, operator
 
 import torch
@@ -306,8 +319,8 @@ def make_record(psdid,
                 pre_size, post_size):
 
     data = [psdid,            pre_seg,      post_seg,
-            *pre_loc,
-            *post_loc,
+            pre_loc[0],       pre_loc[1],   pre_loc[2],
+            post_loc[0],      post_loc[1],  post_loc[2],
             pre_weight,       post_weight,
             pre_size,         post_size]
 

@@ -1,5 +1,20 @@
 #!/usr/bin/env python3
 
+#Pasteurize
+from __future__ import unicode_literals
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from builtins import dict
+from builtins import zip
+from builtins import map
+from builtins import range
+from future import standard_library
+standard_library.install_aliases()
+
+
+import itertools
+
 import numpy as np
 import pandas as pd
 
@@ -159,7 +174,7 @@ def wrap_row(sz, com, bb):
     return dict(zip(["size","COM_x","COM_y","COM_z",
                      "BBOX_bx","BBOX_by","BBOX_bz",
                      "BBOX_ex","BBOX_ey","BBOX_ez"],
-                    map(int, (sz, *com, *bb.astuple()))))
+                    map(int, itertools.chain(sz, com, bb.astuple()))))
 
 
 def enforce_size_threshold(seg_info_df, size_thr):

@@ -1,5 +1,17 @@
 #!/usr/bin/env python3
 
+#Pasteurize
+from __future__ import division
+from __future__ import unicode_literals
+from __future__ import print_function
+from __future__ import absolute_import
+from builtins import zip
+from builtins import int
+from builtins import map
+from future import standard_library
+standard_library.install_aliases()
+
+
 import math, operator
 
 import numpy as np
