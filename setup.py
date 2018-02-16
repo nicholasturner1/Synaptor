@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 
-from setuptools import setup, find_packages
+from Cython.Build import cythonize
+from setuptools import setup, find_packages, Extension
+
+extensions = [
+    Extension("synaptor._seg_utils", sources=["synaptor/_seg_utils.pyx"])
+]
 
 setup(
     name='synaptor',
@@ -13,5 +18,6 @@ setup(
               'synaptor.clefts',
               'synaptor.edges',
               'synaptor.merge',
-              'synaptor.io']
+              'synaptor.io'],
+    ext_modules = cythonize(extensions)
 )
