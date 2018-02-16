@@ -104,6 +104,35 @@ def infer_edges(net, img, cleft, seg, offset, patchsz,
     return make_record_dframe(edges)
 
 
+def infer_whole_edge(net, img, cleft, seg, cleft_id, patchsz, dil_param=5):
+
+    cleft_mask = cleft == cleft_id
+
+    seg_weights, seg_szs, seg_locs = {}, {}, {}
+    while cleft_mask.max():
+
+        loc = pick_cleft_locs(cleft_mask, [True], 1)[True][0]
+
+        box = random_box(patchsz, cleft, loc)
+        box_offset = box.min()
+        cleft_mask[box.index()] = False
+
+        img_p, clf_p, seg_p = get_patches(img, cleft, seg, box, cleft_id)
+
+        segids = find_close_segments(clf_p, seg_p, dil_param)
+
+        new_weights, new_szs = infer_patch_weights(net, img_p, clf_p,
+                                                   seg_p, segids)
+        seg_weights, seg_szs = dict_tuple_avg(new_weights, new_szs,
+                                              seg_weights, seg_szs)
+
+        new_locs = random_locs(seg_p[0,0,:].transpose((2,1,0)),
+                               segids, offset=box_offset)
+        seg_locs = update_locs(new_locs, seg_locs)
+
+    return seg_weights, seg_szs, seg_locs
+
+
 def pick_cleft_locs(cleft, cleft_ids, num_locs):
 
     order = np.argsort(cleft.flat)
@@ -278,6 +307,19 @@ def dict_tuple_avg(d1, s1, d2, s2):
             sizes[k]   = s2[k]
 
     return weights, sizes
+
+
+def dict_tuple_sum(d1, d2):
+
+    weights = copy.copy(d1)
+
+    for (k,v) in d2.items():
+        if k in weights:
+            weights[k] += v
+        else:
+            weights[k] = v
+
+    return weights
 
 
 def update_locs(new_locs, all_locs):
