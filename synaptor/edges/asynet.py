@@ -1,5 +1,18 @@
 #!/usr/bin/env python
 
+#Pasteurize
+from __future__ import division
+from __future__ import unicode_literals
+from __future__ import print_function
+from __future__ import absolute_import
+from builtins import dict
+from builtins import range
+from builtins import zip
+from builtins import map
+from future import standard_library
+standard_library.install_aliases()
+
+
 import random, copy, operator
 
 import torch
@@ -89,6 +102,35 @@ def infer_edges(net, img, cleft, seg, offset, patchsz,
         #print("Edge complete in {} seconds".format(time.time() - start))
 
     return make_record_dframe(edges)
+
+
+def infer_whole_edge(net, img, cleft, seg, cleft_id, patchsz, dil_param=5):
+
+    cleft_mask = cleft == cleft_id
+
+    seg_weights, seg_szs, seg_locs = {}, {}, {}
+    while cleft_mask.max():
+
+        loc = pick_cleft_locs(cleft_mask, [True], 1)[True][0]
+
+        box = random_box(patchsz, cleft, loc)
+        box_offset = box.min()
+        cleft_mask[box.index()] = False
+
+        img_p, clf_p, seg_p = get_patches(img, cleft, seg, box, cleft_id)
+
+        segids = find_close_segments(clf_p, seg_p, dil_param)
+
+        new_weights, new_szs = infer_patch_weights(net, img_p, clf_p,
+                                                   seg_p, segids)
+        seg_weights, seg_szs = dict_tuple_avg(new_weights, new_szs,
+                                              seg_weights, seg_szs)
+
+        new_locs = random_locs(seg_p[0,0,:].transpose((2,1,0)),
+                               segids, offset=box_offset)
+        seg_locs = update_locs(new_locs, seg_locs)
+
+    return seg_weights, seg_szs, seg_locs
 
 
 def pick_cleft_locs(cleft, cleft_ids, num_locs):
@@ -267,6 +309,19 @@ def dict_tuple_avg(d1, s1, d2, s2):
     return weights, sizes
 
 
+def dict_tuple_sum(d1, d2):
+
+    weights = copy.copy(d1)
+
+    for (k,v) in d2.items():
+        if k in weights:
+            weights[k] += v
+        else:
+            weights[k] = v
+
+    return weights
+
+
 def update_locs(new_locs, all_locs):
 
     for (k,v) in new_locs.items():
@@ -306,8 +361,8 @@ def make_record(psdid,
                 pre_size, post_size):
 
     data = [psdid,            pre_seg,      post_seg,
-            *pre_loc,
-            *post_loc,
+            pre_loc[0],       pre_loc[1],   pre_loc[2],
+            post_loc[0],      post_loc[1],  post_loc[2],
             pre_weight,       post_weight,
             pre_size,         post_size]
 

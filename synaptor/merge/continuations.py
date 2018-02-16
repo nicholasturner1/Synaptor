@@ -1,6 +1,20 @@
 #!/usr/bin/env python3
 
 
+#Pasteurize
+from __future__ import unicode_literals
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from builtins import zip
+from builtins import range
+from builtins import str
+from builtins import int
+from future import standard_library
+standard_library.install_aliases()
+from builtins import object
+
+
 import numpy as np
 import h5py
 
@@ -34,7 +48,7 @@ def make_id_lookup(face_arr):
     return lookup
 
 
-class Continuation:
+class Continuation(object):
 
 
     def __init__(self, segid, face, face_coords=[]):
@@ -109,7 +123,7 @@ class Continuation:
                                                       face=str(self.face))
 
 
-class Face:
+class Face(object):
 
 
     def __init__(self, axis, hi_index):

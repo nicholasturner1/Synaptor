@@ -1,10 +1,34 @@
 #!/usr/bin/env python3
 
+#Pasteurize
+from __future__ import unicode_literals
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from builtins import dict
+from builtins import zip
+from builtins import map
+from builtins import filter
+from future import standard_library
+standard_library.install_aliases()
+
+
 import numpy as np
 from scipy import ndimage
 
+from . import _seg_utils
 from . import bbox
 import time
+
+
+def relabel_data(d,mapping, copy=True):
+    """
+    Remapping data according to an id mapping using cython loops
+    """
+
+    if copy:
+        d = np.copy(d)
+    return _seg_utils.relabel_data(d,mapping)
 
 
 def relabel_data_iterative(d,mapping):
@@ -13,6 +37,10 @@ def relabel_data_iterative(d,mapping):
     Best when only modifying a few ids
     """
     r = np.copy(d)
+
+    src_ids = set(np.unique(d))
+    mapping = dict(filter(lambda x: x[0] in src_ids, mapping.items()))
+
     for k,v in mapping.items():
         r[d==k] = v
     return r
@@ -42,24 +70,15 @@ def nonzero_unique_ids(seg):
     return ids[ids!=0]
 
 
-def centers_of_mass(ccs, offset=(0,0,0), ids=None):
+def centers_of_mass(ccs, offset=(0,0,0)):
 
-    if ids is None:
-        ids = nonzero_unique_ids(ccs)
+    coords = _seg_utils.centers_of_mass(ccs, offset)
 
-    coords = ndimage.measurements.center_of_mass(ccs,ccs,ids)
-
+    #keeping the datatype consistent until we can test it
     coords_dict = { i : tuple(map(int,coord))
-                    for (i,coord) in zip(ids, coords) }
+                    for (i,coord) in coords.items() }
 
-    if offset == (0,0,0):
-        return coords_dict
-
-    add_offset = lambda x: (x[0]+offset[0],
-                            x[1]+offset[1],
-                            x[2]+offset[2])
-
-    return { i : add_offset(coord) for (i,coord) in coords_dict.items() }
+    return coords_dict
 
 
 def bounding_boxes(ccs, offset=(0,0,0)):
@@ -92,7 +111,7 @@ def segment_sizes(seg):
     return size_dict
 
 
-def filter_segs_by_size(seg, thresh, szs=None, to_ignore=None):
+def filter_segs_by_size(seg, thresh, szs=None, to_ignore=None, copy=True):
 
     if szs is None:
         szs = segment_sizes(seg)
@@ -107,18 +126,16 @@ def filter_segs_by_size(seg, thresh, szs=None, to_ignore=None):
                                   szs.items()))
 
     if len(to_remove) > 0:
-        return filter_segs_by_id(seg, to_remove), remaining_sizes
+        return filter_segs_by_id(seg, to_remove, copy=copy), remaining_sizes
     else:
         return seg, remaining_sizes
 
 
-def filter_segs_by_id(seg, ids):
+def filter_segs_by_id(seg, ids, copy=True):
 
     removal_mapping = { v : 0 for v in ids }
 
     if len(removal_mapping) > 0:
-        #too memory intensive for right now
-        return relabel_data_lookup_arr(seg, removal_mapping)
-        #return relabel_data_lookup_arr(seg, removal_mapping)
+        return relabel_data(seg, removal_mapping, copy=copy)
     else:
         return seg

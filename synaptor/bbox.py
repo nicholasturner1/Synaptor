@@ -3,12 +3,25 @@
 """
 Tweaked version of https://github.com/torms3/DataProvider/blob/refactoring/python/dataprovider/box.py
 """
+#Pasteurize
+from __future__ import unicode_literals
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
 
+from builtins import map
+from builtins import zip
+from builtins import range
+from future import standard_library
+standard_library.install_aliases()
+
+
+from builtins import object
 import operator
 #from . import tup_ops
 
 
-class BBox3d:
+class BBox3d(object):
 
 
     def __init__(self, v1_or_bbox, v2=None, v3=None):
