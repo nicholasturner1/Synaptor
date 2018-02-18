@@ -1,9 +1,4 @@
 #!/usr/bin/env python3
-
-"""
-Tweaked version of https://github.com/torms3/DataProvider/blob/refactoring/python/dataprovider/box.py
-"""
-#Pasteurize
 from __future__ import unicode_literals
 from __future__ import print_function
 from __future__ import division
@@ -15,21 +10,46 @@ from builtins import range
 from future import standard_library
 standard_library.install_aliases()
 
+__doc__ = """
+
+3D-Coordinate Bounding Box
+
+Tweaked version of https://github.com/torms3/DataProvider/blob/refactoring/python/dataprovider/box.py
+
+Nicholas Turner <nturner@cs.princeton.edu>, 2018
+"""
+
 
 from builtins import object
+#from .vector import Vec3d
+from vector import Vec3d, minimum, maximum
 import operator
-#from . import tup_ops
 
 
 class BBox3d(object):
+    """
+    3D-Coordinate Bounding Box
+
+    index()      -- return an np array index
+    min()        -- return the minimum coordinate
+    max()        -- return the (exclusive) upper coordinate
+    transpose()  -- return a new bbox with coordinates reversed
+    translate()  -- return a new bbox with shifted coordinates
+    merge()      -- return a new bbox containing this and another box
+    astuple()    -- return a simplified representation
+    """
 
 
     def __init__(self, v1_or_bbox, v2=None, v3=None):
+        """
+        Initialize a box from a (1) box, (2) pair of vectors, or 
+        (3) triplet of slices
+        """
 
-        if   v3 is not None: #coord-wise
+        if v3 is not None: #slices- coord-wise
             self.set_slices(v1_or_bbox, v2, v3)
 
-        elif v2 is not None: #begin<->end
+        elif v2 is not None: #vectors- begin<->end
             self.set_bounds(v1_or_bbox, v2)
 
         else: #iterable
@@ -39,95 +59,60 @@ class BBox3d(object):
             elif len(v1_or_bbox) == 3:
                 self.set_slices(*v1_or_bbox)
             else:
-                raise("something")
+                raise(ValueError("unexpected argument specified"))
 
 
     def set_bounds(self, b,e):
-
-        x = slice(b[0], e[0], None)
-        y = slice(b[1], e[1], None)
-        z = slice(b[2], e[2], None)
-
-        self.set_slices(x,y,z)
+        self._min = Vec3d(b)
+        self._max = Vec3d(e)
 
 
     def set_slices(self, x,y,z):
-
-        self._x = x
-        self._y = y
-        self._z = z
+        self._min = Vec3d(x.start, y.start, z.start)
+        self._max = Vec3d(x.stop, y.stop, z.stop)
 
 
     def index(self):
         """ Convert to an index for np cut-outs """
-        return (self._x, self._y, self._z)
+        return (slice(self._min[0], self._max[0]),
+                slice(self._min[1], self._max[1]),
+                slice(self._min[2], self._max[2]))
 
 
     def min(self):
-        return (self._x.start, self._y.start, self._z.start)
+        """Return the minimum coordinate"""
+        return Vec3d(self._min)
 
 
     def max(self):
-        return (self._x.stop, self._y.stop, self._z.stop)
+        """Return the maximum coordinate"""
+        return Vec3d(self._max)
 
 
-    def transposed(self):
-        return BBox3d(self._z, self._y, self._x)
+    def transpose(self):
+        """Return the same box with reversed coordinates"""
+        return BBox3d(Vec3d(self._min.z, self._min.y, self._min.x),
+                      Vec3d(self._max.z, self._max.y, self._max.x))
 
 
     def astuple(self):
-        return (self._x.start, self._y.start, self._z.start,
-                self._x.stop,  self._y.stop,  self._z.stop)
+        """Return in a simplified representation"""
+        return (self._min.x, self._min.y, self._min.z,
+                self._max.x, self._max.y, self._max.z)
 
 
     def translate(self, v):
-
-        x = slice(self._x.start + v[0], self._x.stop + v[0], None)
-        y = slice(self._y.start + v[1], self._y.stop + v[1], None)
-        z = slice(self._z.start + v[2], self._z.stop + v[2], None)
-
-        return BBox3d(x,y,z)
+        """Shift by a coordinate v, return a copy"""
+        return BBox3d(self._min+v, self._max+v)
 
 
     def merge(self, other):
-
-        xb = min(self._x.start, other._x.start)
-        yb = min(self._y.start, other._y.start)
-        zb = min(self._z.start, other._z.start)
-
-        xe = max(self._x.start, other._x.start)
-        ye = max(self._y.start, other._y.start)
-        ze = max(self._z.start, other._z.start)
-
-        x = slice(xb, xe, None)
-        y = slice(yb, ye, None)
-        z = slice(zb, ze, None)
-
-        return BBox3d(x,y,z)
-
-
-    def containing_box(loc, box_shape, vol_shape):
-
-        box = BBox3d.centered_box(loc, box_shape)
-
-        shift_up   = tuple( -i  if i < 0 else 0 for i in box.min() )
-        shift_down = tuple( j-i if i > j else 0 for (i,j) in zip(box.max(),
-                                                                vol_shape))
-
-        total_shift = tuple(map(operator.add, shift_up, shift_down))
-        return box.translate(total_shift)
-
-
-    def centered_box(loc, box_shape):
         """
-        Yields a BBox3d centered on the given coordinate of a given shape
-        Not guaranteed to remain within any bounds
+        Consolidate two bounding boxes together, forming a 
+        new box which contains both original boxes
         """
-        margin = tuple(map(operator.floordiv, box_shape, (2 for _ in range(3))))
-        begin  = tuple(map(operator.sub, loc, margin))
-        end    = tuple(map(operator.add, begin, box_shape))
-
-        return BBox3d(begin, end)
+        return BBox3d(minimum(self._min, other._min),
+                      maximum(self._max, other._max))
 
 
     def __eq__(self, other):
@@ -145,6 +130,38 @@ class BBox3d(object):
 
     def __str__(self):
         return "{}({},{},{})".format(self.__class__.__name__, self._x, self._y, self._z)
+
+
+#=========================================================================
+# Utility Functions
+#=========================================================================
+
+def containing_box(loc, box_shape, max_coord):
+    """
+    Find a bounding box of a given shape that contains loc.
+    The resulting box is constrained to stay within (0,0,0)<->max_coord
+    """
+    #these coordinates might be out of bounds
+    box = centered_box(loc, box_shape)
+
+    shift_up = (box.min() - abs(box.min())) // -2
+    over = box.max() - max_coord
+    shift_down = (over + abs(over)) // -2
+
+    total_shift = shift_up + shift_down
+    return box.translate(total_shift)
+
+
+def centered_box(loc, box_shape):
+    """
+    Yields a BBox3d centered on the given coordinate of a given shape
+    Not guaranteed to remain within any bounds
+    """
+    margin = Vec3d(box_shape) // 2
+    begin  = loc - margin
+    end    = begin + box_shape
+
+    return BBox3d(begin, end)
 
 
 if __name__ == "__main__":
