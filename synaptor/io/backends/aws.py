@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-
-
-#Pasteurize
 from __future__ import unicode_literals
 from __future__ import print_function
 from __future__ import division
@@ -10,39 +7,24 @@ from builtins import zip
 from future import standard_library
 standard_library.install_aliases()
 
-import os
 
-#Piggybacking on cloudvolume's secrets
-import cloudvolume
+__doc__ = """
+AWS IO Functionality
+
+Nicholas Turner <nturner@cs.princeton.edu>, 2018
+"""
+
+
+import os, re
+
+import cloudvolume #Piggybacking on cloudvolume's secrets
 import boto3
 
 from . import utils
 
 
+REGEXP = re.compile("s3://")
 CREDS = cloudvolume.secrets.aws_credentials
-
-
-def send_local_file(local_name, remote_path):
-    bucket, key = parse_remote_path(remote_path)
-
-    client = open_client()
-
-    client.upload_file(local_name, bucket, key)
-
-
-def send_local_dir(local_dir, remote_dir):
-    bucket, key = parse_remote_path(remote_dir)
-
-    #Sending directory to a subdirectory of remote dir
-    key = os.path.join(key, os.path.basename(utils.check_no_slash(local_dir)))
-
-    fnames = os.listdir(local_dir)
-    remote_keys = [os.path.join(key, f) for f in fnames]
-
-    client = open_client()
-
-    for (f,key) in zip(fnames, remote_keys):
-        client.upload_file(os.path.join(local_dir, f), bucket, key)
 
 
 def pull_file(remote_path):
@@ -55,7 +37,7 @@ def pull_file(remote_path):
     client.download_file(bucket, key, local_fname)
 
 
-def pull_all_files(remote_dir):
+def pull_directory(remote_dir):
     """ This will currently break if the remote dir has subdirectories """
     bucket, key = parse_remote_path(remote_dir)
 
@@ -75,6 +57,29 @@ def pull_all_files(remote_dir):
     return local_fnames
 
 
+def send_file(local_name, remote_path):
+    bucket, key = parse_remote_path(remote_path)
+
+    client = open_client()
+
+    client.upload_file(local_name, bucket, key)
+
+
+def send_directory(local_dir, remote_dir):
+    bucket, key = parse_remote_path(remote_dir)
+
+    #Sending directory to a subdirectory of remote dir
+    key = os.path.join(key, os.path.basename(utils.check_no_slash(local_dir)))
+
+    fnames = os.listdir(local_dir)
+    remote_keys = [os.path.join(key, f) for f in fnames]
+
+    client = open_client()
+
+    for (f,key) in zip(fnames, remote_keys):
+        client.upload_file(os.path.join(local_dir, f), bucket, key)
+
+
 def keys_under_prefix(client, bucket, key):
 
     response = client.list_objects(Bucket=bucket,
@@ -84,6 +89,7 @@ def keys_under_prefix(client, bucket, key):
 
 
 def parse_remote_path(remote_path):
+    """ Wrapper around the utils function - checks for the right protocol """
     protocol, bucket, key = utils.parse_remote_path(remote_path)
 
     assert protocol == "s3:", "Mismatched protocol (expected AWS S3)"

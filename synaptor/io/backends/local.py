@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-
-#Pasteurize
 from __future__ import unicode_literals
 from __future__ import print_function
 from __future__ import division
@@ -8,10 +6,38 @@ from __future__ import absolute_import
 from future import standard_library
 standard_library.install_aliases()
 
+
+__doc__ = """
+Local Filesystem IO
+
+Nicholas Turner <nturner@cs.princeton.edu>, 2018
+"""
+
+
 import os, glob, shutil
+
 import h5py
 import pandas as pd
 
+
+def pull_file(fname):
+    assert os.path.exists
+    return fname
+
+
+def pull_directory(dirname):
+    return glob.glob(os.path.join(dirname, "*"))
+
+
+def send_file(src, dst):
+    shutil.copyfile(src, dst)
+
+
+def send_directory(dirname, dst):
+    full_dst = os.path.join(dst,dirname)
+    if os.path.exists(full_dst):
+        os.rmdir(full_dst)
+    shutil.move(dirname, dst)
 
 
 def write_dframe(dframe, path):
@@ -47,23 +73,3 @@ def write_h5(data, fname, dset_name="/main", chunk_size=None):
         else:
             f.create_dataset(dset_name, data=data, chunks=chunk_size,
                              compression="gzip", compression_opts=4)
-
-
-def send_local_file(src, dst):
-    shutil.copyfile(src, dst)
-
-
-def send_local_dir(dirname, dst):
-    full_dst = os.path.join(dst,dirname)
-    if os.path.exists(full_dst):
-        os.rmdir(full_dst)
-    shutil.move(dirname, dst)
-
-
-def pull_file(fname):
-    assert os.path.exists
-    return fname
-
-
-def pull_all_files(dirname):
-    return glob.glob(os.path.join(dirname, "*"))

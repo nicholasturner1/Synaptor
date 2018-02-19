@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-
-#Pasteurize
 from __future__ import unicode_literals
 from __future__ import print_function
 from __future__ import division
@@ -9,41 +7,25 @@ from builtins import zip
 from future import standard_library
 standard_library.install_aliases()
 
-import os
 
-#Piggybacking on cloudvolume's secrets
-import cloudvolume
+__doc__ = """
+GCloud IO Functionality
+
+Nicholas Turner <nturner@cs.princeton.edu>, 2018
+"""
+
+
+import os, re
+
+import cloudvolume #Piggybacking on cloudvolume's secrets
 from google.cloud import storage
 
 from . import utils
 
 
+REGEXP = re.compile("gs://")
 PROJECT_NAME = cloudvolume.secrets.PROJECT_NAME
 CREDS        = cloudvolume.secrets.google_credentials
-
-
-def send_local_file(local_name, remote_path):
-    bucket, key = parse_remote_path(remote_path)
-
-    blob = open_bucket(bucket).blob(key)
-
-    blob.upload_from_filename(local_name)
-
-
-def send_local_dir(local_dir, remote_dir):
-    bucket, key = parse_remote_path(remote_dir)
-
-    #Sending directory to a subdirectory of remote dir
-    key = os.path.join(key, os.path.basename(utils.check_no_slash(local_dir)))
-
-    fnames = os.listdir(local_dir)
-    remote_keys = [os.path.join(key, f) for f in fnames]
-
-    active_bucket = open_bucket(bucket)
-
-    for (f,key) in zip(fnames, remote_keys):
-        blob = active_bucket.blob(key)
-        blob.upload_from_filename(os.path.join(local_dir, f))
 
 
 def pull_file(remote_path):
@@ -58,7 +40,7 @@ def pull_file(remote_path):
     return local_fname
 
 
-def pull_all_files(remote_dir):
+def pull_directory(remote_dir):
     """ This will currently break if the remote dir has subdirectories """
     bucket, key = parse_remote_path(remote_dir)
 
@@ -78,7 +60,32 @@ def pull_all_files(remote_dir):
     return local_fnames
 
 
+def send_file(local_name, remote_path):
+    bucket, key = parse_remote_path(remote_path)
+
+    blob = open_bucket(bucket).blob(key)
+
+    blob.upload_from_filename(local_name)
+
+
+def send_directory(local_dir, remote_dir):
+    bucket, key = parse_remote_path(remote_dir)
+
+    #Sending directory to a subdirectory of remote dir
+    key = os.path.join(key, os.path.basename(utils.check_no_slash(local_dir)))
+
+    fnames = os.listdir(local_dir)
+    remote_keys = [os.path.join(key, f) for f in fnames]
+
+    active_bucket = open_bucket(bucket)
+
+    for (f,key) in zip(fnames, remote_keys):
+        blob = active_bucket.blob(key)
+        blob.upload_from_filename(os.path.join(local_dir, f))
+
+
 def parse_remote_path(remote_path):
+    """ Wrapper around the utils function - checks for the right protocol """
     protocol, bucket, key = utils.parse_remote_path(remote_path)
 
     assert protocol == "gs:", "Mismatched protocol (expected Google Storage)"
@@ -87,6 +94,7 @@ def parse_remote_path(remote_path):
 
 
 def open_bucket(bucket):
+    """ Opens a bucket """
     client = storage.Client(project=PROJECT_NAME,
                             credentials=CREDS)
 
