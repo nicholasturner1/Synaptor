@@ -16,6 +16,7 @@ Nicholas Turner <nturner@cs.princeton.edu>, 2018
 
 import os, glob, shutil
 
+import torch
 import h5py
 import pandas as pd
 
@@ -40,14 +41,24 @@ def send_directory(dirname, dst):
     shutil.move(dirname, dst)
 
 
+def read_dframe(path):
+    """ Simple for now """
+    return pd.read_csv(path, index_col=0)
+
+
 def write_dframe(dframe, path):
     """ Simple for now """
     dframe.to_csv(path, index_label="psd_segid")
 
 
-def read_dframe(path):
-    """ Simple for now """
-    return pd.read_csv(path, index_col=0)
+def read_network(path):
+    """ Reads a PyTorch model from disk """
+    return torch.load(path)
+
+
+def write_network(net, path):
+    """ Writes a PyTorch model to disk """
+    torch.save(net, path)
 
 
 def open_h5(fname):

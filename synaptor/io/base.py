@@ -100,7 +100,7 @@ def read_dframe(path_or_head, basename=None):
     return bck.local.read_dframe(local_fname)
 
 
-def write_dframe(dframe, path_or_head, basename):
+def write_dframe(dframe, path_or_head, basename=None):
     """
     Writes a dataframe to a path - path can specify
     remote storage in Google Cloud or AWS S3
@@ -118,7 +118,46 @@ def write_dframe(dframe, path_or_head, basename):
     bck.local.write_dframe(dframe, local_fname)
 
     if is_remote_path(path):
-        send_local_file(local_fname, path)
+        send_file(local_fname, path)
+
+
+def read_network(path_or_head, basename=None):
+    """
+    Reads a saved Torch network - path can specify remote
+    storage in Google Cloud or AWS S3
+    """
+    if basename is not None:
+        path = os.path.join(path_or_prefix, basename)
+    else:
+        path = path_or_prefix
+
+    if is_remote_path(path):
+        local_fname = pull_file(path)
+    else:
+        local_fname = path
+
+    return bck.local.read_network(local_fname)
+
+
+def write_network(net, path_or_head, basename=None):
+    """
+    Reads a saved Torch network - path can specify remote
+    storage in Google Cloud or AWS S3
+    """
+    if basename is not None:
+        path = os.path.join(path_or_prefix, basename)
+    else:
+        path = path_or_prefix
+
+    if is_remote_path(path):
+        local_fname = utils.temp_path(path)
+    else:
+        local_fname = path
+
+    bck.local.write_network(net, local_fname)
+
+    if is_remote_path(path):
+        send_file(local_fname, path)
 
 
 def open_h5(path):
