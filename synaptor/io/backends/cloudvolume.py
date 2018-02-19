@@ -17,8 +17,7 @@ Nicholas Turner <nturner@cs.princeton.edu>, 2018
 import numpy as np
 import cloudvolume #external package
 
-
-from ...bbox import BBox3d
+from ...types.bbox import BBox3d
 
 
 def read_cloud_volume_chunk(cv_name, bbox):

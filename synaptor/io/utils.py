@@ -17,7 +17,8 @@ Nicholas Turner <nturner@cs.princeton.edu>, 2018
 """
 
 
-import os
+import os, re
+
 import numpy as np
 
 from .. import bbox

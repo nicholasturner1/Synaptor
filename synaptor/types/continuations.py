@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-
-
-#Pasteurize
 from __future__ import unicode_literals
 from __future__ import print_function
 from __future__ import division
@@ -14,43 +11,22 @@ from future import standard_library
 standard_library.install_aliases()
 from builtins import object
 
+__doc__ = """
+Segment Continuation
+
+Nicholas Turner <nturner@cs.princeton.edu>, 2018
+"""
+
 
 import numpy as np
 import h5py
 
 
-def extract_all_continuations(segs):
-
-    continuations = []
-    for face in Face.all_faces():
-
-        extracted = face.extract(segs)
-
-        segid_lookup = make_id_lookup(extracted)
-        for (segid,coords) in segid_lookup.items():
-            continuations.append(Continuation(segid, face, np.array(coords)))
-
-    return continuations
-
-
-def make_id_lookup(face_arr):
-
-    x,y = np.nonzero(face_arr)
-    segids = face_arr[(x,y)]
-
-    lookup = {}
-    for (segid,i,j) in zip(segids, x,y):
-        if segid not in lookup:
-            lookup[segid] = [(i,j)]
-        else:
-            lookup[segid].append((i,j))
-
-    return lookup
-
-
 class Continuation(object):
-
-
+    """
+    Continuation - a representation of a segment that contacts
+     a surface of a chunk, and may continue to the next chunk
+    """
     def __init__(self, segid, face, face_coords=[]):
 
         self.segid = segid
@@ -63,7 +39,7 @@ class Continuation(object):
 
 
     def opposite_face(self):
-        return opposite_face(self.face)
+        return Face.opposite(self.face)
 
 
     def write_to_fname(self, fname):
@@ -124,8 +100,9 @@ class Continuation(object):
 
 
 class Face(object):
-
-
+    """
+    Face - a representation for a face of a chunk of data
+    """
     def __init__(self, axis, hi_index):
 
         self.axis = axis
@@ -137,6 +114,7 @@ class Face(object):
 
 
     def extract(self, data):
+        """ Extracts the 2D data at a Face of a 3d chunk """
         index = -1 if self.hi_index else 0
         return np.take(data, index, axis=self.axis)
 
@@ -178,3 +156,47 @@ class Face(object):
     def __str__(self):
         hi = "high" if self.hi_index else "low"
         return "<Face {axis},{hi}>".format(axis=self.axis, hi=hi)
+
+
+#=========================================================================
+# Utility functions
+#=========================================================================
+
+def extract_all_continuations(segs):
+    """ 
+    Takes chunk of segmented data and finds the continuations
+    within that chunk
+    """
+
+    continuations = []
+    for face in Face.all_faces():
+
+        #Pulls the 2D face arr
+        extracted = face.extract(segs)
+
+        #Finds which segids are in the face, and extracts the coords
+        # at which that segid exists
+        segid_lookup = make_id_lookup(extracted)
+        for (segid,coords) in segid_lookup.items():
+            continuations.append(Continuation(segid, face, np.array(coords)))
+
+    return continuations
+
+
+def make_id_lookup(face_arr):
+    """ 
+    Takes a 2D numpy array, and finds where the values are nonzero.
+    Returns a lookup from segid to the coords at which it exists
+    """
+
+    x,y = np.nonzero(face_arr)
+    segids = face_arr[(x,y)]
+
+    lookup = {}
+    for (segid,i,j) in zip(segids, x,y):
+        if segid not in lookup:
+            lookup[segid] = [(i,j)]
+        else:
+            lookup[segid].append((i,j))
+
+    return lookup
