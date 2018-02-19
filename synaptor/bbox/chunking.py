@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-
-#Pasteurize
 from __future__ import unicode_literals
 from __future__ import print_function
 from __future__ import division
@@ -9,13 +7,25 @@ from builtins import map
 from future import standard_library
 standard_library.install_aliases()
 
+__doc__ = """
 
-import itertools, operator
+Coordinate Chunking Functions
+
+Nicholas Turner <nturner@cs.princeton.edu>, 2018
+"""
+
+
+import itertools
 
 from . import bbox
+from .vector import Vec3d
+
 
 def chunk_bboxes(vol_size, chunk_size, offset=None):
-
+    """
+    Break up a volume of a given size into chunks. The desired coordinates
+    of the chunks should start at the offset value
+    """
     x_bnds = bounds1D(vol_size[0], chunk_size[0])
     y_bnds = bounds1D(vol_size[1], chunk_size[1])
     z_bnds = bounds1D(vol_size[2], chunk_size[2])
@@ -30,7 +40,10 @@ def chunk_bboxes(vol_size, chunk_size, offset=None):
 
 
 def bounds1D(full_width, step_size):
-
+    """
+    Return the bbox coordinates for a single dimension given
+    the size of the chunked dimension and the size of each box
+    """
     assert step_size > 0, "invalid step_size: {}".format(step_size)
     assert full_width > 0, "invalid volume_width: {}".format(full_width)
 
@@ -51,10 +64,10 @@ def bounds1D(full_width, step_size):
 
 
 def find_closest_chunk_boundary(pt, offset, chunk_size):
+    """Return the bounding box corner closest to the given point"""
 
-    diff = tuple(map(operator.sub, pt,offset))
-    index = tuple(map(operator.truediv, diff,chunk_size))
-    closest = tuple(map(round, index))
+    diff = Vec3d(pt) - offset
+    index = diff / chunk_size
+    closest = round(index)
     
-    shift = tuple(map(operator.mul, closest,chunk_size))
-    return tuple(map(operator.add, shift,offset))
+    return closest * chunk_size + offset

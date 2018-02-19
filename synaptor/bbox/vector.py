@@ -270,6 +270,9 @@ class Vec3d(object):
     def __abs__(self):
         return Vec3d(abs(self.x), abs(self.y), abs(self.z))
 
+    def __round(self):
+        return Vec3d(round(self.x), round(self.y), round(self.z))
+
     def __invert__(self):
         return Vec3d(-self.x, -self.y, -self.z)
 

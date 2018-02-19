@@ -4,7 +4,7 @@ from Cython.Build import cythonize
 from setuptools import setup, find_packages, Extension
 
 extensions = [
-    Extension("synaptor._seg_utils", sources=["synaptor/_seg_utils.pyx"])
+    Extension("synaptor.seg_utils._seg_utils", sources=["synaptor/seg_utils/_seg_utils.pyx"])
 ]
 
 setup(

@@ -17,7 +17,7 @@ import numpy as np
 from scipy import ndimage
 
 from . import _seg_utils
-from . import bbox
+from .. import bbox
 import time
 
 

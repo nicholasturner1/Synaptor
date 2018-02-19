@@ -21,9 +21,9 @@ Nicholas Turner <nturner@cs.princeton.edu>, 2018
 
 
 from builtins import object
-#from .vector import Vec3d
-from vector import Vec3d, minimum, maximum
 import operator
+
+from .vector import Vec3d, minimum, maximum
 
 
 class BBox3d(object):
