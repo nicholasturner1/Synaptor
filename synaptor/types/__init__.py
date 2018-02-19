@@ -1,2 +1,2 @@
 from . import bbox
-from . import continuations
+from . import continuation
