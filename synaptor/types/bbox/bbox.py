@@ -132,6 +132,10 @@ class BBox3d(object):
         return "{}({},{},{})".format(self.__class__.__name__, self._x, self._y, self._z)
 
 
+    def __hash__(self):
+        return hash(self.astuple())
+
+
 #=========================================================================
 # Utility Functions
 #=========================================================================

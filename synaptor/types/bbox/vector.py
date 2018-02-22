@@ -270,11 +270,17 @@ class Vec3d(object):
     def __abs__(self):
         return Vec3d(abs(self.x), abs(self.y), abs(self.z))
 
-    def __round(self):
+    def __round__(self):
         return Vec3d(round(self.x), round(self.y), round(self.z))
 
     def __invert__(self):
         return Vec3d(-self.x, -self.y, -self.z)
+
+    def __hash__(self):
+        return hash((self.x,self.y,self.z))
+
+    def __lt__(self, other):
+        return tuple(self) < tuple(other)
 
 
 ########################################################################
