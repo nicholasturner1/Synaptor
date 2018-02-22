@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-
-#Pasteurize
 from __future__ import unicode_literals
 from __future__ import print_function
 from __future__ import division
@@ -16,8 +14,8 @@ import pandas as pd
 import numpy as np
 
 
-from ..merge import continuations
-from .. import io
+from ...types import continuation
+from ... import io
 
 
 COM_SCHEMA  = ["COM_x","COM_y","COM_z"]
@@ -64,7 +62,7 @@ def write_chunk_seg_info(centers, sizes, bboxes, chunk_bounds, proc_dir_path):
 
     assert len(centers) == len(sizes) == len(bboxes)
 
-    chunk_tag = io.chunk_tag(chunk_bounds)
+    chunk_tag = io.fname_chunk_tag(chunk_bounds)
     seg_info_fname = os.path.join(proc_dir_path, SEG_INFO_DIRNAME,
                                   "seg_info_{tag}.df".format(tag=chunk_tag))
 
@@ -113,11 +111,11 @@ def dframe_from_tuple_dict(tuple_dict, colnames):
 
 def write_chunk_continuations(conts, chunk_bounds, proc_dir_path):
 
-    chunk_tag = io.chunk_tag(chunk_bounds)
+    chunk_tag = io.fname_chunk_tag(chunk_bounds)
     fname = os.path.join(proc_dir_path, CONTINUATION_DIRNAME,
                          "conts_{tag}.h5".format(tag=chunk_tag))
 
-    fobj = io.make_local_h5(fname)
+    fobj = io.open_h5(fname)
     local_fname = fobj.filename
     for c in conts:
         c.write_to_fobj(fobj)
@@ -138,7 +136,7 @@ def write_chunk_id_maps(chunk_id_maps, chunk_bounds, proc_dir_path):
 
     for (id_map, bounds) in zip(chunk_id_maps.flat, chunk_bounds):
 
-        chunk_tag = io.chunk_tag(bounds)
+        chunk_tag = io.fname_chunk_tag(bounds)
         fname = os.path.join(ID_MAP_DIRNAME,
                              "id_map_{tag}.df".format(tag=chunk_tag))
         write_id_map(id_map, fname)
@@ -148,7 +146,7 @@ def write_chunk_id_maps(chunk_id_maps, chunk_bounds, proc_dir_path):
 
 def read_chunk_id_map(proc_dir_path, chunk_bounds):
 
-    chunk_tag = io.chunk_tag(chunk_bounds)
+    chunk_tag = io.fname_chunk_tag(chunk_bounds)
     basename = "id_map_{tag}.df".format(tag=chunk_tag)
     fname = io.pull_file(os.path.join(proc_dir_path, ID_MAP_DIRNAME, basename))
 
