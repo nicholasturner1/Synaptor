@@ -75,7 +75,7 @@ def extract_sorted_bboxes(local_dir):
     Takes every file within a local directory, and returns a list
     of their bounding boxes sorted lexicographically
     """
-    fnames = local.pull_all_files(local_dir)
+    fnames = bck.local.pull_directory(local_dir)
     bboxes = list(map(bbox_from_fname, fnames))
 
     return sorted(bboxes, key=lambda bb: bb.min())

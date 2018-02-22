@@ -88,9 +88,9 @@ def read_dframe(path_or_head, basename=None):
     storage in Google Cloud or AWS S3
     """
     if basename is not None:
-        path = os.path.join(path_or_prefix, basename)
+        path = os.path.join(path_or_head, basename)
     else:
-        path = path_or_prefix
+        path = path_or_head
 
     if is_remote_path(path):
         local_fname = pull_file(path)
@@ -106,9 +106,9 @@ def write_dframe(dframe, path_or_head, basename=None):
     remote storage in Google Cloud or AWS S3
     """
     if basename is not None:
-        path = os.path.join(path_or_prefix, basename)
+        path = os.path.join(path_or_head, basename)
     else:
-        path = path_or_prefix
+        path = path_or_head
 
     if is_remote_path(path):
         local_fname = utils.temp_path(path)
@@ -127,9 +127,9 @@ def read_network(path_or_head, basename=None):
     storage in Google Cloud or AWS S3
     """
     if basename is not None:
-        path = os.path.join(path_or_prefix, basename)
+        path = os.path.join(path_or_head, basename)
     else:
-        path = path_or_prefix
+        path = path_or_head
 
     if is_remote_path(path):
         local_fname = pull_file(path)
@@ -145,9 +145,9 @@ def write_network(net, path_or_head, basename=None):
     storage in Google Cloud or AWS S3
     """
     if basename is not None:
-        path = os.path.join(path_or_prefix, basename)
+        path = os.path.join(path_or_head, basename)
     else:
-        path = path_or_prefix
+        path = path_or_head
 
     if is_remote_path(path):
         local_fname = utils.temp_path(path)
@@ -173,6 +173,44 @@ def open_h5(path):
 
     return bck.local.open_h5(fname)
 
+
+def read_h5(path_or_head, basename=None):
+    """
+    Reads an hdf5 file - path can specify remote
+    storage in Google Cloud or AWS S3
+    """
+    if basename is not None:
+        path = os.path.join(path_or_head, basename)
+    else:
+        path = path_or_head
+
+    if is_remote_path(path):
+        local_fname = pull_file(path)
+    else:
+        local_fname = path
+
+    return bck.local.read_h5(local_fname)
+
+
+def write_h5(data, path_or_head, basename=None):
+    """
+    Writes data to an hdf5 file - path can specify remote
+    storage in Google Cloud or AWS S3
+    """
+    if basename is not None:
+        path = os.path.join(path_or_head, basename)
+    else:
+        path = path_or_head
+
+    if is_remote_path(path):
+        local_fname = utils.temp_path(path)
+    else:
+        local_fname = path
+
+    bck.local.write_h5(net, local_fname)
+
+    if is_remote_path(path):
+        send_file(local_fname, path)
 
 def is_remote_path(path):
     return GCLOUD_REGEXP.match(path) or AWS_REGEXP.match(path)
