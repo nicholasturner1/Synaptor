@@ -14,10 +14,6 @@ setup(
     author='Nicholas Turner',
     author_email='nturner@cs.princeton.edu',
     url='https://github.com/nicholasturner1/Synaptor',
-    packages=['synaptor',
-              'synaptor.clefts',
-              'synaptor.edges',
-              'synaptor.merge',
-              'synaptor.io'],
+    packages=['synaptor'],
     ext_modules = cythonize(extensions)
 )
