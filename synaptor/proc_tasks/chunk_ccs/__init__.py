@@ -1,4 +1,4 @@
-from . import io
-from . import dil_comps
+#from . import io
+from . import conn_comps
 
-from .dil_comps import dilated_components
+from .conn_comps import connected_components3d, dilated_components

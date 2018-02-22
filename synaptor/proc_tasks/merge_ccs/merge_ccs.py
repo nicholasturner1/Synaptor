@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-
-#Pasteurize
 from __future__ import unicode_literals
 from __future__ import print_function
 from __future__ import division
@@ -18,9 +16,9 @@ import itertools
 import numpy as np
 import pandas as pd
 
+from ...types import continuation
+from ...types import bbox
 from . import utils
-from . import continuations
-from .. import bbox
 
 
 def consolidate_cleft_info_arr(cleft_info_arr):
@@ -91,7 +89,7 @@ def find_connected_continuations(continuation_arr):
 
     for index in np.ndindex(sizes):
 
-        for face in continuations.Face.all_faces():
+        for face in continuation.Face.all_faces():
 
             #bounds checking
             if face.hi_index and index[face.axis] == sizes[face.axis] - 1:
@@ -156,7 +154,7 @@ def merge_cleft_rows(row1, row2):
     bb  = bbox1.merge(bbox2)
 
     return wrap_row(sz, com, bb)
-     
+
 
 def unwrap_row(df_row):
 
@@ -174,7 +172,7 @@ def wrap_row(sz, com, bb):
     return dict(zip(["size","COM_x","COM_y","COM_z",
                      "BBOX_bx","BBOX_by","BBOX_bz",
                      "BBOX_ex","BBOX_ey","BBOX_ez"],
-                    map(int, itertools.chain(sz, com, bb.astuple()))))
+                    map(int, itertools.chain((sz,), com, bb.astuple()))))
 
 
 def enforce_size_threshold(seg_info_df, size_thr):
@@ -190,4 +188,3 @@ def update_id_map(map1, map2):
         map1[k] = map2.get(v,v)
 
     return map1
-
