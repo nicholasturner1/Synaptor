@@ -27,6 +27,9 @@ class Continuation(object):
     Continuation - a representation of a segment that contacts
      a surface of a chunk, and may continue to the next chunk
     """
+
+    __slots__ = ("segid","face","face_coords")
+
     def __init__(self, segid, face, face_coords=[]):
 
         self.segid = segid
@@ -57,7 +60,7 @@ class Continuation(object):
 
                 if not Face.represented_in_h5(f,face):
                      res[face] = []
-                     continue 
+                     continue
 
                 all_conts = [ Continuation.read_from_fobj(f,face,int(segid))
                               for segid in f["/"+face_dir].keys() ]
@@ -103,6 +106,9 @@ class Face(object):
     """
     Face - a representation for a face of a chunk of data
     """
+
+    __slots__ = ("axis","hi_index")
+
     def __init__(self, axis, hi_index):
 
         self.axis = axis
@@ -127,7 +133,7 @@ class Face(object):
     def represented_in_h5(fobj, face):
         hi = "high" if face.hi_index else "low"
         axis_str = str(face.axis)
-        return (axis_str in fobj.keys() and 
+        return (axis_str in fobj.keys() and
                 hi in fobj[axis_str].keys())
 
 
@@ -162,8 +168,8 @@ class Face(object):
 # Utility functions
 #=========================================================================
 
-def extract_all_continuations(segs):
-    """ 
+def extract_all_continuations(seg):
+    """
     Takes chunk of segmented data and finds the continuations
     within that chunk
     """
@@ -172,7 +178,7 @@ def extract_all_continuations(segs):
     for face in Face.all_faces():
 
         #Pulls the 2D face arr
-        extracted = face.extract(segs)
+        extracted = face.extract(seg)
 
         #Finds which segids are in the face, and extracts the coords
         # at which that segid exists
@@ -184,7 +190,7 @@ def extract_all_continuations(segs):
 
 
 def make_id_lookup(face_arr):
-    """ 
+    """
     Takes a 2D numpy array, and finds where the values are nonzero.
     Returns a lookup from segid to the coords at which it exists
     """

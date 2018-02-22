@@ -39,10 +39,11 @@ class BBox3d(object):
     astuple()    -- return a simplified representation
     """
 
+    __slots__ = ("_min","_max")
 
     def __init__(self, v1_or_bbox, v2=None, v3=None):
         """
-        Initialize a box from a (1) box, (2) pair of vectors, or 
+        Initialize a box from a (1) box, (2) pair of vectors, or
         (3) triplet of slices
         """
 
@@ -108,7 +109,7 @@ class BBox3d(object):
 
     def merge(self, other):
         """
-        Consolidate two bounding boxes together, forming a 
+        Consolidate two bounding boxes together, forming a
         new box which contains both original boxes
         """
         return BBox3d(minimum(self._min, other._min),
