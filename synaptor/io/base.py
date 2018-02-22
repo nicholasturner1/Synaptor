@@ -57,6 +57,9 @@ def send_file(local_path, path):
     Sends a local file to storage. The storage can be
     local or remote as specified by the pathname
     """
+    if local_path == path:
+        return
+
     if   GCLOUD_REGEXP.match(path):
         bck.gcloud.send_file(local_name, path)
     elif AWS_REGEXP.match(path):
@@ -72,6 +75,9 @@ def send_directory(local_dir, path):
     Sends a local directory of files to storage. The storage can be
     local or remote as specified by the pathname
     """
+    if local_dir == path:
+        return
+
     if   GCLOUD_REGEXP.match(path):
         bck.gcloud.send_directory(local_dir, path)
     elif AWS_REGEXP.match(path):
