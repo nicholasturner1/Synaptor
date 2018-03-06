@@ -127,43 +127,50 @@ def write_dframe(dframe, path_or_head, basename=None):
         send_file(local_fname, path)
 
 
-def read_network(path_or_head, basename=None):
+def read_network(prefix_or_head, basename=None):
     """
     Reads a saved Torch network - path can specify remote
     storage in Google Cloud or AWS S3
     """
     if basename is not None:
-        path = os.path.join(path_or_head, basename)
+        prefix = os.path.join(prefix_or_head, basename)
     else:
-        path = path_or_head
+        prefix = prefix_or_head
 
-    if is_remote_path(path):
-        local_fname = pull_file(path)
+    if is_remote_path(prefix):
+        net_fname = pull_file(prefix + ".py")
+        chkpt_fname = pull_file(prefix + ".chkpt")
+        local_prefix = os.path.splitext(net_fname)[0]
     else:
-        local_fname = path
+        local_prefix = prefix
 
-    return bck.local.read_network(local_fname)
+    return bck.local.read_network(local_prefix)
 
 
-def write_network(net, path_or_head, basename=None):
+def write_network(net, prefix_or_head, basename=None):
     """
     Reads a saved Torch network - path can specify remote
     storage in Google Cloud or AWS S3
     """
     if basename is not None:
-        path = os.path.join(path_or_head, basename)
+        prefix = os.path.join(prefix_or_head, basename)
     else:
-        path = path_or_head
+        prefix = prefix_or_head
 
-    if is_remote_path(path):
-        local_fname = utils.temp_path(path)
+    if is_remote_path(prefix):
+        local_net = utils.temp_path(prefix + ".py")
+        local_chkpt = utils.temp_path(prefix + ".chkpt")
+        local_prefix = os.path.splitext(local_net)[0]
     else:
-        local_fname = path
+        local_net = prefix + ".py"
+        local_chkpt = prefix + ".chkpt"
+        local_prefix = prefix
 
-    bck.local.write_network(net, local_fname)
+    bck.local.write_network(net, local_prefix)
 
-    if is_remote_path(path):
-        send_file(local_fname, path)
+    if is_remote_path(prefix):
+        send_file(local_net, prefix + ".py")
+        send_file(local_chkpt, prefix + ".chkpt")
 
 
 def open_h5(path):
