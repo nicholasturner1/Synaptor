@@ -20,6 +20,6 @@ from .proc_tasks.merge_ccs import apply_chunk_id_maps, update_chunk_id_maps
 from .proc_tasks.merge_ccs import merge_cleft_df, enforce_size_threshold
 from .proc_tasks.merge_ccs import read_seg_infos, read_all_continuations
 
-#from . import evaluate
+from . import evaluate
 
 from . import io

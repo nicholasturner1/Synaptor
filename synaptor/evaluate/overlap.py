@@ -28,7 +28,11 @@ def score_overlaps(pred_clefts, gt_clefts, mode="liberal", to_ignore=[]):
     else: #"bare"
         pass
 
-    return precision(overlaps, pred_ids), recall(overlaps, gt_ids)
+    # Need these sometimes for averaging across datasets
+    n_pred = len(pred_ids)
+    n_gt = len(gt_ids)
+
+    return precision(overlaps, pred_ids), recall(overlaps, gt_ids), n_pred, n_gt
 
 
 def count_overlaps(clefts, gt_clefts):
