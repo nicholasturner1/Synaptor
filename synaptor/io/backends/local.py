@@ -22,7 +22,7 @@ import pandas as pd
 
 
 def pull_file(fname):
-    assert os.path.exists
+    assert os.path.exists, "File {} doesn't exist".format(fname)
     return fname
 
 
@@ -67,7 +67,7 @@ def open_h5(fname):
 
 
 def read_h5(fname, dset_name="/main"):
-    assert os.path.isfile(fname)
+    assert os.path.isfile(fname), "File {} doesn't exist".format(fname)
     with h5py.File(fname) as f:
         return f[dset_name].value
 

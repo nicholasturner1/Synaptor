@@ -213,7 +213,7 @@ def write_h5(data, path_or_head, basename=None):
     else:
         local_fname = path
 
-    bck.local.write_h5(net, local_fname)
+    bck.local.write_h5(data, local_fname)
 
     if is_remote_path(path):
         send_file(local_fname, path)
