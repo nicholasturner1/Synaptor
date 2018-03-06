@@ -45,7 +45,10 @@ def connected_components3d(d, thresh=0):
     Performs basic connected components on network
     output given a threshold value
     """
-    return ndimage.label(d > thresh)[0]
+    if thresh != 0:
+        return ndimage.label(d > thresh)[0]
+    else:
+        return ndimage.label(d)[0]
 
 
 def dilate_mask_by_k(d, k):
@@ -56,6 +59,5 @@ def dilate_mask_by_k(d, k):
 
 def make_dilation_kernel(k):
     """ 2D Manhattan Distance Kernel """
-
     kernel = ndimage.generate_binary_structure(2,1)
     return ndimage.iterate_structure(kernel, k)[np.newaxis,:,:]
