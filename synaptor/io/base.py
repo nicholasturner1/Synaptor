@@ -127,24 +127,18 @@ def write_dframe(dframe, path_or_head, basename=None):
         send_file(local_fname, path)
 
 
-def read_network(prefix_or_head, basename=None):
+def read_network(net_fname, chkpt_fname):
     """
-    Reads a saved Torch network - path can specify remote
+    Reads a saved Torch network - paths can specify remote
     storage in Google Cloud or AWS S3
     """
-    if basename is not None:
-        prefix = os.path.join(prefix_or_head, basename)
-    else:
-        prefix = prefix_or_head
+    if is_remote_path(net_fname):
+        net_fname = pull_file(net_fname)
 
-    if is_remote_path(prefix):
-        net_fname = pull_file(prefix + ".py")
-        chkpt_fname = pull_file(prefix + ".chkpt")
-        local_prefix = os.path.splitext(net_fname)[0]
-    else:
-        local_prefix = prefix
+    if is_remote_path(chkpt_fname):
+        chkpt_fname = pull_file(chkpt_fname)
 
-    return bck.local.read_network(local_prefix)
+    return bck.local.read_network(net_fname, chkpt_fname)
 
 
 def write_network(net, prefix_or_head, basename=None):

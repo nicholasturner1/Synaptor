@@ -51,13 +51,10 @@ def write_dframe(dframe, path):
     dframe.to_csv(path, index_label="psd_segid")
 
 
-def read_network(prefix):
+def read_network(net_fname, chkpt_fname):
     """ Reads a PyTorch model from disk """
-    net_fname = prefix + ".py"
-    chkpt_fname = prefix + ".chkpt"
-
     model = imp.load_source("Model",net_fname).InstantiatedModel
-    model.load_state_dict(torch.load(chkpt_fname)
+    model.load_state_dict(torch.load(chkpt_fname))
 
     return model
 
