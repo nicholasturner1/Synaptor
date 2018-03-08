@@ -4,8 +4,11 @@ Cleft info DataFrame IO for processing tasks
 """
 
 import os, itertools
+
 import pandas as pd
 import numpy as np
+
+from ... import io
 
 
 CLEFT_INFO_DIRNAME = "cleft_infos"

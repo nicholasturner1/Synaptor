@@ -3,6 +3,8 @@ __doc__ = """
 Neural Network Model IO for processing tasks
 """
 
+import os
+
 from ... import io
 
 

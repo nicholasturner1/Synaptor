@@ -3,6 +3,8 @@ __doc__ = """
 Cleft continuation IO for processing tasks
 """
 
+import os
+
 from ... import io
 from ...types import continuation
 
