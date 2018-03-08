@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-
-
-#Pasteurize
 from __future__ import unicode_literals
 from __future__ import print_function
 from __future__ import division
@@ -10,6 +7,11 @@ from builtins import zip
 from future import standard_library
 standard_library.install_aliases()
 
+__doc__ = """
+Edge consolidation (w/o cleft information)
+
+Nicholas Turner <nturner@cs.princeton.edu>, 2018
+"""
 
 import pandas as pd
 
@@ -22,6 +24,15 @@ def consolidate_edges(edge_dframe_arr):
         full_dframe = merge_dframes(new_dframe, full_dframe)
 
     return full_dframe
+
+
+def merge_to_cleft_df(edge_df, cleft_df):
+    new_df = pd.merge(cleft_df, edge_df, left_index=True, right_index=True, copy=False)
+
+    new_df["size"] = new_df["size_x"]
+    new_df.drop(columns=["size_x","size_y"], inplace=True)
+
+    return new_df
 
 
 def merge_dframes(dframe1, dframe2):

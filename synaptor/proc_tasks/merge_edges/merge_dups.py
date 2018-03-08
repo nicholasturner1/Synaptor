@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-
-#Pasteurize
 from __future__ import division
 from __future__ import unicode_literals
 from __future__ import print_function
@@ -11,6 +9,9 @@ from builtins import map
 from future import standard_library
 standard_library.install_aliases()
 
+__doc__ = """
+
+"""
 
 import math, operator
 
@@ -18,23 +19,14 @@ import numpy as np
 import scipy.spatial
 import pandas as pd
 
-from . import utils
-from .. import bbox
+from . import misc
+from ...types import bbox
 
 
 aux_record_keys = ["presyn_seg","presyn_sz","presyn_wt",
                    "presyn_x","presyn_y","presyn_z",
                    "postsyn_seg","postsyn_sz","postsyn_wt",
                    "postsyn_x","postsyn_y","postsyn_z", "size"]
-
-
-def merge_dframes(cleft_df, edge_df):
-    new_df = pd.merge(cleft_df, edge_df, left_index=True, right_index=True, copy=False)
-
-    new_df["size"] = new_df["size_x"]
-    new_df.drop(columns=["size_x","size_y"], inplace=True)
-
-    return new_df
 
 
 def merge_duplicate_clefts(full_info_df, dist_thr, res):
@@ -54,9 +46,9 @@ def merge_duplicate_clefts(full_info_df, dist_thr, res):
         cleft_pairs = find_pairs_within_dist(cleft_ids, cleft_coords,
                                              dist_thr, res)
 
-        conn_comps.extend(utils.find_connected_components(cleft_pairs))
+        conn_comps.extend(misc.find_connected_components(cleft_pairs))
 
-    return utils.make_id_map(conn_comps)
+    return misc.make_id_map(conn_comps)
 
 
 def find_pairs_within_dist(ids, coords, dist_thr, res):
@@ -100,7 +92,7 @@ def row_col_from_condensed_index(d,i):
 
 
 def merge_full_df(full_info_df, id_map):
-    return utils.merge_info_df(full_info_df, id_map, merge_full_records)
+    return misc.merge_info_df(full_info_df, id_map, merge_full_records)
 
 
 def merge_full_records(record1, record2):
@@ -119,7 +111,7 @@ def merge_full_records(record1, record2):
     bb1, bb2   = record_dict1["BBOX"], record_dict2["BBOX"]
 
     base_dict["size"] = sz1 + sz2
-    base_dict["COM"]  = utils.weighted_avg(com1, sz1, com2, sz2)
+    base_dict["COM"]  = misc.weighted_avg(com1, sz1, com2, sz2)
     base_dict["BBOX"] = bb1.merge(bb2)
 
     return wrap_row(base_dict)

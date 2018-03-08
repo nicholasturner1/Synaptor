@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-
-#Pasteurize
 from __future__ import division
 from __future__ import unicode_literals
 from __future__ import print_function
@@ -24,17 +22,18 @@ import scipy.ndimage as ndimage
 import scipy.ndimage.morphology as morph
 import pandas as pd
 
-
-from .. import bbox
-from .. import seg_utils
+from ...types import bbox
+from ... import seg_utils
 
 import time
 
-RECORD_SCHEMA = ["psd_segid",     "presyn_seg", "postsyn_seg",
-                 "presyn_x",      "presyn_y",   "presyn_z",
-                 "postsyn_x",     "postsyn_y",  "postsyn_z",
+
+RECORD_SCHEMA = ["psd_segid",     "presyn_segid", "postsyn_segid",
+                 "presyn_x",      "presyn_y",     "presyn_z",
+                 "postsyn_x",     "postsyn_y",    "postsyn_z",
                  "presyn_wt",     "postsyn_wt",
                  "presyn_sz",     "postsyn_sz" ]
+
 
 def infer_edges(net, img, cleft, seg, offset, patchsz,
                 samples_per_cleft=2, dil_param=5, cleft_ids=None ):
@@ -51,9 +50,13 @@ def infer_edges(net, img, cleft, seg, offset, patchsz,
         cleft_ids = seg_utils.nonzero_unique_ids(cleft)
 
 
+    import time #inj
+    start = time.time() #inj
     cleft_locs = pick_cleft_locs(cleft, cleft_ids, samples_per_cleft)
+    print("Locs finished in {0:.3f}s".format(time.time() - start)) #inj
 
 
+    start = time.time() #inj
     edges = [] #list of dict records
     for (cid, locs) in cleft_locs.items():
 
@@ -100,8 +103,13 @@ def infer_edges(net, img, cleft, seg, offset, patchsz,
                                  pre_w, post_w,
                                  pre_sz, post_sz))
         #print("Edge complete in {} seconds".format(time.time() - start))
+    print("Inference loop finished in {0:.3f}s".format(time.time() - start))#inj
 
-    return make_record_dframe(edges)
+    start = time.time()
+    res = make_record_dframe(edges)
+    print("dframe in {0:.3f}s".format(time.time() - start))
+    return res
+    #return make_record_dframe(edges)
 
 
 def infer_whole_edge(net, img, cleft, seg, cleft_id, patchsz, dil_param=5):
@@ -153,7 +161,7 @@ def pick_cleft_locs(cleft, cleft_ids, num_locs):
 
 def random_box(box_shape, seg, loc):
     """ Returns a BBox3d containing loc within a segmentation """
-    return bbox.BBox3d.containing_box(loc, box_shape, seg.shape)
+    return bbox.containing_box(loc, box_shape, seg.shape)
 
 
 def random_loc(seg, i, offset=(0,0,0)):

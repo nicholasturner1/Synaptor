@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-
-#Pasteurize
 from __future__ import unicode_literals
 from __future__ import print_function
 from __future__ import division
@@ -12,11 +10,10 @@ standard_library.install_aliases()
 import pandas as pd
 
 
-from .. import seg_utils
-from .. import clefts
+from ... import seg_utils
 
 
-def add_seg_size(edges_dframe, clefts):
+def add_cleft_sizes(edges_dframe, clefts):
     """ Finds the sizes of the cleft segments, adds it to the edges dframe """
 
     szs = seg_utils.segment_sizes(clefts)
@@ -27,7 +24,7 @@ def add_seg_size(edges_dframe, clefts):
     return full_df
 
 
-def add_seg_locs(edges_dframe, clefts):
+def add_cleft_locs(edges_dframe, clefts):
     """ 
     Finds the locations of the cleft segments, adds them to the edges dframe
     """

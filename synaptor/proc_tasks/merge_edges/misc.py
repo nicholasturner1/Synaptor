@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-
-#Pasteurize
 from __future__ import division
 from __future__ import unicode_literals
 from __future__ import print_function
@@ -86,13 +84,11 @@ def make_id_map(ccs):
     return mapping
 
 
-def update_chunk_id_maps(chunk_id_maps, id_map):
+def update_id_map(id_map, next_map):
+    for (k,v) in id_map.items():
+        id_map[k] = next_map.get(v,v)
 
-    for mapping in chunk_id_maps.flat:
-        for (k,v) in mapping.items():
-            mapping[k] = id_map.get(v,v)
-
-    return chunk_id_maps
+    return id_map
 
 
 def weighted_avg(com1, sz1, com2, sz2):
