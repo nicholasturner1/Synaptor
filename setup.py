@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 
+import numpy as np
 from Cython.Build import cythonize
 from setuptools import setup, find_packages, Extension
 
 extensions = [
-    Extension("synaptor.seg_utils._seg_utils", sources=["synaptor/seg_utils/_seg_utils.pyx"])
+    Extension("synaptor.seg_utils._seg_utils", 
+              sources=["synaptor/seg_utils/_seg_utils.pyx"],
+              include_dirs=[np.get_include()])
 ]
 
 setup(
