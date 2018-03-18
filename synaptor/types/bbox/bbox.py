@@ -130,12 +130,23 @@ class BBox3d(object):
 
 
     def __str__(self):
-        return "{}({},{},{})".format(self.__class__.__name__, self._x, self._y, self._z)
-
+        return "{}({}<->{})".format(self.__class__.__name__,
+                                    tuple(self._min),
+                                    tuple(self._max))
 
     def __hash__(self):
         return hash(self.astuple())
 
+    def contains(self, x):
+        return self._min.all_le(x) and self._max.all_gt(x)
+
+    def shrink_by(self, v):
+        v = Vec3d(v)
+        return BBox3d(self._min + v, self._max - v)
+
+    def grow_by(self, v):
+        v = Vec3d(v)
+        return BBox3d(self._min - v, self._max + v)
 
 #=========================================================================
 # Utility Functions

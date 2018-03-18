@@ -114,6 +114,21 @@ class Vec3d(object):
             self.z = f(self.z, v)
         return self
 
+    def _all_comp(self, v, f):
+        "Any uniform boolean operator"
+        if isinstance(v, Vec3d):
+            return (f(self.x, v.x) and
+                    f(self.y, v.y) and
+                    f(self.z, v.z))
+        elif (hasattr(v, "__getitem__")):
+            return (f(self.x, v[0]) and
+                    f(self.y, v[1]) and
+                    f(self.z, v[2]))
+        else:
+            return (f(self.x, v) and
+                    f(self.y, v) and
+                    f(self.z, v))
+
     # Addition
     def __add__(self, v):
         if isinstance(v, Vec3d):
@@ -279,8 +294,33 @@ class Vec3d(object):
     def __hash__(self):
         return hash((self.x,self.y,self.z))
 
-    def __lt__(self, other):
-        return tuple(self) < tuple(other)
+    #==============================================
+    # Lexicographic Sorting
+    #==============================================
+    def __lt__(self, v):
+        return tuple(self) < tuple(v)
+
+    def __gt__(self, v):
+        return tuple(self) > tuple(v)
+
+    def __le__(self, v):
+        return tuple(self) <= tuple(v)
+
+    def __ge__(self, v):
+        return tuple(self) >= tuple(v)
+
+    def all_lt(self, v):
+        return self._all_comp(v, operator.lt)
+
+    def all_gt(self, v):
+        return self._all_comp(v, operator.gt)
+
+    def all_le(self, v):
+        return self._all_comp(v, operator.le)
+
+    def all_ge(self, v):
+        return self._all_comp(v, operator.ge)
+
 
 
 ########################################################################
@@ -306,5 +346,3 @@ def maximum(v1, v2):
     zmax = max(v1.z, v2.z)
 
     return Vec3d(xmax, ymax, zmax)
-
-
