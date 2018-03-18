@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 
+import numpy as np
 from Cython.Build import cythonize
 from setuptools import setup, find_packages, Extension
 
 extensions = [
-    Extension("synaptor._seg_utils", sources=["synaptor/_seg_utils.pyx"])
+    Extension("synaptor.seg_utils._seg_utils", 
+              sources=["synaptor/seg_utils/_seg_utils.pyx"],
+              include_dirs=[np.get_include()])
 ]
 
 setup(
@@ -14,10 +17,6 @@ setup(
     author='Nicholas Turner',
     author_email='nturner@cs.princeton.edu',
     url='https://github.com/nicholasturner1/Synaptor',
-    packages=['synaptor',
-              'synaptor.clefts',
-              'synaptor.edges',
-              'synaptor.merge',
-              'synaptor.io'],
+    packages=['synaptor'],
     ext_modules = cythonize(extensions)
 )

@@ -1,45 +1,84 @@
 #!/usr/bin/env python3
-
-
 from __future__ import unicode_literals
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
 from builtins import filter
 from builtins import range
+from builtins import map
 from future import standard_library
 standard_library.install_aliases()
-import os
+
+
+__doc__ = """
+IO Utility Functions
+
+Nicholas Turner <nturner@cs.princeton.edu>, 2018
+"""
+
+
+import os, re
+
 import numpy as np
 
-
-def check_slash(path):
-    if path[-1] == "/":
-        return path
-    else:
-        return path + "/"
+from .. import bbox
+from . import backends as bck
 
 
-def check_no_slash(path):
-    if path[-1] == "/":
-        return path[:-1]
-    else:
-        return path
+AWS_REGEXP = bck.aws.REGEXP
+GCLOUD_REGEXP = bck.gcloud.REGEXP
+BBOX_REGEXP   = re.compile("[0-9]+_[0-9]+_[0-9]+-[0-9]+_[0-9]+_[0-9]+")
 
 
-def parse_remote_path(remote_path):
-    """ Simple, but should work """
+def fname_chunk_tag(chunk_bounds):
+    """ Creates a filename tag for a 3d dataset chunk """
+    chunk_min = chunk_bounds.min()
+    chunk_max = chunk_bounds.max()
+    return "{0}_{1}_{2}-{3}_{4}_{5}".format(chunk_min[0], chunk_min[1],
+                                            chunk_min[2],
+                                            chunk_max[0], chunk_max[1],
+                                            chunk_max[2])
 
-    fields = remote_path.split("/")
 
-    assert len(fields) > 3, "Improper remote path (needs more fields)"
+def temp_path(path):
+    """ Creates a temporary filename for """
+    no_prefix = GCLOUD_REGEXP.sub("", AWS_REGEXP.sub("", path))
+    tag = random_tag()
 
-    protocol = fields[0]
-    assert fields[1] == ""
-    bucket   = fields[2]
-    key      = "/".join(fields[3:])
+    return tag + "_" + os.path.basename(no_prefix)
 
-    return protocol, bucket, key
+
+def random_tag(k=8):
+    """ Returns a random tag for disambiguating filenames """
+    return "".join(random.choice(string.ascii_uppercase +
+                                  string.digits)
+                   for _ in range(k))
+
+
+def bbox_from_fname(path):
+    """ Extracts the bounding box from a path """
+
+    match = BBOX_REGEXP.search(path)
+
+    if match is None:
+        raise(Exception("bbox not found in path"))
+
+    beg_str, end_str = match.group(0).split("-")
+    beg = tuple(map(int,beg_str.split("_")))
+    end = tuple(map(int,end_str.split("_")))
+
+    return bbox.BBox3d(beg, end)
+
+
+def extract_sorted_bboxes(local_dir):
+    """
+    Takes every file within a local directory, and returns a list
+    of their bounding boxes sorted lexicographically
+    """
+    fnames = bck.local.pull_directory(local_dir)
+    bboxes = list(map(bbox_from_fname, fnames))
+
+    return sorted(bboxes, key=lambda bb: bb.min())
 
 
 def make_info_arr(start_lookup):
