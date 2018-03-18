@@ -36,12 +36,13 @@ def merge_info_df(df, id_map, merge_fn):
         to_drop.append(k)
         indices.add(v)
 
-    index = sorted(list(indices))
-    replacements = pd.DataFrame.from_dict(new_rows, orient="index")
+    if len(new_rows) > 0:
+        index = sorted(list(indices))
+        replacements = pd.DataFrame.from_dict(new_rows, orient="index")
 
-    # indexing by columns ensures that they have the same order
-    df.loc[index] = replacements[df.columns]
-    df.drop(to_drop, inplace=True)
+        # indexing by columns ensures that they have the same order
+        df.loc[index] = replacements[df.columns]
+        df.drop(to_drop, inplace=True)
 
     return df
 

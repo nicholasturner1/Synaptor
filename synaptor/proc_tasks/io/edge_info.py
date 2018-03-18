@@ -40,7 +40,7 @@ def read_all_edge_infos(proc_dir_path):
     assert len(fnames) > 0, "No filenames returned"
 
     starts  = [ io.bbox_from_fname(f).min() for f in fnames ]
-    dframes = [ read_chunk_edges(f) for f in fnames ]
+    dframes = [ read_chunk_edge_info(f) for f in fnames ]
 
     info_arr = io.utils.make_info_arr({s : df for (s,df) in zip(starts, dframes)})
     return info_arr, os.path.dirname(fnames[0])

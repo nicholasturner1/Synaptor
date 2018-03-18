@@ -71,7 +71,7 @@ def bbox_from_fname(path):
 
 
 def extract_sorted_bboxes(local_dir):
-    """ 
+    """
     Takes every file within a local directory, and returns a list
     of their bounding boxes sorted lexicographically
     """

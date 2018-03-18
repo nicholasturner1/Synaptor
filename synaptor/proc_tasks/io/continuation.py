@@ -40,11 +40,11 @@ def read_all_continuations(proc_dir_path):
     Currently assumes that NOTHING else is in the same subdirectory
     """
     continuation_dir = os.path.join(proc_dir_path, CONTN_DIRNAME)
-    fnames = io.pull_all_files(continuation_dir)
+    fnames = io.pull_directory(continuation_dir)
 
     starts = [io.bbox_from_fname(f).min() for f in fnames ]
     cont_dicts = [ read_chunk_continuations(f) for f in fnames ]
 
-    info_arr = io.utils.make_info_arr({s : cd
-                                       for (s,cd) in zip(starts, cont_dicts)})
+    start_lookup = {s:cd for (s,cd) in zip(starts, cont_dicts)}
+    info_arr = io.utils.make_info_arr(start_lookup)
     return info_arr, os.path.dirname(fnames[0])

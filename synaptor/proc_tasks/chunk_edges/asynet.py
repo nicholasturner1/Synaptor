@@ -28,14 +28,15 @@ from ... import seg_utils
 import time
 
 
-RECORD_SCHEMA = ["psd_segid",     "presyn_segid", "postsyn_segid",
-                 "presyn_x",      "presyn_y",     "presyn_z",
-                 "postsyn_x",     "postsyn_y",    "postsyn_z",
-                 "presyn_wt",     "postsyn_wt",
-                 "presyn_sz",     "postsyn_sz" ]
+RECORD_SCHEMA = ["cleft_segid",     "presyn_segid", "postsyn_segid",
+                 "presyn_x",        "presyn_y",     "presyn_z",
+                 "postsyn_x",       "postsyn_y",    "postsyn_z",
+                 "presyn_wt",       "postsyn_wt",
+                 "presyn_sz",       "postsyn_sz" ]
+SCHEMA_W_BASINS = RECORD_SCHEMA + ["presyn_basin","postsyn_basin"]
 
 
-def infer_edges(net, img, cleft, seg, offset, patchsz,
+def infer_edges(net, img, cleft, seg, offset, patchsz, wshed=None,
                 samples_per_cleft=2, dil_param=5, cleft_ids=None ):
     """
     Runs a trained network over the psds within the valid range
@@ -50,38 +51,24 @@ def infer_edges(net, img, cleft, seg, offset, patchsz,
         cleft_ids = seg_utils.nonzero_unique_ids(cleft)
 
 
-    import time #inj
-    start = time.time() #inj
     cleft_locs = pick_cleft_locs(cleft, cleft_ids, samples_per_cleft)
-    print("Locs finished in {0:.3f}s".format(time.time() - start)) #inj
 
+    record_basins = wshed is not None
 
-    start = time.time() #inj
     edges = [] #list of dict records
     for (cid, locs) in cleft_locs.items():
 
-        #start = time.time()
-
-        seg_weights, seg_szs, seg_locs = {}, {}, {}
+        seg_weights, seg_szs, seg_locs = {},{},{}
         for loc in locs:
-            #box_start = time.time()
             box = random_box(patchsz, cleft, loc)
-            box_offset = tuple(map(operator.add, box.min(), offset))
-            #print("Box stuff in {} seconds".format(time.time() - box_start))
+            box_offset = box.min() + offset
 
-            #patch_start = time.time()
             img_p, clf_p, seg_p = get_patches(img, cleft, seg, box, cid)
-            #print("Fetching patches in {} seconds".format(time.time() - patch_start))
 
-            #close_start = time.time()
             segids = find_close_segments(clf_p, seg_p, dil_param)
-            #print("Close segments in {} seconds".format(time.time() - close_start))
 
-            #inf_start = time.time()
             new_weights, new_szs = infer_patch_weights(net, img_p, clf_p,
                                                        seg_p, segids)
-            #inf_end = time.time()
-            #print("Patch inf complete in {} seconds".format(inf_end - inf_start))
             seg_weights, seg_szs = dict_tuple_avg(new_weights, new_szs,
                                                   seg_weights, seg_szs)
 
@@ -89,27 +76,27 @@ def infer_edges(net, img, cleft, seg, offset, patchsz,
                                    segids, offset=box_offset)
             seg_locs = update_locs(new_locs, seg_locs)
 
-        #print("Samples complete in {} seconds".format(time.time() - start))
-        if len(seg_weights) == 0: #hallucinated?
+        if len(seg_weights) == 0: #hallucinated synapse - or no segmentation
             continue
 
         pre_seg, post_seg, pre_w, post_w = make_assignment(seg_weights)
         pre_loc, post_loc = seg_locs[pre_seg], seg_locs[post_seg]
-        pre_sz,  post_sz  = seg_szs[pre_seg],  seg_szs[post_seg]
+        pre_sz,  post_sz = seg_szs[pre_seg],  seg_szs[post_seg]
 
+        if record_basins:
+            pre_basin = pull_basin(wshed, pre_loc, offset)
+            post_basin = pull_basin(wshed, post_loc, offset)
 
-        edges.append(make_record(cid, pre_seg, post_seg,
-                                 pre_loc, post_loc,
-                                 pre_w, post_w,
-                                 pre_sz, post_sz))
-        #print("Edge complete in {} seconds".format(time.time() - start))
-    print("Inference loop finished in {0:.3f}s".format(time.time() - start))#inj
+            edges.append(make_record(cid, pre_seg, post_seg,
+                                     pre_loc, post_loc, pre_w, post_w,
+                                     pre_sz, post_sz, pre_basin, post_basin))
+        else:
+            edges.append(make_record(cid, pre_seg, post_seg,
+                                     pre_loc, post_loc,
+                                     pre_w, post_w,
+                                     pre_sz, post_sz))
 
-    start = time.time()
-    res = make_record_dframe(edges)
-    print("dframe in {0:.3f}s".format(time.time() - start))
-    return res
-    #return make_record_dframe(edges)
+    return make_record_dframe(edges, record_basins)
 
 
 def infer_whole_edge(net, img, cleft, seg, cleft_id, patchsz, dil_param=5):
@@ -338,6 +325,10 @@ def update_locs(new_locs, all_locs):
     return all_locs
 
 
+def pull_basin(wshed, loc, offset=(0,0,0)):
+    return wshed[tuple(map(operator.sub,loc,offset))]
+
+
 def make_assignment(weights):
     """
     Assigns a synapse to partners
@@ -366,7 +357,8 @@ def make_record(psdid,
                 pre_seg, post_seg,
                 pre_loc, post_loc,
                 pre_weight, post_weight,
-                pre_size, post_size):
+                pre_size, post_size,
+                pre_basin=None, post_basin=None):
 
     data = [psdid,            pre_seg,      post_seg,
             pre_loc[0],       pre_loc[1],   pre_loc[2],
@@ -374,17 +366,28 @@ def make_record(psdid,
             pre_weight,       post_weight,
             pre_size,         post_size]
 
-    assert len(data) == len(RECORD_SCHEMA)
+    assert len(data) == len(RECORD_SCHEMA), "mismatched data and schema"
 
-    return dict(zip(RECORD_SCHEMA, data))
+    if pre_basin is None:
+        return dict(zip(RECORD_SCHEMA, data))
+
+    else:
+        assert post_basin is not None, "pre but no post basin"
+        data += [pre_basin, post_basin]
+
+        return dict(zip(SCHEMA_W_BASINS, data))
 
 
-def make_record_dframe(record_list):
+
+def make_record_dframe(record_list, record_basins=True):
 
     if len(record_list) == 0:
-        return pd.DataFrame({k : [] for k in RECORD_SCHEMA})
+        if record_basins:
+            return pd.DataFrame({k : {} for k in SCHEMA_W_BASINS})
+        else:
+            return pd.DataFrame({k : [] for k in RECORD_SCHEMA})
     else:
-        return pd.DataFrame.from_records(record_list, index="psd_segid")
+        return pd.DataFrame.from_records(record_list, index="cleft_segid")
 
 
 def make_variable(np_arr, requires_grad=True, volatile=False):

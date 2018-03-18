@@ -39,7 +39,7 @@ def pull_file(path):
         return bck.local.pull_file(path)
 
 
-def pull_all_files(dir_path):
+def pull_directory(dir_path):
     """
     Pulls a directory from storage. The storage can be
     local or remote as specified by the pathname

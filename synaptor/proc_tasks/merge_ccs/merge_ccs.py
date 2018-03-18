@@ -198,7 +198,7 @@ def wrap_row(sz, com, bb):
 def enforce_size_threshold(cleft_info_df, size_thr):
     """Finds a mapping that removes clefts under the size threshold"""
     violations = cleft_info_df[cleft_info_df[SZ_SCHEMA[0]] < size_thr].index
-    seg_info_df.drop(violations.tolist(), inplace=True)
+    cleft_info_df.drop(violations.tolist(), inplace=True)
 
     return {v : 0 for v in violations}
 

@@ -24,10 +24,10 @@ def read_chunk_cleft_info(fname):
 def write_chunk_cleft_info(dframe, chunk_bounds, proc_dir_path):
     """Writes a dataframe of chunk info to the processing directory"""
     chunk_tag = io.fname_chunk_tag(chunk_bounds)
-    clft_info_fname = os.path.join(proc_dir_path, CLEFT_INFO_DIRNAME,
-                                  CLEFT_INFO_FMTSTR.format(tag=chunk_tag))
+    cleft_info_fname = os.path.join(proc_dir_path, CLEFT_INFO_DIRNAME,
+                                    CLEFT_INFO_FMTSTR.format(tag=chunk_tag))
 
-    io.write_dframe(dframe, seg_info_fname)
+    io.write_dframe(dframe, cleft_info_fname)
 
 
 def read_all_cleft_infos(proc_dir_path):
@@ -36,12 +36,12 @@ def read_all_cleft_infos(proc_dir_path):
     the processing directory. Currently assumes that NOTHING else is in the
     cleft info subdirectory
     """
-    clft_info_dir = os.path.join(proc_dir_path, CLEFT_INFO_DIRNAME)
-    fnames = io.pull_all_files(seg_info_dir)
+    cleft_info_dir = os.path.join(proc_dir_path, CLEFT_INFO_DIRNAME)
+    fnames = io.pull_directory(cleft_info_dir)
     assert len(fnames) > 0, "No filenames returned"
 
     starts  = [ io.bbox_from_fname(f).min() for f in fnames ]
-    dframes = [ read_chunk_seg_info(f) for f in fnames ]
+    dframes = [ read_chunk_cleft_info(f) for f in fnames ]
 
     info_arr = io.utils.make_info_arr({s : df
                                        for (s,df) in zip(starts, dframes)})

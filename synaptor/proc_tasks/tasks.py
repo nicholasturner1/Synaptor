@@ -119,19 +119,21 @@ def merge_ccs_task(cont_info_arr, cleft_info_arr, chunk_bounds, size_thr):
 
 
 def chunk_edges_task(img, clefts, seg, asynet,
-                     chunk_bounds, patchsz,
-                     num_samples_per_cleft=2,
+                     chunk_begin, chunk_end, patchsz,
+                     wshed=None, num_samples_per_cleft=2,
                      dil_param=5, id_map=None):
     """
     -Applies an id map to a chunk (if passed)
+    NOTE: Modifies the clefts array if id_map exists
     -Applies an assignment network to each cleft in the chunk
     -Computes the sizes of each cleft to assist later thresholding
     -Returns all of the computed information in a DataFrame
-    NOTE: Modifies the clefts array if id_map exists
 
     Returns:
      -A DataFrame of info for each edge within this chunk
     """
+
+    chunk_bounds = types.BBox3d(chunk_begin, chunk_end)
 
     if id_map is not None:
         clefts = timed("Remapping cleft ids",
@@ -142,11 +144,11 @@ def chunk_edges_task(img, clefts, seg, asynet,
     edges = timed("Inferring edges",
                   chunk_edges.infer_edges,
                   asynet, img, clefts, seg,
-                  offset, patchsz, sampler_per_cleft=num_samples_per_cleft,
-                  dil_param=dil_param)
+                  offset, patchsz, samples_per_cleft=num_samples_per_cleft,
+                  wshed=wshed, dil_param=dil_param)
 
     edges = timed("Computing cleft size and adding to edge dframe",
-                  chunk_edges.add_seg_size,
+                  chunk_edges.add_cleft_sizes,
                   edges, clefts)
 
     return edges
@@ -171,7 +173,7 @@ def merge_edges_task(edges_arr, merged_cleft_info,
                            edges_arr)
 
     full_df = timed("Merging edge DataFrame to cleft DataFrame",
-                    merge_edges.merge_dframes,
+                    merge_edges.merge_to_cleft_df,
                     merged_cleft_info, merged_edge_df)
 
     dup_id_map = timed("Merging duplicate clefts",
@@ -203,11 +205,11 @@ def remap_ids_task(clefts, *id_maps, copy=False):
     """
 
     id_map = id_maps[0]
-    for (i,next_map) in enumerate(id_maps[2:]):
+    for (i,next_map) in enumerate(id_maps[1:]):
         id_map = timed("Updating id map: round {i}".format(i=i+1),
                        merge_edges.update_id_map,
-                       id_map, next_map)
+                       id_map, next_map, reused_ids=True)
 
-    clefts = s.seg_utils.relabel_data(clefts, id_map, copy=copy)
+    clefts = seg_utils.relabel_data(clefts, id_map, copy=copy)
 
     return clefts

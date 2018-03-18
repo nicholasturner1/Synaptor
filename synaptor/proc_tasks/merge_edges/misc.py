@@ -36,12 +36,13 @@ def merge_info_df(df, id_map, merge_fn):
         to_drop.append(k)
         indices.add(v)
 
-    index = sorted(list(indices))
-    replacements = pd.DataFrame.from_dict(new_rows, orient="index")
+    if len(new_rows) > 0:
+        index = sorted(list(indices))
+        replacements = pd.DataFrame.from_dict(new_rows, orient="index")
 
-    # indexing by columns ensures that they have the same order
-    df.loc[index] = replacements[df.columns]
-    df.drop(to_drop, inplace=True)
+        # indexing by columns ensures that they have the same order
+        df.loc[index] = replacements[df.columns]
+        df.drop(to_drop, inplace=True)
 
     return df
 
@@ -84,9 +85,20 @@ def make_id_map(ccs):
     return mapping
 
 
-def update_id_map(id_map, next_map):
+def update_id_map(id_map, next_map, reused_ids=False):
+
+    #need to keep track of which keys are accounted
+    # for within the current id_map
+    new_keys = set(next_map.keys())
+
     for (k,v) in id_map.items():
         id_map[k] = next_map.get(v,v)
+        new_keys.discard(v)
+
+    #make a new mapping for each new key
+    if not reused_ids:
+        for k in new_keys:
+            id_map[k] = next_map[k]
 
     return id_map
 
