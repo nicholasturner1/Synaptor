@@ -174,7 +174,7 @@ def open_h5(path):
         path = path + ".h5"
 
     if is_remote_path(path):
-        fname = temp_path(path)
+        fname = utils.temp_path(path)
     else:
         fname = path
 
