@@ -14,7 +14,7 @@ IO Utility Functions
 Nicholas Turner <nturner@cs.princeton.edu>, 2018
 """
 
-import os, re, random
+import os, re, random, string
 
 import numpy as np
 

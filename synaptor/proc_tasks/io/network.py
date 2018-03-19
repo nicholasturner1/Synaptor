@@ -26,5 +26,5 @@ def write_network_to_proc(net_fname, chkpt_fname, proc_dir_path):
     dest_net_fname   = os.path.join(proc_dir_path, NETWORK_DIRNAME, NETWORK_FNAME)
     dest_chkpt_fname = os.path.join(proc_dir_path, NETWORK_DIRNAME, CHKPT_FNAME)
 
-    io.send_local_file(net_fname,   dest_net_fname)
-    io.send_local_file(chkpt_fname,  dest_chkpt_fname)
+    io.send_file(net_fname,   dest_net_fname)
+    io.send_file(chkpt_fname,  dest_chkpt_fname)

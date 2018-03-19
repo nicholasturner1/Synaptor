@@ -31,7 +31,7 @@ def write_chunk_continuations(conts, chunk_bounds, proc_dir_path):
     fobj.close()
 
     if io.is_remote_path(fname):
-        io.send_local_file(local_fname, fname)
+        io.send_file(local_fname, fname)
 
 
 def read_all_continuations(proc_dir_path):
