@@ -61,13 +61,13 @@ def send_file(local_path, path):
         return
 
     if   GCLOUD_REGEXP.match(path):
-        bck.gcloud.send_file(local_name, path)
+        bck.gcloud.send_file(local_path, path)
     elif AWS_REGEXP.match(path):
-        bck.aws.send_file(local_name, path)
+        bck.aws.send_file(local_path, path)
     else:
         warnings.warn("Pathname {} doesn't match remote pattern".format(path),
                       Warning)
-        bck.local.send_file(local_name, path)
+        bck.local.send_file(local_path, path)
 
 
 def send_directory(local_dir, path):
