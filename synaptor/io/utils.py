@@ -8,16 +8,13 @@ from builtins import range
 from builtins import map
 from future import standard_library
 standard_library.install_aliases()
-
-
 __doc__ = """
 IO Utility Functions
 
 Nicholas Turner <nturner@cs.princeton.edu>, 2018
 """
 
-
-import os, re
+import os, re, random
 
 import numpy as np
 
