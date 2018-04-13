@@ -13,14 +13,14 @@ from .tasks import timed
 
 def chunk_ccs_task(output_cvname, cleft_cvname, proc_dir_path,
                    chunk_begin, chunk_end,
-                   cc_thresh, sz_thresh):
+                   cc_thresh, sz_thresh, mip=0):
 
     chunk_bounds = types.BBox3d(chunk_begin, chunk_end)
 
 
     net_output = timed("Reading network output chunk: {}".format(chunk_bounds),
                        io.read_cloud_volume_chunk,
-                       output_cvname, chunk_bounds)
+                       output_cvname, chunk_bounds, mip=mip)
 
     (ccs, continuations,
      cleft_info) = tasks.chunk_ccs_task(net_output,
@@ -29,7 +29,7 @@ def chunk_ccs_task(output_cvname, cleft_cvname, proc_dir_path,
 
     timed("Writing cleft chunk: {}".format(chunk_bounds),
           io.write_cloud_volume_chunk,
-          ccs, cleft_cvname, chunk_bounds)
+          ccs, cleft_cvname, chunk_bounds, mip=mip)
 
     timed("Writing chunk_continuations",
           taskio.write_chunk_continuations,
@@ -137,7 +137,7 @@ def merge_edges_task(voxel_res, dist_thr, size_thr, proc_dir_path):
 
 
 def remap_ids_task(cleft_in_cvname, cleft_out_cvname,
-                   chunk_begin, chunk_end, proc_dir_path):
+                   chunk_begin, chunk_end, proc_dir_path, mip=0):
 
     chunk_bounds = types.BBox3d(chunk_begin, chunk_end)
 
@@ -151,7 +151,7 @@ def remap_ids_task(cleft_in_cvname, cleft_out_cvname,
 
     cleft_chunk = timed("Reading cleft chunk",
                         io.read_cloud_volume_chunk,
-                        cleft_in_cvname, chunk_bounds)
+                        cleft_in_cvname, chunk_bounds, mip=mip)
 
     cleft_chunk = tasks.remap_ids_task(cleft_chunk, chunk_id_map,
                                        dup_id_map, copy=False)

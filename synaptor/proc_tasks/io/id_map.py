@@ -51,8 +51,13 @@ def write_chunk_id_maps(chunk_id_maps, chunk_bounds, proc_dir_path):
 
 
 def read_dup_id_map(proc_dir_path):
-    df = io.read_dframe(proc_dir_path, "dup_id_map.df")
-    return dict(zip(df.index, df.new_id))
+    try:
+        df = io.read_dframe(proc_dir_path, "dup_id_map.df")
+        return dict(zip(df.index, df.new_id))
+    except Exception as e:
+        print(e)
+        print("WARNING: no dup id map found, passing empty dup mapping")
+        return dict()
 
 
 def write_dup_id_map(id_map, proc_dir_path):
