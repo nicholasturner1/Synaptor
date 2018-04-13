@@ -158,4 +158,4 @@ def remap_ids_task(cleft_in_cvname, cleft_out_cvname,
 
     timed("Writing results",
           io.write_cloud_volume_chunk,
-          cleft_chunk, cleft_out_cvname, chunk_bounds)
+          cleft_chunk, cleft_out_cvname, chunk_bounds, mip=mip)
