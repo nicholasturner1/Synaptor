@@ -67,9 +67,27 @@ def find_connected_components(matches):
 
     vertex_ccs = g.components()
 
-    orig_ccs = [g.vs[cc]["ids"] for cc in vertex_ccs]
+    # This is horribly slow for some reason
+    # orig_ccs = [g.vs[cc]["ids"] for cc in vertex_ccs]
+    orig_ccs = deal_cc_ids(g, vertex_ccs)
 
     return orig_ccs
+
+
+def deal_cc_ids(g, vertex_ccs, ids_key="ids"):
+
+    #Init bookkeeping objects
+    mapping = np.zeros((len(g.vs),), dtype=np.uint32)
+    cc_ids = [list() for _ in range(len(vertex_ccs))]
+
+    for (cc_i,cc) in enumerate(vertex_ccs):
+        for seg_j in cc:
+            mapping[seg_j] = cc_i
+
+    for (segid, cc) in zip(g.vs[ids_key], iter(mapping)):
+        cc_ids[cc].append(segid)
+
+    return cc_ids
 
 
 def make_id_map(ccs):
