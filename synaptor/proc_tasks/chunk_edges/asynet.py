@@ -25,8 +25,6 @@ import pandas as pd
 from ...types import bbox
 from ... import seg_utils
 
-import time
-
 
 RECORD_SCHEMA = ["cleft_segid",     "presyn_segid", "postsyn_segid",
                  "presyn_x",        "presyn_y",     "presyn_z",
@@ -39,10 +37,10 @@ SCHEMA_W_BASINS = RECORD_SCHEMA + ["presyn_basin","postsyn_basin"]
 def infer_edges(net, img, cleft, seg, offset, patchsz, wshed=None,
                 samples_per_cleft=2, dil_param=5, cleft_ids=None ):
     """
-    Runs a trained network over the psds within the valid range
-    of the dataset and infers the synaptic partners involved at each synapse
+    Runs a trained network over the synaptic clefts within the dataset
+    and infers the synaptic partners involved at each synapse
 
-    Returns a DataFrame mapping psd segment id to a tuple of synaptic
+    Returns a DataFrame mapping synaptic cleft segment id to a tuple of synaptic
     partners (presynaptic,postsynaptic)
     """
 
@@ -154,7 +152,6 @@ def random_box(box_shape, seg, loc):
 def random_loc(seg, i, offset=(0,0,0)):
     """ Finds a random location where (np array) seg == i """
 
-    start = time.time()
     xs,ys,zs = np.nonzero(seg == i)
     assert len(xs) > 0, "{} not contained in volume".format(i)
 
