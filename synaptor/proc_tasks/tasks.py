@@ -13,6 +13,8 @@ from . import chunk_ccs
 from . import merge_ccs
 from . import chunk_edges
 from . import merge_edges
+from . import chunk_overlaps
+from . import merge_overlaps
 
 
 def timed(fn_desc, fn, *args, **kwargs):
@@ -193,6 +195,30 @@ def merge_edges_task(edges_arr, merged_cleft_info,
                           dup_id_map, size_thr_map)
 
     return full_df, merged_id_map, merged_edge_df
+
+
+def chunk_overlaps_task(segs_of_interest, base_segs):
+    """
+    -Determines which segments of interest overlap with
+    which base segs, returns the overlap matrix
+    """
+    return timed("Counting overlaps",
+                 chunk_overlaps.count_overlaps,
+                 segs_of_interest, base_segs)
+
+
+def merge_overlaps_task(overlaps_arr):
+    """
+    -Merges the chunk overlap matrices into one,
+    -Returns a mapping from segment to base segment of max overlap
+    """
+    full_overlap = timed("Merging overlap matrices",
+                         merge_overlaps.consolidate_overlaps,
+                         overlaps_arr)
+
+    return timed("Finding segments with maximal overlap",
+                 merge_overlaps.find_max_overlaps,
+                 full_overlap)
 
 
 def remap_ids_task(clefts, *id_maps, copy=False):
