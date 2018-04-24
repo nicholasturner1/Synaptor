@@ -27,10 +27,11 @@ def consolidate_edges(edge_dframe_arr):
 
 
 def merge_to_cleft_df(edge_df, cleft_df):
+    sizes = cleft_df["size"] #edge version might be approximate by downsampling
     new_df = pd.merge(cleft_df, edge_df, left_index=True,
                       right_index=True, copy=False)
 
-    new_df["size"] = new_df["size_x"]
+    new_df["size"] = sizes
     new_df.drop(columns=["size_x","size_y"], inplace=True)
 
     return new_df

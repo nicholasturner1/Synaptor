@@ -40,3 +40,31 @@ def add_cleft_locs(edges_dframe, clefts):
     return pd.merge(df, edges_dframe,
                     left_index=True, right_index=True,
                     copy=False)
+
+def upsample_edge_info(edges_dframe, mip, offset):
+    """pass"""
+
+    assert len(offset) == 3, "invalid coordinate offset"
+
+    coord_factor = 2 ** mip
+
+    edges_dframe["presyn_x"] = upsample_col(edges_dframe["presyn_x"],
+                                            coord_factor, offset[0])
+    edges_dframe["presyn_y"] = upsample_col(edges_dframe["presyn_y"],
+                                            coord_factor, offset[1])
+    edges_dframe["presyn_z"] = upsample_col(edges_dframe["presyn_z"],
+                                            coord_factor, offset[2])
+
+    edges_dframe["postsyn_x"] = upsample_col(edges_dframe["postsyn_x"],
+                                             coord_factor, offset[0])
+    edges_dframe["postsyn_y"] = upsample_col(edges_dframe["postsyn_y"],
+                                             coord_factor, offset[0])
+    edges_dframe["postsyn_z"] = upsample_col(edges_dframe["postsyn_z"],
+                                             coord_factor, offset[0])
+
+    return edges_dframe
+
+
+def upsample_col(column, coord_factor, offset):
+    #Current ngl convention is to scale offsets too, only need to scale
+    return column * coord_factor
