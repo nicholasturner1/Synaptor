@@ -62,16 +62,13 @@ class BBox3d(object):
             else:
                 raise(ValueError("unexpected argument specified"))
 
-
     def set_bounds(self, b,e):
         self._min = Vec3d(b)
         self._max = Vec3d(e)
 
-
     def set_slices(self, x,y,z):
         self._min = Vec3d(x.start, y.start, z.start)
         self._max = Vec3d(x.stop, y.stop, z.stop)
-
 
     def index(self):
         """ Convert to an index for np cut-outs """
@@ -79,33 +76,27 @@ class BBox3d(object):
                 slice(self._min[1], self._max[1]),
                 slice(self._min[2], self._max[2]))
 
-
     def min(self):
         """Return the minimum coordinate"""
         return Vec3d(self._min)
 
-
     def max(self):
         """Return the maximum coordinate"""
         return Vec3d(self._max)
-
 
     def transpose(self):
         """Return the same box with reversed coordinates"""
         return BBox3d(Vec3d(self._min.z, self._min.y, self._min.x),
                       Vec3d(self._max.z, self._max.y, self._max.x))
 
-
     def astuple(self):
         """Return in a simplified representation"""
         return (self._min.x, self._min.y, self._min.z,
                 self._max.x, self._max.y, self._max.z)
 
-
     def translate(self, v):
         """Shift by a coordinate v, return a copy"""
         return BBox3d(self._min+v, self._max+v)
-
 
     def merge(self, other):
         """
@@ -115,19 +106,23 @@ class BBox3d(object):
         return BBox3d(minimum(self._min, other._min),
                       maximum(self._max, other._max))
 
+    def scale(self, factor):
+        """Scales the coordinates by a given factor, return a copy"""
+        return BBox3d(self._min*factor, self._max*factor)
+
+    def scale2d(self, factor):
+        return BBox3d(self._min*[factor,factor,1],
+                      self._max*[factor,factor,1])
 
     def __eq__(self, other):
         return self.min() == other.min() and self.max() == other.max()
 
-
     def __ne__(self, other):
         return not(self == other)
-
 
     def __repr__(self):
         s, e = self.min(), self.max()
         return "<BBox3d {}-{}>".format(s,e)
-
 
     def __str__(self):
         return "{}({}<->{})".format(self.__class__.__name__,

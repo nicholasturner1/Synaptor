@@ -5,9 +5,11 @@ Synaptor Processing Tasks w/ Standardized IO
 
 from .. import io
 from .. import types
+from .. import seg_utils
 
 from . import io as taskio
 from . import tasks
+from . import chunk_edges
 from .tasks import timed
 
 
@@ -72,23 +74,44 @@ def merge_ccs_task(proc_dir_path, size_thr):
 def chunk_edges_task(img_cvname, cleft_cvname, seg_cvname,
                      chunk_begin, chunk_end, patchsz,
                      num_samples_per_cleft, dil_param,
-                     proc_dir_path, wshed_cvname=None):
+                     proc_dir_path, wshed_cvname=None,
+                     mip=0, img_mip=None, seg_mip=None):
+    """
+    Runs tasks.chunk_edges_task after reading the relevant
+    cloud volume chunks and downsampling the cleft volume
+    to match the others.
+
+    Writes the results as edge information dataframes within
+    {proc_dir_path}/chunk_edges
+
+    img_mip refers to the mip level which corresponds to the mip arg
+    seg_mip refers to the mip level which corresponds to the mip arg
+    these can both be left as None, in which case they'll assume the
+    mip arg value
+    """
 
     chunk_bounds = types.BBox3d(chunk_begin, chunk_end)
 
-    img = timed("Reading img chunk",
+    img_mip = mip if img_mip is None else img_mip
+    seg_mip = mip if seg_mip is None else seg_mip
+
+    mip0_bounds = chunk_bounds.scale2d(2 ** mip)
+
+    img = timed("Reading img chunk at mip {}".format(img_mip),
                 io.read_cloud_volume_chunk,
-                img_cvname, chunk_bounds)
-    clefts = timed("Reading cleft chunk",
+                img_cvname, chunk_bounds, mip=img_mip)
+    # clefts won't be downsampled - will do that myself later
+    clefts = timed("Reading cleft chunk at mip 0",
                    io.read_cloud_volume_chunk,
-                   cleft_cvname, chunk_bounds)
-    seg = timed("Reading segmentation chunk",
+                   cleft_cvname, mip0_bounds, mip=0)
+    seg = timed("Reading segmentation chunk at mip {}".format(seg_mip),
                 io.read_cloud_volume_chunk,
-                seg_cvname, chunk_bounds)
+                seg_cvname, chunk_bounds, mip=seg_mip)
     if wshed_cvname is not None:
-        wshed = timed("Reading watershed chunk",
+        wshed = timed("Reading watershed chunk at mip {}".format(seg_mip),
                       io.read_cloud_volume_chunk,
-                      wshed_cvname, chunk_bounds)
+                      wshed_cvname, chunk_bounds, mip=seg_mip)
+        assert wshed.shape == seg.shape, "mismatched wshed basins"
     else:
         wshed = None
 
@@ -98,7 +121,15 @@ def chunk_edges_task(img_cvname, cleft_cvname, seg_cvname,
 
     chunk_id_map = timed("Reading chunk id map",
                          taskio.read_chunk_id_map,
-                         proc_dir_path, chunk_bounds)
+                         proc_dir_path, mip0_bounds)
+
+    #Downsampling clefts to match other volumes
+    if mip > 0:
+        clefts = timed("Downsampling seg to mip {}".format(mip),
+                       seg_utils.downsample_seg_to_mip,
+                       clefts, 0, mip)
+
+    assert img.shape == clefts.shape == seg.shape, "mismatched volumes"
 
     edges = tasks.chunk_edges_task(img, clefts, seg, asynet,
                                    chunk_begin, chunk_end, patchsz,
@@ -106,9 +137,14 @@ def chunk_edges_task(img_cvname, cleft_cvname, seg_cvname,
                                    num_samples_per_cleft=num_samples_per_cleft,
                                    dil_param=dil_param)
 
+    if mip > 0:
+        edges = timed("Up-sampling edge information",
+                      chunk_edges.upsample_edge_info,
+                      edges, mip, chunk_begin)
+
     timed("Writing chunk edges",
           taskio.write_chunk_edge_info,
-          edges, chunk_bounds, proc_dir_path)
+          edges, mip0_bounds, proc_dir_path)
 
 
 def merge_edges_task(voxel_res, dist_thr, size_thr, proc_dir_path):
@@ -155,7 +191,7 @@ def chunk_overlaps_task(seg_cvname, base_seg_cvname,
     timed("Writing overlap matrix",
           taskio.write_chunk_overlap_mat,
           overlap_matrix, chunk_bounds, proc_dir_path)
-                           
+
 
 def merge_overlaps_task(proc_dir_path):
 
@@ -165,10 +201,10 @@ def merge_overlaps_task(proc_dir_path):
 
     max_overlaps = tasks.merge_overlaps_task(overlap_arr)
 
-    
+
     timed("Writing max overlaps",
           taskio.write_max_overlaps,
-          max_overlaps, proc_dir_path)         
+          max_overlaps, proc_dir_path)
 
 
 def remap_ids_task(cleft_in_cvname, cleft_out_cvname,
