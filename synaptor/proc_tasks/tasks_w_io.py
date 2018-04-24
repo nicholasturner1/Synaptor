@@ -136,6 +136,41 @@ def merge_edges_task(voxel_res, dist_thr, size_thr, proc_dir_path):
           full_df, proc_dir_path)
 
 
+def chunk_overlaps_task(seg_cvname, base_seg_cvname,
+                        chunk_begin, chunk_end,
+                        proc_dir_path, mip=0):
+
+    chunk_bounds = types.BBox3d(chunk_begin, chunk_end)
+
+    seg_chunk = timed("Reading seg chunk",
+                      io.read_cloud_volume_chunk,
+                      seg_cvname, chunk_bounds, mip=mip)
+
+    base_seg_chunk = timed("Reading base seg chunk",
+                           io.read_cloud_volume_chunk,
+                           base_seg_cvname, chunk_bounds, mip=mip)
+
+    overlap_matrix = tasks.chunk_overlaps_task(seg_chunk, base_seg_chunk)
+
+    timed("Writing overlap matrix",
+          taskio.write_chunk_overlap_mat,
+          overlap_matrix, chunk_bounds, proc_dir_path)
+                           
+
+def merge_overlaps_task(proc_dir_path):
+
+    overlap_arr, _ = timed("Reading overlap matrices",
+                        taskio.read_all_overlap_mats,
+                        proc_dir_path)
+
+    max_overlaps = tasks.merge_overlaps_task(overlap_arr)
+
+    
+    timed("Writing max overlaps",
+          taskio.write_max_overlaps,
+          max_overlaps, proc_dir_path)         
+
+
 def remap_ids_task(cleft_in_cvname, cleft_out_cvname,
                    chunk_begin, chunk_end, proc_dir_path, mip=0):
 
