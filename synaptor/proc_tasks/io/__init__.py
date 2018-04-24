@@ -21,3 +21,8 @@ from . import id_map
 from .id_map import read_chunk_id_map, write_chunk_id_map
 from .id_map import write_chunk_id_maps
 from .id_map import read_dup_id_map, write_dup_id_map
+
+from . import overlap
+from .overlap import read_chunk_overlap_mat, write_chunk_overlap_mat
+from .overlap import read_all_overlap_mats
+from .overlap import read_max_overlaps, write_max_overlaps
