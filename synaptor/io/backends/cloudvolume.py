@@ -20,10 +20,10 @@ import cloudvolume #external package
 from ...types.bbox import BBox3d
 
 
-def read_cloud_volume_chunk(cv_name, bbox, mip=0):
+def read_cloud_volume_chunk(cv_name, bbox, mip=0, parallel=1):
     """ Reads a chunk of data specified by a bounding box """
 
-    cv = cloudvolume.CloudVolume(cv_name, mip=mip)
+    cv = cloudvolume.CloudVolume(cv_name, mip=mip, parallel=parallel)
 
     #ensuring that we always read something
     cv.fill_missing = True
@@ -32,10 +32,10 @@ def read_cloud_volume_chunk(cv_name, bbox, mip=0):
     return cv[bbox.index()][:,:,:,0]
 
 
-def write_cloud_volume_chunk(data, cv_name, bbox, mip=0):
+def write_cloud_volume_chunk(data, cv_name, bbox, mip=0, parallel=1):
     """ Writes a chunk of data specified by a bounding box """
 
-    cv = cloudvolume.CloudVolume(cv_name, mip=mip)
+    cv = cloudvolume.CloudVolume(cv_name, mip=mip, parallel=parallel)
 
     cv[bbox.index()] = data.astype(cv.dtype)
 

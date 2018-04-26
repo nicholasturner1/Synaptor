@@ -20,11 +20,12 @@ parser.add_argument("cleft_cvname")
 parser.add_argument("proc_dir_path")
 
 # Processing Parameters
-parser.add_argument("--chunk_begin", nargs="+", type=int, required=True)
-parser.add_argument("--chunk_end", nargs="+", type=int, required=True)
-parser.add_argument("--mip", type=int, default=0)
 parser.add_argument("cc_thresh", type=float)
 parser.add_argument("sz_thresh", type=int)
+parser.add_argument("--chunk_begin", nargs="+", type=int, required=True)
+parser.add_argument("--chunk_end", nargs="+", type=int, required=True)
+parser.add_argument("--parallel", type=int, default=1)
+parser.add_argument("--mip", type=int, default=0)
 
 args = parser.parse_args()
 print(vars(args))
