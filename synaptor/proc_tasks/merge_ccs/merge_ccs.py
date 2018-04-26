@@ -100,7 +100,7 @@ def find_connected_continuations(continuation_arr, max_face_shape=(1024,1024)):
     """
 
     sizes   = continuation_arr.shape
-    face_checked = np.zeros((3,) + continuation_arr.shape, dtype=np.bool)
+    face_checked = np.zeros((6,) + continuation_arr.shape, dtype=np.bool)
     matches = []
 
     for index in np.ndindex(sizes):
@@ -114,10 +114,10 @@ def find_connected_continuations(continuation_arr, max_face_shape=(1024,1024)):
                 continue
 
             #if we've processed the other side already
-            if face_checked[(face.axis,)+index]:
+            if face_checked[(face.axis + 3*face.hi_index,)+index]:
                 continue
             else:
-                face_checked[(face.axis,)+index] = True
+                face_checked[(face.axis + 3*face.hi_index,)+index] = True
 
             index_to_check = list(index)
             if face.hi_index:
@@ -125,12 +125,14 @@ def find_connected_continuations(continuation_arr, max_face_shape=(1024,1024)):
             else:
                 index_to_check[face.axis] -= 1
             index_to_check = tuple(index_to_check)
-            face_checked[(face.axis,)+index_to_check] = True
+            oppface = face.opposite()
+
+            face_checked[(oppface.axis+3*oppface.hi_index,)+index_to_check] = True
 
             conts_here  = continuation_arr[index][face]
-            conts_there = continuation_arr[index_to_check][face.opposite()]
+            conts_there = continuation_arr[index_to_check][oppface]
 
-            new_matches = match_continuations(conts_here, conts_there, 
+            new_matches = match_continuations(conts_here, conts_there,
                                               face_shape=max_face_shape)
 
             matches.extend(new_matches)
