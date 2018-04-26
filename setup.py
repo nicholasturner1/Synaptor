@@ -20,6 +20,7 @@ setup(
     packages=['synaptor',
               'synaptor.evaluate',
               'synaptor.io',
+              'synaptor.io.backends',
               'synaptor.proc_tasks',
               'synaptor.proc_tasks.chunk_ccs',
               'synaptor.proc_tasks.chunk_edges',
