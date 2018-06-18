@@ -13,5 +13,6 @@ from .tasks import merge_edges_task
 from .tasks import remap_ids_task
 
 from . import io
+from . import utils
 
 from . import tasks_w_io
