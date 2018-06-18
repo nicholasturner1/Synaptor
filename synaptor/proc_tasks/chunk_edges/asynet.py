@@ -11,7 +11,7 @@ from future import standard_library
 standard_library.install_aliases()
 
 
-import random, copy, operator
+import random, copy, operator, itertools
 
 import torch
 from torch.autograd import Variable
@@ -97,18 +97,38 @@ def infer_edges(net, img, cleft, seg, offset, patchsz, wshed=None,
     return make_record_dframe(edges, record_basins)
 
 
-def infer_whole_edge(net, img, cleft, seg, cleft_id, patchsz, dil_param=5):
+def infer_whole_edges(net, img, cleft, seg,
+                      patchsz, dil_param=5,
+                      cleft_ids=None, bboxes=None):
 
-    cleft_mask = cleft == cleft_id
+    if cleft_ids is None:
+        cleft_ids = seg_utils.nonzero_unique_ids(cleft)
 
-    seg_weights, seg_szs, seg_locs = {}, {}, {}
-    while cleft_mask.max():
+    if bboxes is None:
+        bboxes = seg_utils.bounding_boxes(cleft)
 
-        loc = pick_cleft_locs(cleft_mask, [True], 1)[True][0]
+    all_weights = {}
 
-        box = random_box(patchsz, cleft, loc)
+    num_clefts = len(cleft_ids)
+    for (iter_i, i) in enumerate(cleft_ids):
+        weights,_ = infer_whole_edge(net, img, cleft, seg,
+                                     i, patchsz, dil_param,
+                                     bboxes)
+
+
+        all_weights[i] = weights
+
+    return all_weights
+
+def infer_whole_edge(net, img, cleft, seg, cleft_id,
+                     patchsz, dil_param=5, cleft_boxes=None):
+
+    bboxes = pick_cleft_bboxes(cleft, cleft_id, patchsz, cleft_boxes)
+
+    seg_weights, seg_szs = {}, {}
+    for box in bboxes:
+
         box_offset = box.min()
-        cleft_mask[box.index()] = False
 
         img_p, clf_p, seg_p = get_patches(img, cleft, seg, box, cleft_id)
 
@@ -119,11 +139,27 @@ def infer_whole_edge(net, img, cleft, seg, cleft_id, patchsz, dil_param=5):
         seg_weights, seg_szs = dict_tuple_avg(new_weights, new_szs,
                                               seg_weights, seg_szs)
 
-        new_locs = random_locs(seg_p[0,0,:].transpose((2,1,0)),
-                               segids, offset=box_offset)
-        seg_locs = update_locs(new_locs, seg_locs)
+    return seg_weights, seg_szs
 
-    return seg_weights, seg_szs, seg_locs
+
+def pick_cleft_bboxes(cleft, cleft_id, patchsz, cleft_boxes):
+
+    cleft_mask = cleft == cleft_id
+    cleft_bbox = cleft_boxes[cleft_id]
+    bboxes = []
+
+    #while cleft_mask[cleft_bbox.index()].max():
+    while cleft_mask.max():
+
+        locs = list(zip(*np.nonzero(cleft_mask)))
+
+        loc = random.choice(locs)
+        box = random_box(patchsz, cleft_mask, loc)
+        bboxes.append(box)
+
+        cleft_mask[box.index()] = False
+
+    return bboxes
 
 
 def pick_cleft_locs(cleft, cleft_ids, num_locs):
@@ -199,8 +235,8 @@ def find_close_segments(psd_p, seg_p, dil_param):
 
 def torch_dilation(seg, kernel, dil_param):
 
-    seg_v = make_variable( seg, volatile=True )
-    ker_v = make_variable( kernel, volatile=True )
+    seg_v = to_tensor( seg, volatile=True )
+    ker_v = to_tensor( kernel, volatile=True )
     sz = kernel.shape
     padding = (sz[2]//2,sz[3]//2,sz[4]//2)
 
@@ -232,7 +268,7 @@ def infer_patch(net, img_p, psd_p):
     """
     #formatting
     net_input = np.concatenate((img_p,psd_p), axis=1).astype("float32")
-    net_input = make_variable(net_input, volatile=True)
+    net_input = to_tensor(net_input, volatile=True)
 
     #network has only one output
     # and batch size = 1
@@ -261,11 +297,11 @@ def seg_weights( output, seg, segids=None ):
 
     for i in segids:
 
-        seg_mask = torch.from_numpy((seg == i).astype("uint8")).cuda()
-        sizes[i] = torch.sum(seg_mask)
+        seg_mask = torch.from_numpy((seg == i).astype("uint8")).cuda()[0,0,...]
+        sizes[i] = torch.sum(seg_mask).item()
 
-        pre_avg  = torch.sum(presyn_output[seg_mask]).data[0] / sizes[i]
-        post_avg = torch.sum(postsyn_output[seg_mask]).data[0] / sizes[i]
+        pre_avg  = torch.sum(presyn_output[seg_mask]).item() / sizes[i]
+        post_avg = torch.sum(postsyn_output[seg_mask]).item() / sizes[i]
 
         weights[i] = (pre_avg, post_avg)
 
@@ -350,6 +386,49 @@ def make_assignment(weights):
     return pre_seg, post_seg, pre_weight, post_weight
 
 
+def make_polyad_assignments(weights, pre_thresh=0.8, post_thresh=0.5):
+    """
+    Presynaptic - take the highest weight, and any others over pre_thresh
+    Postsynaptic - take any over post_thresh
+    Create edges between all pairs of presynaptic and postsynaptic
+    """
+
+    pre_weights = []
+    post_weights = []
+
+    for (k,v) in weights.items():
+        pre, post = v
+        pre_weights.append((k,pre))
+        post_weights.append((k,post))
+
+    max_pre_seg, max_pre_wt = max(pre_weights, key=operator.itemgetter(1))
+    if max_pre_wt > pre_thresh:
+        pre_segs = all_over_thresh(pre_weights, pre_thresh)
+    else:
+        pre_segs = [max_pre_seg]
+
+    post_segs = all_over_thresh(post_weights, post_thresh)
+
+    return list(itertools.product(pre_segs, post_segs))
+
+
+def all_over_thresh(weights, thresh):
+    return list(map(operator.itemgetter(0),
+                    filter(lambda x: x[1] > thresh,
+                           weights)))
+
+def make_polyad_edges_at_threshs(all_weights, pre_thresh=0.8, post_thresh=0.5):
+
+    full_edges = []
+
+    for (cleft_id, cleft_weights) in all_weights.items():
+        new_edges = make_polyad_assignments(cleft_weights, pre_thresh, post_thresh)
+        tagged_edges = [(cleft_id, e[0], e[1]) for e in new_edges]
+        full_edges += tagged_edges
+
+    return full_edges
+
+
 def make_record(psdid,
                 pre_seg, post_seg,
                 pre_loc, post_loc,
@@ -389,7 +468,6 @@ def make_record_dframe(record_list, record_basins=True):
 
 def make_variable(np_arr, requires_grad=True, volatile=False):
     """ Creates a torch.autograd.Variable from a np array """
-    if not volatile:
-      return Variable(torch.from_numpy(np_arr.copy()), requires_grad=requires_grad).cuda()
-    else:
-      return Variable(torch.from_numpy(np_arr.copy()), volatile=True).cuda()
+    tensor = torch.from_numpy(np_arr.copy())
+    tensor.requires_grad = requires_grad and not volatile
+    return tensor
