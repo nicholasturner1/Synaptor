@@ -24,7 +24,7 @@ from . import utils
 
 
 REGEXP = re.compile("s3://")
-CREDS = cloudvolume.secrets.aws_credentials
+CREDS_FN = cloudvolume.secrets.aws_credentials
 
 
 def pull_file(remote_path):
@@ -32,7 +32,7 @@ def pull_file(remote_path):
 
     local_fname = os.path.basename(remote_path)
 
-    client = open_client()
+    client = open_client(bucket)
 
     client.download_file(bucket, key, local_fname)
 
@@ -41,7 +41,7 @@ def pull_directory(remote_dir):
     """ This will currently break if the remote dir has subdirectories """
     bucket, key = parse_remote_path(remote_dir)
 
-    client = open_client()
+    client = open_client(bucket)
 
     remote_keys  = keys_under_prefix(client, bucket, key)
     local_dir    = os.path.basename(utils.check_no_slash(key))
@@ -60,7 +60,7 @@ def pull_directory(remote_dir):
 def send_file(local_name, remote_path):
     bucket, key = parse_remote_path(remote_path)
 
-    client = open_client()
+    client = open_client(bucket)
 
     client.upload_file(local_name, bucket, key)
 
@@ -74,7 +74,7 @@ def send_directory(local_dir, remote_dir):
     fnames = os.listdir(local_dir)
     remote_keys = [os.path.join(key, f) for f in fnames]
 
-    client = open_client()
+    client = open_client(bucket)
 
     for (f,key) in zip(fnames, remote_keys):
         client.upload_file(os.path.join(local_dir, f), bucket, key)
@@ -97,8 +97,9 @@ def parse_remote_path(remote_path):
     return bucket, key
 
 
-def open_client():
+def open_client(bucket):
+    creds = CREDS_FN(bucket)
     return boto3.client("s3",
-                        aws_access_key_id=CREDS["AWS_ACCESS_KEY_ID"],
-                        aws_secret_access_key=CREDS["AWS_SECRET_ACCESS_KEY"],
+                        aws_access_key_id=creds["AWS_ACCESS_KEY_ID"],
+                        aws_secret_access_key=creds["AWS_SECRET_ACCESS_KEY"],
                         region_name="us-east-1")

@@ -24,8 +24,7 @@ from . import utils
 
 
 REGEXP = re.compile("gs://")
-PROJECT_NAME = cloudvolume.secrets.PROJECT_NAME
-CREDS        = cloudvolume.secrets.google_credentials
+CREDS_FN = cloudvolume.secrets.google_credentials
 
 
 def pull_file(remote_path):
@@ -95,7 +94,8 @@ def parse_remote_path(remote_path):
 
 def open_bucket(bucket):
     """ Opens a bucket """
-    client = storage.Client(project=PROJECT_NAME,
-                            credentials=CREDS)
+    project, creds = CREDS_FN(bucket)
+    client = storage.Client(project=project, 
+                            credentials=creds)
 
     return client.get_bucket(bucket)
