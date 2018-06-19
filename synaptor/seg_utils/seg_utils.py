@@ -235,3 +235,56 @@ def downgrade_type(arr):
     return arr.astype(np.uint8)
 
   return arr
+
+
+def label_surfaces3d(seg):
+
+    surface_mask = np.zeros(seg.shape, dtype=np.bool)
+
+    #Z
+    surface_mask[1:,:,:] = seg[1:,:,:] != seg[:-1,:,:]
+    surface_mask[:-1,:,:] = np.logical_or(surface_mask[:-1,:,:],
+                                          seg[:-1,:,:] != seg[1:,:,:])
+
+    #Y
+    surface_mask[:,1:,:] = np.logical_or(surface_mask[:,1:,:],
+                                         seg[:,1:,:] != seg[:,:-1,:])
+    surface_mask[:,:-1,:] = np.logical_or(surface_mask[:,:-1,:],
+                                          seg[:,:-1,:] != seg[:,1:,:])
+
+
+    #X
+    surface_mask[:,:,1:] = np.logical_or(surface_mask[:,:,1:],
+                                         seg[:,:,1:] != seg[:,:,:-1])
+    surface_mask[:,:,:-1] = np.logical_or(surface_mask[:,:,:-1],
+                                          seg[:,:,:-1] != seg[:,:,1:])
+
+    surface_voxels = np.zeros(seg.shape, dtype=seg.dtype)
+
+    surface_voxels[surface_mask] = seg[surface_mask]
+
+    return surface_voxels
+
+
+def label_surfaces2d(seg):
+
+    surface_mask = np.zeros(seg.shape, dtype=np.bool)
+
+    #Y
+    surface_mask[:,1:,:] = np.logical_or(surface_mask[:,1:,:],
+                                         seg[:,1:,:] != seg[:,:-1,:])
+    surface_mask[:,:-1,:] = np.logical_or(surface_mask[:,:-1,:],
+                                          seg[:,:-1,:] != seg[:,1:,:])
+
+
+    #X
+    surface_mask[:,:,1:] = np.logical_or(surface_mask[:,:,1:],
+                                         seg[:,:,1:] != seg[:,:,:-1])
+    surface_mask[:,:,:-1] = np.logical_or(surface_mask[:,:,:-1],
+                                          seg[:,:,:-1] != seg[:,:,1:])
+
+    surface_voxels = np.zeros(seg.shape, dtype=seg.dtype)
+
+    surface_voxels[surface_mask] = seg[surface_mask]
+
+    return surface_voxels
