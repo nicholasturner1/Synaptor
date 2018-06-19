@@ -15,6 +15,7 @@ Nicholas Turner <nturner@cs.princeton.edu>, 2018
 
 
 import os, glob, shutil
+import itertools
 import importlib, types
 
 import torch
@@ -39,7 +40,7 @@ def send_directory(dirname, dst):
     full_dst = os.path.join(dst,dirname)
     if os.path.abspath(full_dst) != os.path.abspath(dirname):
         shutil.move(dirname, dst)
-        
+
 
 def read_dframe(path):
     """ Simple for now """
@@ -89,6 +90,35 @@ def write_h5(data, fname, dset_name="/main", chunk_size=None):
         else:
             f.create_dataset(dset_name, data=data, chunks=chunk_size,
                              compression="gzip", compression_opts=4)
+
+def read_edge_csv(fname, delim=";"):
+
+    edges = []
+    with open(fname) as f:
+        for l in f.readlines():
+            fields = l.strip().split(delim)
+
+            edgeid = int(fields[0])
+            field1 = eval(fields[1])
+            field2 = eval(fields[2])
+
+            if isinstance(field1,int):
+                field1 = [field1]
+            if isinstance(field2,int):
+                field2 = [field2]
+
+            for (pre,post) in itertools.product(field1,field2):
+                edges.append((edgeid,pre,post))
+
+    return edges
+
+def write_edge_csv(edges, fname, delim=";"):
+
+    with open(fname, "w+") as f:
+        for (cleft_id, presyn_id, postsyn_id) in edges:
+            f.write("{cid};{preid};{postid}\n".format(cid=cleft_id,
+                                                      preid=presyn_id,
+                                                      postid=postsyn_id))
 
 
 def load_source(fname, module_name="something"):
