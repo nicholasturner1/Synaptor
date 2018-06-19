@@ -37,6 +37,11 @@ def chunk_bboxes(vol_size, chunk_size, offset=None, mip=0):
                       chunk_size[1]//mip_factor,
                       chunk_size[2])
 
+        if offset is not None:
+            offset = (offset[0]//mip_factor,
+                      offset[1]//mip_factor,
+                      offset[2])
+
     x_bnds = bounds1D(vol_size[0], chunk_size[0])
     y_bnds = bounds1D(vol_size[1], chunk_size[1])
     z_bnds = bounds1D(vol_size[2], chunk_size[2])
