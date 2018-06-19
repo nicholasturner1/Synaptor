@@ -147,16 +147,20 @@ class BBox3d(object):
 # Utility Functions
 #=========================================================================
 
-def containing_box(loc, box_shape, max_coord):
+def containing_box(loc, box_shape, vol_shape):
     """
     Find a bounding box of a given shape that contains loc.
-    The resulting box is constrained to stay within (0,0,0)<->max_coord
+    The resulting box is constrained to stay within (0,0,0)<->vol_shape
     """
     #these coordinates might be out of bounds
     box = centered_box(loc, box_shape)
+    return shift_to_bounds(box, vol_shape)
+
+
+def shift_to_bounds(box, vol_shape):
 
     shift_up = (box.min() - abs(box.min())) // -2
-    over = box.max() - max_coord
+    over = box.max() - vol_shape
     shift_down = (over + abs(over)) // -2
 
     total_shift = shift_up + shift_down
