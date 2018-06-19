@@ -9,14 +9,14 @@ ENV PATH /opt/conda/bin:$PATH
 
 
 RUN apt-get update && \
-    pytorchDeps='build-essential cmake git vim ca-certificates libnccl2=2.0.5-2+cuda8.0 libnccl-dev=2.0.5-2+cuda8.0' && \
+    pytorchDeps='build-essential cmake git vim ca-certificates libjpeg-dev libpng-dev' && \
     igraphDeps='libxml2-dev zlib1g-dev pkg-config libffi-dev libcairo-dev' && \
     condaDeps='wget bzip2 libglib2.0-0 libxext6 libsm6 libxrender1 mercurial subversion' && \
     apt-get install -y --no-install-recommends $pytorchDeps $igraphDeps $condaDeps && \
     rm -rf /var/lib/apt/lists/* && \
 #Install miniconda3
     echo 'export PATH=/opt/conda/bin:$PATH' > /etc/profile.d/conda.sh && \
-    wget --quiet https://repo.continuum.io/miniconda/Miniconda3-4.3.27-Linux-x86_64.sh -O ~/miniconda.sh && \
+    wget --quiet https://repo.continuum.io/miniconda/Miniconda3-4.5.4-Linux-x86_64.sh -O ~/miniconda.sh && \
     /bin/bash ~/miniconda.sh -b -p /opt/conda && \
     rm ~/miniconda.sh && \
 #Fixes a conda bug - https://github.com/conda/conda/issues/6030
