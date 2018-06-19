@@ -11,28 +11,33 @@ from . import overlap
 from . import toolbox as tb
 
 
-def full_eval(train_set, val_set, test_set,
-              asynet, patchsz=(160,160,18),
+def full_eval(train_set, val_set, test_set=None,
+              asynet=None, patchsz=(160,160,18),
               output_prefix=None, write=False,
-              voxel_beta=1.5, cleft_beta=1.5, 
+              voxel_beta=1.5, cleft_beta=1.5,
               voxel_bins=None, sz_threshs=None,
-              dist_thr=1000, voxel_res=[4,4,40]):
+              dist_thr=1000, voxel_res=[4,4,40],
+              merge_ccs=True, delete=True):
 
-    train_set, val_set, test_set = parse_datasets(train_set, val_set, test_set)
+    train_set, val_set, test_set = tb.parse_datasets(train_set, val_set, test_set)
 
     val_set.read()
     print("Tuning parameters on the validation set...")
     (cc_thr, sz_thr,
      _, _, ccs) = tune_parameters_dset(val_set, asynet, patchsz,
-                                       voxel_beta, cleft_beta, 
+                                       voxel_beta, cleft_beta,
                                        True, #thresh_ccs
                                        voxel_bins, sz_threshs,
-                                       dist_thr, voxel_res)
+                                       dist_thr, voxel_res,
+                                       merge_ccs=merge_ccs)
     print("Optimized thresholds: CC {}; Size {}".format(cc_thr, sz_thr))
     val_prec, val_rec, val_precs, val_recs = score_ccs_dset(val_set, ccs)
     print("Validation Set: {0:.3f}P/{1:.3f}R".format(val_prec, val_rec))
-    print("Set-Wise: {}".format(list(zip(val_precs, val_recs))))
-    val_set.delete()
+    print("Set-Wise:")
+    print_setwise_scores(val_precs, val_recs)
+
+    if delete:
+        val_set.delete()
 
 
     if write == True:
@@ -44,92 +49,84 @@ def full_eval(train_set, val_set, test_set,
     train_set.read()
     ((tr_prec, tr_rec, tr_precs, tr_recs), ccs
     ) = score_w_params(train_set, asynet, patchsz,
-                       cc_thr, sz_thr)
+                       cc_thr, sz_thr, merge_ccs=merge_ccs)
     print("Training Set: {0:.3f}P/{1:.3f}R".format(tr_prec, tr_rec))
-    print("Set-Wise: {}".format(list(zip(tr_precs, tr_recs))))
-    train_set.delete()
+    print("Set-Wise:")
+    print_setwise_scores(tr_precs, tr_recs)
+
+    if delete:
+        train_set.delete()
 
 
     if write == True:
         print("Writing clefts...")
         write_dset_ccs(ccs, output_prefix, "train")
 
+    if test_set is not None:
+        print("Scoring Test Set...")
+        test_set.read()
+        ((te_prec, te_rec, te_precs, te_recs), ccs
+        ) = score_w_params(test_set, asynet, patchsz,
+                           cc_thr, sz_thr)
+        print("Test Set: {0:.3f}P/{1:.3f}R".format(te_prec, te_rec))
+        print("Set-Wise:")
+        print_setwise_scores(te_precs, te_recs)
 
-    print("Scoring Test Set...")
-    test_set.read()
-    ((te_prec, te_rec, te_precs, te_recs), ccs
-    ) = score_w_params(test_set, asynet, patchsz,
-                       cc_thr, sz_thr)
-    print("Test Set: {0:.3f}P/{1:.3f}R".format(te_prec, te_rec))
-    print("Set-Wise: {}".format(list(zip(te_precs, te_recs))))
-    test_set.delete()
+        if delete:
+            test_set.delete()
 
-
-    if write == True:
-        print("Writing clefts...")
-        write_dset_ccs(ccs, output_prefix, "test")
-
-
-def parse_datasets(*args):
-    dsets = []
-    for arg in args:
-        if isinstance(arg, dataset.EvalDataset):
-            dsets.append(arg)
-        else:
-            dsets.append(dataset.EvalDataset(arg))
-
-    return dsets
+        if write == True:
+            print("Writing clefts...")
+            write_dset_ccs(ccs, output_prefix, "test")
 
 
-def parse_dataset(arg):
-    if isinstance(arg, dataset.EvalDataset):
-        return arg
-    else:
-        dataset.EvalDataset(arg)
+def print_setwise_scores(precs, recs):
+    for (i,(p,r)) in enumerate(list(zip(precs, recs))):
+        print("Set {i}".format(i=i))
+        print("Prec: {p}".format(p=p))
+        print("Rec: {r}".format(r=r))
 
 
 def tune_parameters_dset(dset, asynet, patchsz,
                          voxel_beta, cleft_beta, thresh_ccs=False,
-                         voxel_bins=None, sz_threshs=None, 
-                         dist_thr=1000, voxel_res=[4,4,40]):
+                         voxel_bins=None, sz_threshs=None,
+                         dist_thr=1000, voxel_res=[4,4,40],
+                         merge_ccs=True):
 
-    dset = read_dataset(dset)
+    dset = tb.read_dataset(dset)
 
     print("Tuning Connected Components threshold...")
     ccs, cc_thresh = tune_cc_threshold_dset(dset, voxel_beta, voxel_bins)
+    ccs = [cc.astype("uint32") for cc in ccs]
 
-    print("Merging duplicates...")
-    ccs, _ = merge_duplicate_clefts_dset(asynet, patchsz, dset,
-                                         ccs, dist_thr, voxel_res)
+    if merge_ccs:
+        assert asynet is not None
+        print("Merging duplicates...")
+        ccs, _ = merge_duplicate_clefts_dset(asynet, patchsz, dset,
+                                             ccs, dist_thr, voxel_res)
 
     print("Tuning size threshold...")
-    sz_thresh, prec, rec, ccs = tune_sz_threshold_dset(dset, ccs, cleft_beta, 
-                                                       sz_threshs, 
+    sz_thresh, prec, rec, ccs = tune_sz_threshold_dset(dset, ccs, cleft_beta,
+                                                       sz_threshs,
                                                        thresh_ccs=thresh_ccs)
 
     return cc_thresh, sz_thresh, prec, rec, ccs
 
 
-def read_dataset(dset):
-
-    if not isinstance(dset, dataset.EvalDataset):
-        dset = dataset.EvalDataset(dset)
-
-    dset.read()
-
-    return dset
-
 
 def score_w_params(dset, asynet, patchsz, cc_thresh, sz_thresh,
-                   dist_thr=1000, voxel_res=[4,4,40]):
-    
-    dset = read_dataset(dset)
+                   dist_thr=1000, voxel_res=[4,4,40], merge_ccs=True):
+
+    dset = tb.read_dataset(dset)
 
     ccs = make_ccs_dset(dset, cc_thresh)
+    ccs = [cc.astype("uint32") for cc in ccs]
 
-    ccs, _ = merge_duplicate_clefts_dset(asynet, patchsz, dset,
-                                         ccs, dist_thr, voxel_res)
-    
+    if merge_ccs:
+        assert asynet is not None
+        ccs, _ = merge_duplicate_clefts_dset(asynet, patchsz, dset,
+                                             ccs, dist_thr, voxel_res)
+
     ccs = [seg_utils.filter_segs_by_size(cc, sz_thresh, copy=False)[0]
            for cc in ccs]
 
@@ -138,17 +135,17 @@ def score_w_params(dset, asynet, patchsz, cc_thresh, sz_thresh,
 
 def score_ccs_dset(dset, ccs):
 
-    dset = read_dataset(dset)
+    dset = tb.read_dataset(dset)
 
     prec, rec, npreds, nlbls = 0., 0., 0, 0
     precs, recs = [], [] #single-vol records
     for (cc, lbl, to_ig) in zip(ccs, dset.labels, dset.to_ignore):
-        p, r, npred, nlbl = overlap.score_overlaps(cc, lbl, 
+        p, r, npred, nlbl = overlap.score_overlaps(cc, lbl,
                                                    mode="conservative",
                                                    to_ignore=to_ig)
 
         old_tp = prec*npreds
-        
+
         npreds += npred
         nlbls += nlbl
 
@@ -159,11 +156,11 @@ def score_ccs_dset(dset, ccs):
         recs.append(r)
 
     return prec, rec, precs, recs
-        
+
 
 def tune_cc_threshold_dset(dset, voxel_beta=1.5, voxel_bins=None):
 
-    dset = read_dataset(dset)
+    dset = tb.read_dataset(dset)
 
     if voxel_bins is None:
         voxel_bins = [0.01*i for i in range(101)]
@@ -179,7 +176,7 @@ def tune_cc_threshold_dset(dset, voxel_beta=1.5, voxel_bins=None):
 
 def analyze_thresholds_dset(dset, voxel_bins=None):
 
-    dset = read_dataset(dset)
+    dset = tb.read_dataset(dset)
 
     if voxel_bins is None:
         voxel_bins = [0.01*i for i in range(101)]
@@ -199,7 +196,7 @@ def analyze_thresholds_dset(dset, voxel_bins=None):
 
 
 def make_ccs_dset(dset, cc_thresh):
-    dset = read_dataset(dset)
+    dset = tb.read_dataset(dset)
 
     clfs = [chunk_ccs.connected_components3d(pred, cc_thresh)
             for pred in dset.preds]
@@ -210,7 +207,7 @@ def make_ccs_dset(dset, cc_thresh):
 def merge_duplicate_clefts_dset(asynet, patchsz, dset, ccs,
                                 dist_thr=1000, voxel_res=[4,4,40]):
 
-    dset = read_dataset(dset)
+    dset = tb.read_dataset(dset)
 
     if not isinstance(ccs, list):
         ccs = [ccs]
@@ -231,7 +228,7 @@ def merge_duplicate_clefts_dset(asynet, patchsz, dset, ccs,
 
 def tune_sz_threshold_dset(dset, ccs, beta=1.5, sz_threshs=None, thresh_ccs=False):
 
-    dset = read_dataset(dset)
+    dset = tb.read_dataset(dset)
 
     if not isinstance(ccs, list):
         ccs = [ccs]
@@ -255,8 +252,8 @@ def tune_sz_threshold_dset(dset, ccs, beta=1.5, sz_threshs=None, thresh_ccs=Fals
                                                             mode="conservative",
                                                             to_ignore=to_ig)
 
-            old_tp = n_preds[i] * precs[i]
-            old_tp2 = n_lbls[i] * recs[i] #overly-careful for now
+            old_tp = round(n_preds[i] * precs[i],3) #rounding is useful for float precision
+            old_tp2 = round(n_lbls[i] * recs[i],3) #overly-careful for now
             assert old_tp == old_tp2, "tps don't match for some reason"
 
             n_preds[i] += npred

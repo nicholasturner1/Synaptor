@@ -6,6 +6,7 @@ from ..proc_tasks import merge_edges
 from .. import seg_utils
 from . import score
 from . import overlap
+from . import dataset
 
 
 def score_w_params(preds, img, seg, lbl,
@@ -19,23 +20,23 @@ def score_w_params(preds, img, seg, lbl,
 
     ccs, _ = seg_utils.filter_segs_by_size(ccs, sz_thresh, copy=False)
 
-    return overlap.score_overlaps(ccs, lbl, mode="conservative", 
+    return overlap.score_overlaps(ccs, lbl, mode="conservative",
                                   to_ignore=to_ignore)
 
 
 def tune_parameters(preds, img, seg, labels,
-                    asynet, patchsz, sz_threshs, 
+                    asynet, patchsz, sz_threshs,
                     voxel_beta=1.5, cleft_beta=1.5,
-                    voxel_bins=None, dist_thr=1000, 
+                    voxel_bins=None, dist_thr=1000,
                     voxel_res=[4,4,40], to_ignore=[]):
 
     cc_thresh, ccs = tune_cc_threshold(preds, labels, voxel_beta, voxel_bins)
 
-    ccs, _ = merge_duplicate_clefts(asynet, patchsz, 
-                                    img, seg, ccs, 
+    ccs, _ = merge_duplicate_clefts(asynet, patchsz,
+                                    img, seg, ccs,
                                     dist_thr, voxel_res)
 
-    sz_thresh, prec, rec = tune_sz_threshold(ccs, labels, cleft_beta, 
+    sz_thresh, prec, rec = tune_sz_threshold(ccs, labels, cleft_beta,
                                              sz_threshs, to_ignore)
 
     return cc_thresh, sz_thresh, prec, rec
@@ -77,7 +78,7 @@ def opt_threshold(tps, fps, fns, voxel_beta=1.5, voxel_bins=None):
 
     assert len(tps)==len(fps)==len(fns)==(len(voxel_bins)-1), "length mismatch"
 
-    old_err = np.seterr(invalid="ignore",divide="ignore") 
+    old_err = np.seterr(invalid="ignore",divide="ignore")
 
     precs = tps / (tps + fps)
     recs = tps / (tps + fns)
@@ -104,7 +105,8 @@ def merge_duplicate_clefts(asynet, patchsz, img, seg, clf,
     return seg_utils.relabel_data(clf, dup_id_map), dup_id_map
 
 
-def tune_sz_threshold(ccs, labels, beta, sz_threshs=None, to_ignore=[]):
+def tune_sz_threshold(ccs, labels, beta, sz_threshs=None, to_ignore=[],
+                      mode="conservative"):
 
     if sz_threshs is None:
         sz_threshs = [100*i for i in range(8)]
@@ -119,14 +121,14 @@ def tune_sz_threshold(ccs, labels, beta, sz_threshs=None, to_ignore=[]):
     for (i,sz_thresh) in enumerate(sz_threshs):
         ccs, _ = seg_utils.filter_segs_by_size(ccs, sz_thresh, copy=False)
 
-        prec, rec, npred, nl = overlap.score_overlaps(ccs, labels, 
-                                                      mode="conservative",
+        prec, rec, npred, nl = overlap.score_overlaps(ccs, labels,
+                                                      mode=mode,
                                                       to_ignore=to_ignore)
 
         precs[i], recs[i], n_preds[i], n_lbls[i] = prec[0], rec[0], npred, nl
 
     opt_i = find_best_fscore(precs, recs, beta)
-    
+
     opt_thresh = sz_threshs[opt_i]
     prec = precs[opt_i]
     rec = recs[opt_i]
@@ -139,7 +141,49 @@ def find_best_fscore(precs, recs, beta):
     opt_i = np.nanargmax(score.all_fscores_PR(precs, recs, beta))
     np.seterr(**old_settings)
     return opt_i
-    
+
 
 def zero_vec(length, dtype=np.float64):
     return np.zeros((length,), dtype=dtype)
+
+
+def parse_datasets(*args):
+    return (parse_dataset(arg) for arg in args)
+
+
+def parse_dataset(arg):
+    if isinstance(arg, dataset.EvalDataset):
+        return arg
+    elif arg is None:
+        print("WARNING: empty dataset!")
+        return None
+    else:
+        return dataset.EvalDataset(arg)
+
+
+def read_dataset(dset):
+
+    if not isinstance(dset, dataset.EvalDataset):
+        dset = dataset.EvalDataset(dset)
+
+    dset.read()
+
+    return dset
+
+
+def make_clefts_at_params(dset, cc_thresh=None, sz_thresh=None):
+
+    dset = read_dataset(dset)
+
+    if cc_thresh is not None:
+        clefts = [chunk_ccs.connected_components3d(p, cc_thresh).astype('uint32')
+                  for p in dset.preds]
+    else:
+        #assume preds are already thresholded
+        clefts = dset.preds
+
+    if sz_thresh is not None:
+        clefts = [seg_utils.filter_segs_by_size(vol, sz_thresh)[0]
+                  for vol in clefts]
+
+    return clefts
