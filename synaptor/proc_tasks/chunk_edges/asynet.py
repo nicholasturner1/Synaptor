@@ -470,4 +470,4 @@ def to_tensor(np_arr, requires_grad=True, volatile=False):
     """ Creates a torch.autograd.Variable from a np array """
     tensor = torch.from_numpy(np_arr.copy())
     tensor.requires_grad = requires_grad and not volatile
-    return tensor
+    return tensor.cuda()
