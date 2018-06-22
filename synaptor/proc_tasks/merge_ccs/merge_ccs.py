@@ -11,17 +11,18 @@ from ...types import continuation
 from .. import utils
 
 
-def merge_connected_continuations(continuation_arr, max_face_shape=(1024,1024)):
+def merge_connected_continuations(continuation_arr, max_face_shape=(1152,1152)):
     """
     Finds an id mapping to merge the continuations which match across faces
     """
 
-    matches = find_connected_continuations(continuation_arr)
+    matches = find_connected_continuations(continuation_arr, 
+                                           max_face_shape=max_face_shape)
     ccs = utils.find_connected_components(matches)
     return utils.make_id_map(ccs)
 
 
-def find_connected_continuations(continuation_arr, max_face_shape=(1024,1024)):
+def find_connected_continuations(continuation_arr, max_face_shape=(1152,1152)):
     """
     Finds the edges of a graph which describes the continuation connectivity
     """
@@ -68,7 +69,7 @@ def find_connected_continuations(continuation_arr, max_face_shape=(1024,1024)):
     return matches
 
 
-def match_continuations(conts1, conts2, face_shape=(1024,1024)):
+def match_continuations(conts1, conts2, face_shape=(1152,1152)):
     """ Determines which continuations match within the two lists """
 
     face1 = reconstruct_face(conts1, shape=face_shape)
@@ -82,7 +83,7 @@ def match_continuations(conts1, conts2, face_shape=(1024,1024)):
     return list(set(zip(matches1,matches2)))
 
 
-def reconstruct_face(continuations, shape=(1024,1024)):
+def reconstruct_face(continuations, shape=(1152,1152)):
 
     face = np.zeros(shape, dtype=np.uint32)
 

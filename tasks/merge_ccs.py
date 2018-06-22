@@ -20,6 +20,8 @@ parser.add_argument("proc_dir_path")
 
 # Processing Parameters
 parser.add_argument("size_thr", type=int)
+parser.add_argument("--max_face_shape", type=int, 
+                    nargs="+", default=(1152,1152))
 
 args = parser.parse_args()
 print(vars(args))

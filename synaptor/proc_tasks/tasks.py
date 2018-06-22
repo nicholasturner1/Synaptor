@@ -75,7 +75,8 @@ def chunk_ccs_task(net_output, chunk_begin, chunk_end,
     return ccs, continuations, cleft_info
 
 
-def merge_ccs_task(cont_info_arr, cleft_info_arr, chunk_bounds, size_thr):
+def merge_ccs_task(cont_info_arr, cleft_info_arr, chunk_bounds, 
+                   size_thr, max_face_shape):
     """
     -Assigns a global set of cleft segment ids
     -Finds which continuations match across chunks
@@ -99,7 +100,7 @@ def merge_ccs_task(cont_info_arr, cleft_info_arr, chunk_bounds, size_thr):
 
     cont_id_map = timed("Merging connected continuations",
                         merge_ccs.merge_connected_continuations,
-                        cont_info_arr)
+                        cont_info_arr, max_face_shape)
 
     chunk_id_maps = timed("Updating chunk id maps",
                           merge_ccs.update_chunk_id_maps,

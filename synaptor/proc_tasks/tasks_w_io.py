@@ -45,7 +45,7 @@ def chunk_ccs_task(output_cvname, cleft_cvname, proc_dir_path,
           cleft_info, chunk_bounds, proc_dir_path)
 
 
-def merge_ccs_task(proc_dir_path, size_thr):
+def merge_ccs_task(proc_dir_path, size_thr, max_face_shape):
 
 
     cont_info_arr, _ = timed("Reading continuations",
@@ -62,7 +62,8 @@ def merge_ccs_task(proc_dir_path, size_thr):
     cons_cleft_info, chunk_id_maps = tasks.merge_ccs_task(cont_info_arr,
                                                           cleft_info_arr,
                                                           chunk_bounds,
-                                                          size_thr)
+                                                          size_thr,
+                                                          max_face_shape)
 
 
     timed("Writing merged cleft info",
