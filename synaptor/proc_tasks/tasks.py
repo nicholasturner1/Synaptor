@@ -237,6 +237,8 @@ def remap_ids_task(clefts, *id_maps, copy=False):
                        merge_edges.update_id_map,
                        id_map, next_map, reused_ids=True)
 
-    clefts = seg_utils.relabel_data(clefts, id_map, copy=copy)
+    clefts = timed("Relabeling data by id map",
+                   seg_utils.relabel_data,
+                   clefts, id_map, copy=copy)
 
     return clefts
