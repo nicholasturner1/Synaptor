@@ -75,7 +75,7 @@ def chunk_ccs_task(net_output, chunk_begin, chunk_end,
     return ccs, continuations, cleft_info
 
 
-def merge_ccs_task(cont_info_arr, cleft_info_arr, chunk_bounds, 
+def merge_ccs_task(cont_info_arr, cleft_info_arr, chunk_bounds,
                    size_thr, max_face_shape):
     """
     -Assigns a global set of cleft segment ids
@@ -172,7 +172,7 @@ def merge_edges_task(edges_arr, merged_cleft_info,
     """
 
     merged_edge_df = timed("Merging edges",
-                           merge_edges.consolidate_edges,
+                           merge_edges.consolidate_edges1,
                            edges_arr)
 
     full_df = timed("Merging edge DataFrame to cleft DataFrame",
