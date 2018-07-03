@@ -33,6 +33,42 @@ def merge_duplicate_clefts(full_info_df, dist_thr, res):
 
     return utils.make_id_map(conn_comps)
 
+def merge_duplicate_clefts1(full_info_df, dist_thr, res):
+
+    conn_comps = []
+    for _,df in full_info_df.groupby(["presyn_segid","postsyn_segid"]):
+
+        if df.shape[0] == 1:
+            continue
+
+        cleft_ids = df.index.values
+        cleft_coords = df[["centroid_x","centroid_y","centroid_z"]].values
+
+        cleft_pairs = find_pairs_within_dist(cleft_ids, cleft_coords,
+                                             dist_thr, res)
+
+        conn_comps.extend(utils.find_connected_components(cleft_pairs))
+
+    return utils.make_id_map(conn_comps)
+
+
+def merge_duplicate_clefts2(full_info_df, dist_thr, res):
+
+    conn_comps = []
+    def find_new_comps(group):
+        if len(group) > 1:
+            ids = group.index.values
+            coords = group[["centroid_x","centroid_y","centroid_z"]].values
+
+            pairs = find_pairs_within_dist(ids, coords, dist_thr, res)
+
+            conn_comps.extend(utils.find_connected_components(pairs))
+        return 0
+
+    full_info_df.groupby(["presyn_segid","postsyn_segid"]).apply(find_new_comps)
+
+    return utils.make_id_map(conn_comps)
+
 
 def merge_polyad_dups(edge_list, centroids, dist_thr, res):
 

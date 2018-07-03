@@ -27,6 +27,56 @@ def merge_full_df(full_info_df, id_map):
     return utils.merge_info_df(full_info_df, id_map, merge_full_records)
 
 
+def merge_full_df1(full_info_df, id_map):
+
+    new_ids = pd.DataFrame.from_dict(id_map, orient="index")
+    full_info_df["new_ids"] = new_ids
+    full_info_df = full_info_df.reset_index()
+
+    #computing grouped stats
+    grouped = full_info_df.groupby("new_ids")
+    szs = grouped[SZ_SCHEMA].sum()
+    bbox1 = grouped[BBOX_SCHEMA[:3]].min()
+    bbox2 = grouped[BBOX_SCHEMA[-3:]].max()
+    coms = compute_centroids(full_info_df, szs)
+
+    #Setting index to the original if not remapped
+    no_new_id = pd.isnull(full_info_df["new_ids"])
+    full_info_df["new_ids"][no_new_id] = full_info_df["psd_segid"][no_new_id]
+    #taking all other fields from largest cleft
+    new_df = full_info_df.sort_values(SZ_SCHEMA).drop_duplicates("new_ids")
+
+    #recreating index
+    new_df = new_df.drop(columns=["psd_segid"])
+    new_df = new_df.rename(columns={"new_ids":"psd_segid"})
+    new_df = new_df.set_index("psd_segid")
+
+    new_df.update(coms)
+    new_df.update(bbox1)
+    new_df.update(bbox2)
+    new_df.update(szs)
+
+    return new_df
+
+
+def compute_centroids(df, szs):
+
+    szs = szs.reset_index()
+    szs = szs.rename(columns={"size":"total_size"})
+
+    centroid_df = pd.merge(df[CENTROID_SCHEMA + SZ_SCHEMA + ["new_ids"]], szs,
+                           how="left", on="new_ids")
+
+    #This will create NANs, but those will disappear after grouping
+    centroid_df["size"] /= centroid_df["total_size"]
+
+    centroid_df["centroid_x"] *= centroid_df["size"]
+    centroid_df["centroid_y"] *= centroid_df["size"]
+    centroid_df["centroid_z"] *= centroid_df["size"]
+
+    return centroid_df.groupby("new_ids")[CENTROID_SCHEMA].sum()
+
+
 def merge_full_records(record1, record2):
 
     record_dict1 = unwrap_row(record1)

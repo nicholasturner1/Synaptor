@@ -180,11 +180,11 @@ def merge_edges_task(edges_arr, merged_cleft_info,
                     merged_cleft_info, merged_edge_df)
 
     dup_id_map = timed("Merging duplicate clefts",
-                       merge_edges.merge_duplicate_clefts,
+                       merge_edges.merge_duplicate_clefts2,
                        full_df, dist_thr, voxel_res)
 
     full_df = timed("Merging duplicates within full dataframe",
-                    merge_edges.merge_full_df,
+                    merge_edges.merge_full_df1,
                     full_df, dup_id_map)
 
     size_thr_map = timed("Enforcing size threshold over merged ccs",
