@@ -1,6 +1,6 @@
 numpy
 scipy
-igraph
+python-igraph
 pandas
 h5py
 cloud-volume
