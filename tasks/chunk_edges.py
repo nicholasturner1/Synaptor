@@ -31,6 +31,8 @@ parser.add_argument("--parallel", type=int, default=1)
 parser.add_argument("--img_mip", type=int, default=0)
 parser.add_argument("--seg_mip", type=int, default=0)
 parser.add_argument("--mip", type=int, default=0)
+parser.add_argument("--mip0_begin", nargs="+", type=int, default=None)
+parser.add_argument("--mip0_end", nargs="+", type=int, default=None)
 
 args = parser.parse_args()
 print(vars(args))

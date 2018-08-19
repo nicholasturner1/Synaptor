@@ -80,6 +80,7 @@ def chunk_edges_task(img_cvname, cleft_cvname, seg_cvname,
                      num_samples_per_cleft, dil_param,
                      proc_dir_path, wshed_cvname=None,
                      mip=0, img_mip=None, seg_mip=None,
+                     mip0_begin=None, mip0_end=None,
                      parallel=1):
     """
     Runs tasks.chunk_edges_task after reading the relevant
@@ -93,6 +94,9 @@ def chunk_edges_task(img_cvname, cleft_cvname, seg_cvname,
     seg_mip refers to the mip level which corresponds to the mip arg
     these can both be left as None, in which case they'll assume the
     mip arg value
+
+    mip0_{begin,end} specify a base level bbox in case upsampling the 
+    other chunk bounds doesn't translate to the same box (e.g. 3//2*2) 
     """
 
     chunk_bounds = types.BBox3d(chunk_begin, chunk_end)
@@ -100,7 +104,10 @@ def chunk_edges_task(img_cvname, cleft_cvname, seg_cvname,
     img_mip = mip if img_mip is None else img_mip
     seg_mip = mip if seg_mip is None else seg_mip
 
-    mip0_bounds = chunk_bounds.scale2d(2 ** mip)
+    if mip0_begin is None:
+        mip0_bounds = chunk_bounds.scale2d(2 ** mip)
+    else:
+        mip0_bounds = types.BBox3d(mip0_begin, mip0_end)
 
     img = timed("Reading img chunk at mip {}".format(img_mip),
                 io.read_cloud_volume_chunk,
