@@ -30,6 +30,10 @@ def merge_full_df(full_info_df, id_map):
 def merge_full_df1(full_info_df, id_map):
 
     new_ids = pd.DataFrame.from_dict(id_map, orient="index")
+
+    if len(new_ids) == 0:
+        return full_info_df
+
     full_info_df["new_ids"] = new_ids
     full_info_df = full_info_df.reset_index()
 
@@ -42,14 +46,14 @@ def merge_full_df1(full_info_df, id_map):
 
     #Setting index to the original if not remapped
     no_new_id = pd.isnull(full_info_df["new_ids"])
-    full_info_df["new_ids"][no_new_id] = full_info_df["psd_segid"][no_new_id]
+    full_info_df["new_ids"][no_new_id] = full_info_df["cleft_segid"][no_new_id]
     #taking all other fields from largest cleft
     new_df = full_info_df.sort_values(SZ_SCHEMA).drop_duplicates("new_ids")
 
     #recreating index
-    new_df = new_df.drop(columns=["psd_segid"])
-    new_df = new_df.rename(columns={"new_ids":"psd_segid"})
-    new_df = new_df.set_index("psd_segid")
+    new_df = new_df.drop(["cleft_segid"], axis=1)
+    new_df = new_df.rename(columns={"new_ids":"cleft_segid"})
+    new_df = new_df.set_index("cleft_segid")
 
     new_df.update(coms)
     new_df.update(bbox1)

@@ -66,7 +66,7 @@ def merge_to_cleft_df(edge_df, cleft_df):
                       right_index=True, copy=False)
 
     new_df["size"] = sizes
-    new_df.drop(columns=["size_x","size_y"], inplace=True)
+    new_df.drop(["size_x","size_y"], axis=1, inplace=True)
 
     return new_df
 
