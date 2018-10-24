@@ -18,8 +18,6 @@ def place_edge_points(edges, seg, clf, voxel_res=[40,4,4], box_shape=[5,100,100]
     cleft_bboxes = seg_utils.bounding_boxes(clf)
 
     for (cleft_i, presyn_j, postsyn_k) in edges:
-        print((cleft_i, presyn_j, postsyn_k))
-
         bb = cleft_bboxes[cleft_i].grow_by(box_shape)
         bb = bbox.shift_to_bounds(bb,seg.shape)
         seg_p = seg[bb.index()]

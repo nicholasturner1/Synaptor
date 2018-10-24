@@ -48,8 +48,9 @@ def full_eval(train_set, val_set, test_set=None,
     print("Scoring Training Set...")
     train_set.read()
     ((tr_prec, tr_rec, tr_precs, tr_recs), ccs
-    ) = score_w_params(train_set, asynet, patchsz,
-                       cc_thr, sz_thr, merge_ccs=merge_ccs)
+    ) = score_w_params(train_set, cc_thr, sz_thr,
+                       asynet=asynet, patchsz=patchsz,
+                       merge_ccs=merge_ccs)
     print("Training Set: {0:.3f}P/{1:.3f}R".format(tr_prec, tr_rec))
     print("Set-Wise:")
     print_setwise_scores(tr_precs, tr_recs)
@@ -66,8 +67,9 @@ def full_eval(train_set, val_set, test_set=None,
         print("Scoring Test Set...")
         test_set.read()
         ((te_prec, te_rec, te_precs, te_recs), ccs
-        ) = score_w_params(test_set, asynet, patchsz,
-                           cc_thr, sz_thr)
+        ) = score_w_params(test_set, cc_thr, sz_thr,
+                           asynet=asynet, patchsz=patchsz,
+                           merge_ccs=merge_ccs)
         print("Test Set: {0:.3f}P/{1:.3f}R".format(te_prec, te_rec))
         print("Set-Wise:")
         print_setwise_scores(te_precs, te_recs)
@@ -114,8 +116,9 @@ def tune_parameters_dset(dset, asynet, patchsz,
 
 
 
-def score_w_params(dset, asynet, patchsz, cc_thresh, sz_thresh,
-                   dist_thr=1000, voxel_res=[4,4,40], merge_ccs=True):
+def score_w_params(dset, cc_thresh, sz_thresh,
+                   asynet=None, patchsz=None, dist_thr=1000,
+                   voxel_res=[4,4,40], merge_ccs=True):
 
     dset = tb.read_dataset(dset)
 
@@ -282,4 +285,5 @@ def write_dset_ccs(ccs, output_prefix, tag):
         fname = "{pref}_{tag}{num}.h5".format(pref=output_prefix, tag=tag, num=i)
 
         print("Writing {}...".format(fname))
-        io.write_h5(cc, fname)
+        # EvalDataset convention is to transpose inputs
+        io.write_h5(cc.transpose((2,1,0)), fname)

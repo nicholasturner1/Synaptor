@@ -115,7 +115,11 @@ class EvalVol(object):
                 return None
 
             print("Reading {ftype}: {fname}".format(ftype=ftype, fname=fname))
-            return io.read_h5(fname).transpose((2,1,0))
+            data = io.read_h5(fname)
+            if len(data.shape) == 4:
+                assert data.shape[0] == 1, "need a single 3d vol"
+                data = data[0,...]
+            return data.transpose((2,1,0))
         else:
             return value
 
