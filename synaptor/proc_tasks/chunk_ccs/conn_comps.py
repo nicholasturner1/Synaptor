@@ -44,11 +44,8 @@ def connected_components3d(d, thresh=0):
     Performs basic connected components on network
     output given a threshold value
     """
-    if thresh != 0:
-        return ndimage.label(d > thresh)[0]
-    else:
-        return ndimage.label(d)[0]
-
+    return ndimage.label(d > thresh)[0]
+    
 
 def dilate_mask_by_k(d, k):
     """ Dilates a volume of data by k """
