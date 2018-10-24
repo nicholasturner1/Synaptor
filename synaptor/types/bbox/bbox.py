@@ -84,6 +84,10 @@ class BBox3d(object):
         """Return the maximum coordinate"""
         return Vec3d(self._max)
 
+    def shape(self):
+        """Return the box shape (max - min)"""
+        return self.max() - self.min()
+
     def transpose(self):
         """Return the same box with reversed coordinates"""
         return BBox3d(Vec3d(self._min.z, self._min.y, self._min.x),
@@ -106,6 +110,17 @@ class BBox3d(object):
         return BBox3d(minimum(self._min, other._min),
                       maximum(self._max, other._max))
 
+    def intersect(self, other):
+        """
+        Find the intersection between two bounding boxes
+
+        The boxes are assumed to overlap, and will produce
+        an invalid box if this is violated
+        """
+        return BBox3d(maximum(self._min, other._min),
+                      minimum(self._max, other._max))
+
+
     def scale(self, factor):
         """Scales the coordinates by a given factor, return a copy"""
         return BBox3d(self._min*factor, self._max*factor)
@@ -113,6 +128,13 @@ class BBox3d(object):
     def scale2d(self, factor):
         return BBox3d(self._min*[factor,factor,1],
                       self._max*[factor,factor,1])
+
+    def div(self, factor):
+        return BBox3d(self._min//factor, self._max//factor)
+
+    def div2d(self, factor):
+        return BBox3d(self._min//[factor,factor,1],
+                      self._max//[factor,factor,1])
 
     def __eq__(self, other):
         return self.min() == other.min() and self.max() == other.max()
@@ -177,6 +199,17 @@ def centered_box(loc, box_shape):
     end    = begin + box_shape
 
     return BBox3d(begin, end)
+
+
+def expand_box_within_bounds(box, box_shape, vol_shape):
+
+    if box.shape().all_ge(box_shape):
+        return shift_to_bounds(box, vol_shape)
+
+    over = box_shape - box.shape()
+    shape_incr = (over + abs(over)) // 4
+
+    return shift_to_bounds(box.grow_by(shape_incr), vol_shape)
 
 
 if __name__ == "__main__":
