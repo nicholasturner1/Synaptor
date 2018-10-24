@@ -49,7 +49,7 @@ def read_dframe(path):
 
 def write_dframe(dframe, path):
     """ Simple for now """
-    dframe.to_csv(path, index_label="psd_segid")
+    dframe.to_csv(path, index_label="cleft_segid")
 
 
 def read_network(net_fname, chkpt_fname):
@@ -91,7 +91,7 @@ def write_h5(data, fname, dset_name="/main", chunk_size=None):
             f.create_dataset(dset_name, data=data, chunks=chunk_size,
                              compression="gzip", compression_opts=4)
 
-def read_edge_csv(fname, delim=";"):
+def read_edge_csv(fname, delim=";", only_confident=False):
 
     edges = []
     with open(fname) as f:
@@ -107,6 +107,9 @@ def read_edge_csv(fname, delim=";"):
             if isinstance(field2,int):
                 field2 = [field2]
 
+            if only_confident and int(fields[3]) == 0:
+                continue 
+
             for (pre,post) in itertools.product(field1,field2):
                 edges.append((edgeid,pre,post))
 
@@ -116,10 +119,8 @@ def write_edge_csv(edges, fname, delim=";"):
 
     with open(fname, "w+") as f:
         for (cleft_id, presyn_id, postsyn_id) in edges:
-            f.write("{cid};{preid};{postid}\n".format(cid=cleft_id,
-                                                      preid=presyn_id,
-                                                      postid=postsyn_id))
-
+            content = delim.join(map(str, (cleft_id, presyn_id, postsyn_id)))
+            f.write(f"{content}\n")
 
 def load_source(fname, module_name="something"):
     """ Imports a module from source """

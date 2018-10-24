@@ -126,6 +126,49 @@ def write_dframe(dframe, path_or_head, basename=None):
     if is_remote_path(path):
         send_file(local_fname, path)
 
+def read_edge_csv(path_or_head, basename=None, delim=";", only_confident=False):
+    """
+    Reads a csv of edges of the form
+    "id;presyn;postsyn"
+    path can specify remote storage in Google Cloud or AWS S3, and
+    delimiter can be customized
+    """
+    if basename is not None:
+        path = os.path.join(path_or_head, basename)
+    else:
+        path = path_or_head
+
+    if is_remote_path(path):
+        local_fname = pull_file(path)
+    else:
+        local_fname = path
+
+    return bck.local.read_edge_csv(local_fname, delim=delim, 
+                                   only_confident=only_confident)
+
+
+def write_edge_csv(edges, path_or_head, basename=None, delim=";"):
+    """
+    Writes a csv of edges of the form
+    "id;presyn;postsyn"
+    path can specify remote storage in Google Cloud or AWS S3, and
+    delimiter can be customized
+    """
+    if basename is not None:
+        path = os.path.join(path_or_head, basename)
+    else:
+        path = path_or_head
+
+    if is_remote_path(path):
+        local_fname = utils.temp_path(path)
+    else:
+        local_fname = path
+
+    bck.local.write_edge_csv(edges, local_fname, delim=delim)
+
+    if is_remote_path(path):
+        send_file(local_fname, path)
+
 
 def read_network(net_fname, chkpt_fname):
     """
