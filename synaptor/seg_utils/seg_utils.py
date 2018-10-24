@@ -12,26 +12,33 @@ from builtins import filter
 from future import standard_library
 standard_library.install_aliases()
 
+from collections import Counter
 
 import numpy as np
 from scipy import ndimage
+from scipy import sparse
 
 from . import _seg_utils
 from .. import bbox
 import time
 
 
-def relabel_data(d,mapping, copy=True):
+def relabel_data(d, mapping, copy=True):
     """
     Remapping data according to an id mapping using cython loops
     """
-
     if copy:
         d = np.copy(d)
-    return _seg_utils.relabel_data(d,mapping)
+    return _seg_utils.relabel_data(d, mapping)
 
 
-def relabel_data_iterative(d,mapping):
+def relabel_data_1N(d, copy=True):
+    """ Condenses data values to 1:N """
+    mapping = {v: i+1 for (i,v) in enumerate(nonzero_unique_ids(d))}
+    return relabel_data(d, mapping, copy=copy)
+
+
+def relabel_data_iterative(d, mapping):
     """
     Remapping data according to an id mapping using an iterative strategy.
     Best when only modifying a few ids
@@ -46,7 +53,7 @@ def relabel_data_iterative(d,mapping):
     return r
 
 
-def relabel_data_lookup_arr(d,mapping):
+def relabel_data_lookup_arr(d, mapping):
     """
     Remapping data according to an id mapping using a lookup np array.
     Best when modifying several ids at once and ids are approximately dense
@@ -75,25 +82,25 @@ def centers_of_mass(ccs, offset=(0,0,0)):
     coords = _seg_utils.centers_of_mass(ccs, offset)
 
     #keeping the datatype consistent until we can test it
-    coords_dict = { i : tuple(map(int,coord))
-                    for (i,coord) in coords.items() }
+    coords_dict = {i : tuple(map(int,coord))
+                   for (i,coord) in coords.items()}
 
     return coords_dict
 
 
 def bounding_boxes(ccs, offset=(0,0,0)):
 
-    ids = nonzero_unique_ids(ccs)
+    ids = list(map(int,nonzero_unique_ids(ccs)))
 
     bbox_slices = ndimage.find_objects(ccs)
 
-    bboxes = { i : bbox.BBox3d(bbox_slices[i-1]) for i in ids }
+    bboxes = {i : bbox.BBox3d(bbox_slices[i-1]) for i in ids}
 
     if offset == (0,0,0):
         return bboxes
 
-    shifted = { segid : bbox.translate(offset)
-                for (segid,bbox) in bboxes.items() }
+    shifted = {segid : bbox.translate(offset)
+               for (segid,bbox) in bboxes.items()}
 
     return shifted
 
@@ -288,3 +295,36 @@ def label_surfaces2d(seg):
     surface_voxels[surface_mask] = seg[surface_mask]
 
     return surface_voxels
+
+
+def count_overlaps(seg1, seg2):
+    """
+    Count the overlapping voxels under each pair of overlapping
+    objects. Returns a scipy.sparse matrix
+    """
+
+    seg1_ids = nonzero_unique_ids(seg1)
+    seg2_ids = nonzero_unique_ids(seg2)
+
+    seg1_index = {v:i for (i,v) in enumerate(seg1_ids)}
+    seg2_index = {v:i for (i,v) in enumerate(seg2_ids)}
+
+    overlap_mask = np.logical_and(seg1 != 0, seg2 != 0)
+
+    n_rows = seg1_ids.size
+    n_cols = seg2_ids.size
+
+    seg1_vals = seg1[overlap_mask]
+    seg2_vals = seg2[overlap_mask]
+
+    counts = Counter(zip(seg1_vals, seg2_vals))
+
+    rs, cs, vs = [],[],[]
+    for ((r,c),v) in counts.items():
+        # subtracting one from indices so val 1 -> index 0
+        rs.append(seg1_index[r])
+        cs.append(seg2_index[c])
+        vs.append(v)
+
+    overlap_mat = sparse.coo_matrix((vs,(rs,cs)), shape=(n_rows, n_cols))
+    return overlap_mat, seg1_ids, seg2_ids

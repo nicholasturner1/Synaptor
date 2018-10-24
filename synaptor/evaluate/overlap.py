@@ -1,18 +1,16 @@
 #!/usr/bin/env python3
 
 
-from collections import Counter
-
 import numpy as np
 import scipy.sparse as sp
 
 from .. import seg_utils
 
 
-def score_overlaps(pred_clefts, gt_clefts, mode="liberal", to_ignore=[]):
+def score_overlaps(pred_clf, gt_clf, mode="liberal", to_ignore=[]):
     """ Compute object-wise precision and recall scores """
 
-    overlaps, pred_ids, gt_ids = count_overlaps(pred_clefts, gt_clefts)
+    overlaps, pred_ids, gt_ids = seg_utils.count_overlaps(pred_clf, gt_clf)
 
     assert mode in ["bare","liberal","conservative"], "invalid mode"
 
@@ -33,38 +31,6 @@ def score_overlaps(pred_clefts, gt_clefts, mode="liberal", to_ignore=[]):
     n_gt = len(gt_ids)
 
     return precision(overlaps, pred_ids), recall(overlaps, gt_ids), n_pred, n_gt
-
-
-def count_overlaps(clefts, gt_clefts):
-    """
-    Count the overlapping voxels under each pair of overlapping
-    objects. Returns a scipy.sparse matrix
-    """
-
-    pred_ids = seg_utils.nonzero_unique_ids(clefts)
-    gt_ids = seg_utils.nonzero_unique_ids(gt_clefts)
-
-    pred_index = {v:i for (i,v) in enumerate(pred_ids)}
-    gt_index = {v:i for (i,v) in enumerate(gt_ids)}
-
-    overlap_mask = np.logical_and(clefts != 0, gt_clefts != 0)
-
-    n_rows = pred_ids.size
-    n_cols = gt_ids.size
-
-    pred_vals = clefts[overlap_mask]
-    gt_vals = gt_clefts[overlap_mask]
-
-    counts = Counter(zip(pred_vals, gt_vals))
-
-    rs, cs, vs = [],[],[]
-    for ((r,c),v) in counts.items():
-        # subtracting one from indices so val 1 -> index 0
-        rs.append(pred_index[r])
-        cs.append(gt_index[c])
-        vs.append(v)
-
-    return sp.coo_matrix((vs,(rs,cs)), shape=(n_rows, n_cols)), pred_ids, gt_ids
 
 
 def ignore_segments(overlaps, to_ignore, pred_ids, gt_ids):
