@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-
+import operator
 from collections import Counter
 
 import numpy as np
@@ -129,3 +129,89 @@ def false_negatives(preds, labels):
     Identifies the false negatives between two lists of iterables
     """
     return false_positives(labels, preds)
+
+
+def prec_rec_curve2d_inclusive(points, labels, beta=1.):
+
+    assert len(points) == len(labels), "mismatched inputs"
+
+    first_axis, first_inds = np.unique(list(map(operator.itemgetter(0), points)),
+                                       return_inverse=True)
+    second_axis, second_inds = np.unique(list(map(operator.itemgetter(1), points)),
+                                         return_inverse=True)
+
+    pos_grid = np.zeros((first_axis.size,second_axis.size), dtype=np.uint32)
+    neg_grid = np.zeros((first_axis.size,second_axis.size), dtype=np.uint32)
+
+    for (i,j,lbl) in zip(first_inds, second_inds, labels):
+        if lbl:
+            pos_grid[i,j] += 1
+        else:
+            neg_grid[i,j] += 1
+
+    fn = false_negative_grid_incl(pos_grid)
+    tp = np.sum(pos_grid) - fn
+    fp = np.sum(neg_grid) - false_negative_grid_incl(neg_grid)
+
+    prec = tp / (tp + fp)
+    rec = tp / (tp + fn)
+    fscore = all_fscores_PR(prec, rec, beta)
+
+    return prec, rec, fscore, first_axis, second_axis
+
+
+def prec_rec_curve2d(points, labels, beta=1.):
+
+    assert len(points) == len(labels), "mismatched inputs"
+
+    first_axis, first_inds = np.unique(list(map(operator.itemgetter(0), points)),
+                                       return_inverse=True)
+    second_axis, second_inds = np.unique(list(map(operator.itemgetter(1), points)),
+                                         return_inverse=True)
+
+    pos_grid = np.zeros((first_axis.size,second_axis.size), dtype=np.uint32)
+    neg_grid = np.zeros((first_axis.size,second_axis.size), dtype=np.uint32)
+
+    for (i,j,lbl) in zip(first_inds, second_inds, labels):
+        if lbl:
+            pos_grid[i,j] += 1
+        else:
+            neg_grid[i,j] += 1
+
+    tp = np.cumsum(np.cumsum(pos_grid[::-1,::-1],axis=0),axis=1)[::-1,::-1]
+
+    fp = np.cumsum(np.cumsum(neg_grid[::-1,::-1],axis=0),axis=1)[::-1,::-1]
+
+    #something ugly for now - need to move on
+    #fn = false_negative_grid(pos_grid)
+    fn = np.sum(pos_grid) - tp#false_negative_grid(pos_grid)
+
+    prec = tp / (tp + fp)
+    rec = tp / (tp + fn)
+    fscore = all_fscores_PR(prec, rec, beta)
+
+    return prec, rec, fscore, first_axis, second_axis
+    # return tp, fp, fn
+
+
+def false_negative_grid_excl(pos_grid):
+
+    fn = np.zeros(pos_grid.shape, dtype=np.uint32)
+    temp = np.zeros(pos_grid.shape, dtype=np.uint32)
+    for (i,j) in zip(*np.nonzero(pos_grid)):
+
+        temp[i+1:,:] = 1
+        temp[:,j+1:] = 1
+        fn += temp * pos_grid[i,j]
+        temp[:] = 0
+
+    return fn
+
+
+def false_negative_grid_incl(pos_grid):
+
+    fn = np.zeros(pos_grid.shape, dtype=np.uint32)
+    for (i,j) in np.ndindex(fn.shape):
+        fn[i,j] = np.sum(pos_grid[:i,:j])
+
+    return fn
