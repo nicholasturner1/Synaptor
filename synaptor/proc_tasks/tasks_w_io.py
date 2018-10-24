@@ -95,8 +95,8 @@ def chunk_edges_task(img_cvname, cleft_cvname, seg_cvname,
     these can both be left as None, in which case they'll assume the
     mip arg value
 
-    mip0_{begin,end} specify a base level bbox in case upsampling the 
-    other chunk bounds doesn't translate to the same box (e.g. 3//2*2) 
+    mip0_{begin,end} specify a base level bbox in case upsampling the
+    other chunk bounds doesn't translate to the same box (e.g. 3//2*2)
     """
 
     chunk_bounds = types.BBox3d(chunk_begin, chunk_end)
@@ -190,8 +190,10 @@ def merge_edges_task(voxel_res, dist_thr, size_thr, proc_dir_path):
 
 def chunk_overlaps_task(seg_cvname, base_seg_cvname,
                         chunk_begin, chunk_end,
-                        proc_dir_path, mip=0,
+                        proc_dir_path, mip=0, seg_mip=None,
                         parallel=1):
+
+    seg_mip = mip if seg_mip is None else seg_mip
 
     chunk_bounds = types.BBox3d(chunk_begin, chunk_end)
 
@@ -203,7 +205,7 @@ def chunk_overlaps_task(seg_cvname, base_seg_cvname,
     base_seg_chunk = timed("Reading base seg chunk",
                            io.read_cloud_volume_chunk,
                            base_seg_cvname, chunk_bounds,
-                           mip=mip, parallel=parallel)
+                           mip=seg_mip, parallel=parallel)
 
     overlap_matrix = tasks.chunk_overlaps_task(seg_chunk, base_seg_chunk)
 

@@ -23,6 +23,7 @@ parser.add_argument("--chunk_begin", nargs="+", type=int, required=True)
 parser.add_argument("--chunk_end", nargs="+", type=int, required=True)
 parser.add_argument("--parallel", type=int, default=1)
 parser.add_argument("--mip", type=int, default=0)
+parser.add_argument("--seg_mip", type=int, default=None)
 
 args = parser.parse_args()
 print(vars(args))
