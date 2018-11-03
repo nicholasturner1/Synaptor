@@ -16,6 +16,7 @@ from .edge_info import read_all_edge_infos
 from .edge_info import read_merged_edge_info, write_merged_edge_info
 from .edge_info import write_final_edge_info
 from .edge_info import read_full_info, write_full_info
+from .edge_info import write_chunk_anchor
 
 from . import id_map
 from .id_map import read_chunk_id_map, write_chunk_id_map

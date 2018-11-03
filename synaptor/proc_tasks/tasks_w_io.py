@@ -254,3 +254,44 @@ def remap_ids_task(cleft_in_cvname, cleft_out_cvname,
           io.write_cloud_volume_chunk,
           cleft_chunk, cleft_out_cvname, chunk_bounds,
           mip=mip, parallel=parallel)
+
+
+def anchor_task(cleft_cvname, seg_cvname, proc_dir_path,
+                chunk_begin, chunk_end, wshed_cvname=None,
+                voxel_res=[4, 4, 40], min_box_width=[100, 100, 5],
+                mip=0, seg_mip=None, parallel=1):
+
+    seg_mip = mip if seg_mip is None else seg_mip
+
+    chunk_bounds = types.BBox3d(chunk_begin, chunk_end)
+
+    seg_chunk = timed("Reading seg chunk",
+                      io.read_cloud_volume_chunk,
+                      seg_cvname, chunk_bounds,
+                      mip=seg_mip, parallel=parallel)
+
+    clf_chunk = timed("Reading cleft chunk",
+                      io.read_cloud_volume_chunk,
+                      cleft_cvname, chunk_bounds,
+                      mip=mip, parallel=parallel)
+
+    if wshed_cvname is not None:
+        wshed = timed("Reading watershed chunk at mip {}".format(seg_mip),
+                      io.read_cloud_volume_chunk,
+                      wshed_cvname, chunk_bounds,
+                      mip=seg_mip, parallel=parallel)
+        assert wshed.shape == seg_chunk.shape, "mismatched wshed basins"
+    else:
+        wshed = None
+
+    edge_df = timed("Reading full edge info",
+                    taskio.read_full_info,
+                    proc_dir_path)
+
+    anchor_df = tasks.anchor_task(edge_df, seg_chunk, clf_chunk, chunk_begin,
+                                  voxel_res=voxel_res, wshed=wshed,
+                                  min_box_width=min_box_width)
+
+    timed("Writing chunk anchor info",
+          taskio.write_chunk_anchor,
+          anchor_df, chunk_bounds, proc_dir_path)

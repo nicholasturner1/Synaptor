@@ -4,6 +4,8 @@ from . import chunk_edges
 from . import merge_edges
 from . import chunk_overlaps
 from . import merge_overlaps
+#from . import candidates
+from . import anchor
 
 from . import tasks
 from .tasks import chunk_ccs_task

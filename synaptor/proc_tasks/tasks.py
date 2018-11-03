@@ -15,6 +15,7 @@ from . import chunk_edges
 from . import merge_edges
 from . import chunk_overlaps
 from . import merge_overlaps
+from . import anchor
 
 
 def timed(fn_desc, fn, *args, **kwargs):
@@ -220,7 +221,7 @@ def merge_overlaps_task(overlaps_arr):
     return timed("Finding segments with maximal overlap",
                  merge_overlaps.find_max_overlaps,
                  full_overlap)
-
+                
 
 def remap_ids_task(clefts, *id_maps, copy=False):
     """
@@ -242,3 +243,18 @@ def remap_ids_task(clefts, *id_maps, copy=False):
                    clefts, id_map, copy=copy)
 
     return clefts
+
+
+def anchor_task(edge_df, seg, clf, chunk_begin,
+                voxel_res=[4, 4, 40], min_box_width=[100, 100, 5],
+                wshed=None):
+    """
+    -Places centralized anchor points for presynaptic and postsynaptic
+    terminals
+    """
+
+    return timed("Placing anchor points",
+                 anchor.place_anchor_pts,
+                 edge_df, seg, clf, 
+                 voxel_res=voxel_res, offset=chunk_begin,
+                 min_box_width=min_box_width, wshed=wshed)

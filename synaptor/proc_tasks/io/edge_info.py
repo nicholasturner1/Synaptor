@@ -13,6 +13,8 @@ EDGES_FMTSTR = "chunk_edges_{tag}.df"
 MERGED_EDGES_FNAME = "cons_edges.df"
 FINAL_EDGES_FNAME = "final_edges.df"
 FINAL_FULL_DF_FNAME = "final.df"
+ANCHOR_DIRNAME = "anchors"
+ANCHOR_FMTSTR = "anchors_{tag}.df"
 
 
 def read_chunk_edge_info(fname):
@@ -80,3 +82,12 @@ def write_full_info(df, proc_dir_path):
     to a processing directory
     """
     io.write_dframe(df, proc_dir_path, FINAL_FULL_DF_FNAME)
+
+
+def write_chunk_anchor(anchor_dframe, chunk_bounds, proc_dir_path):
+    """Writes a dataframe of anchor points to the processing directory"""
+    chunk_tag = io.fname_chunk_tag(chunk_bounds)
+    anchor_df_fname = os.path.join(proc_dir_path, ANCHOR_DIRNAME,
+                                 ANCHOR_FMTSTR.format(tag=chunk_tag))
+
+    io.write_dframe(anchor_dframe, anchor_df_fname)
