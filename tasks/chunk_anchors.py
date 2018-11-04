@@ -1,11 +1,6 @@
 #!/usr/bin/env python3
 __doc__ = """
-Chunk Overlaps Wrapper Script
-
-Determines which segments of interest overlap with
-base segs
-
-Returns the overlap matrix
+Chunk Anchors Wrapper Script
 """
 import synaptor as s
 

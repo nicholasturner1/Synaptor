@@ -16,7 +16,6 @@ def place_anchor_pts(edge_df, seg, clf, voxel_res=[4, 4, 40],
     if len(cleft_ids) == 0:
         return pd.DataFrame()
 
-    surfaces = seg_utils.label_surfaces3d(seg)
     cleft_bboxes = seg_utils.bounding_boxes(clf)
     edge_df = edge_df.loc[cleft_ids]
     edges = dict(zip(edge_df.index,
@@ -31,10 +30,10 @@ def place_anchor_pts(edge_df, seg, clf, voxel_res=[4, 4, 40],
         bbox = cleft_bboxes[cleft_id]
 
         presyn_pt = place_anchor_pt(cleft_id, presyn, clf, seg, bb=bbox,
-                                    surfaces=surfaces, voxel_res=voxel_res,
+                                    voxel_res=voxel_res,
                                     min_box_width=min_box_width)
         postsyn_pt = place_anchor_pt(cleft_id, postsyn, clf, seg, bb=bbox,
-                                     surfaces=surfaces, voxel_res=voxel_res,
+                                     voxel_res=voxel_res,
                                      min_box_width=min_box_width)
 
         if wshed is not None:
@@ -55,8 +54,6 @@ def place_anchor_pt(cleft_id, seg_id, clf, seg,
 
     if np.isnan(seg_id):
         return (-1,-1,-1)
-    if surfaces is None:
-        surfaces = seg_utils.label_surfaces3d(seg)
     if bb is None:
         bb = seg_utils.bounding_boxes(clf)[cleft_id]
     clf_b = clf[bb.index()]
@@ -67,12 +64,11 @@ def place_anchor_pt(cleft_id, seg_id, clf, seg,
     # v = "view"
     seg_v = seg[bb.index()]
     clf_v = clf[bb.index()]
-    surf_v = surfaces[bb.index()]
 
     if seg_id not in seg_v:
         return (-2,-2,-2)
 
-    base_pt = closest_pt_to_seg(cleft_id, seg_id, clf_v, surf_v, voxel_res)
+    base_pt = closest_pt_to_seg(cleft_id, seg_id, clf_v, seg_v, voxel_res)
     shifted = shift_pt(base_pt, seg_id, seg_v, min_box_width, voxel_res)
     anchor_pt = tuple(shifted + bb.min())
 
