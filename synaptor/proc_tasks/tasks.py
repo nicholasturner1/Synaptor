@@ -221,7 +221,7 @@ def merge_overlaps_task(overlaps_arr):
     return timed("Finding segments with maximal overlap",
                  merge_overlaps.find_max_overlaps,
                  full_overlap)
-                
+
 
 def remap_ids_task(clefts, *id_maps, copy=False):
     """
@@ -255,6 +255,6 @@ def anchor_task(edge_df, seg, clf, chunk_begin,
 
     return timed("Placing anchor points",
                  anchor.place_anchor_pts,
-                 edge_df, seg, clf, 
+                 edge_df, seg, clf, verbose=True,
                  voxel_res=voxel_res, offset=chunk_begin,
                  min_box_width=min_box_width, wshed=wshed)

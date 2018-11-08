@@ -9,7 +9,7 @@ from ...types import bbox
 
 def place_anchor_pts(edge_df, seg, clf, voxel_res=[4, 4, 40],
                      offset=(0, 0, 0), min_box_width=[100, 100, 5],
-                     wshed=None, cleft_ids=None):
+                     wshed=None, cleft_ids=None, verbose=False):
 
     if cleft_ids is None:
         cleft_ids = seg_utils.nonzero_unique_ids(clf)
@@ -30,10 +30,10 @@ def place_anchor_pts(edge_df, seg, clf, voxel_res=[4, 4, 40],
         bbox = cleft_bboxes[cleft_id]
 
         presyn_pt = place_anchor_pt(cleft_id, presyn, clf, seg, bb=bbox,
-                                    voxel_res=voxel_res,
+                                    voxel_res=voxel_res, verbose=verbose,
                                     min_box_width=min_box_width)
         postsyn_pt = place_anchor_pt(cleft_id, postsyn, clf, seg, bb=bbox,
-                                     voxel_res=voxel_res,
+                                     voxel_res=voxel_res, verbose=verbose,
                                      min_box_width=min_box_width)
 
         if wshed is not None:
@@ -49,8 +49,11 @@ def place_anchor_pts(edge_df, seg, clf, voxel_res=[4, 4, 40],
 
 
 def place_anchor_pt(cleft_id, seg_id, clf, seg,
-                    bb=None, surfaces=None,
+                    bb=None, surfaces=None, verbose=False,
                     voxel_res=[4, 4, 40], min_box_width=[100, 100, 5]):
+
+    if verbose:
+        print(f"Placing anchor for cleft {cleft_id} on segment {seg_id}")
 
     if np.isnan(seg_id):
         return (-1,-1,-1)
@@ -60,6 +63,9 @@ def place_anchor_pt(cleft_id, seg_id, clf, seg,
 
     bb = bb.grow_by(min_box_width)
     bb = bbox.shift_to_bounds(bb, seg.shape)
+
+    if verbose:
+        print(f"local bbox: {bb}")
 
     # v = "view"
     seg_v = seg[bb.index()]
@@ -119,7 +125,7 @@ def shift_pt(base_pt, seg_id, seg_v, box_width, voxel_res):
     return tuple(local_centroid_coord + bb.min())
 
 
-def make_record(cleft_segid, presyn_pt, postsyn_pt, 
+def make_record(cleft_segid, presyn_pt, postsyn_pt,
                 presyn_wshed_id, postsyn_wshed_id,
                 offset=(0, 0, 0)):
     record = {
