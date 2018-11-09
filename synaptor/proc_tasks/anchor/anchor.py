@@ -64,6 +64,10 @@ def place_anchor_pt(cleft_id, seg_id, clf, seg,
     bb = bb.grow_by(min_box_width)
     bb = bbox.shift_to_bounds(bb, seg.shape)
 
+    # Extra checking that the bbox coordinates are valid
+    bounds = bbox.BBox3d((0, 0, 0), seg.shape)
+    bb = bb.intersect(bounds)
+
     if verbose:
         print(f"local bbox: {bb}")
 
