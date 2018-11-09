@@ -82,6 +82,7 @@ def place_anchor_pt(cleft_id, seg_id, clf, seg,
 
 
 def closest_pt_to_seg(seg1_id, seg2_id, seg1, seg2, voxel_res):
+    """Greedily estimates the closest point in seg2 to seg1"""
 
     # Takes a greedy strategy
     seg1_coords = find_coords(seg1, seg1_id)
@@ -91,8 +92,8 @@ def closest_pt_to_seg(seg1_id, seg2_id, seg1, seg2, voxel_res):
     closest_seg2pt = tuple(seg2_coords[0])
 
     while True:
-        new_pt1 = closest_coord_to_pt(closest_seg2pt, seg1_coords, voxel_res)
-        new_pt2 = closest_coord_to_pt(new_pt1, seg2_coords, voxel_res)
+        new_pt2 = closest_coord_to_pt(closest_seg1pt, seg2_coords, voxel_res)
+        new_pt1 = closest_coord_to_pt(new_pt2, seg1_coords, voxel_res)
 
         if new_pt1 == closest_seg1pt and new_pt2 == closest_seg2pt:
             break
@@ -100,7 +101,7 @@ def closest_pt_to_seg(seg1_id, seg2_id, seg1, seg2, voxel_res):
         closest_seg1pt = new_pt1
         closest_seg2pt = new_pt2
 
-    return closest_seg1pt
+    return closest_seg2pt
 
 
 def find_coords(seg, segid):
