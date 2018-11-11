@@ -133,14 +133,18 @@ def shift_pt(base_pt, seg_id, seg_v, box_width, voxel_res):
 def make_record(cleft_segid, presyn_pt, postsyn_pt,
                 presyn_wshed_id, postsyn_wshed_id,
                 offset=(0, 0, 0)):
+
+    # valid coordinates are > 0, others are error codes
+    add_if_valid = lambda x, y: x + y if x >= 0 else x
+
     record = {
         "cleft_segid": cleft_segid,
-        "presyn_x": presyn_pt[0] + offset[0],
-        "presyn_y": presyn_pt[1] + offset[1],
-        "presyn_z": presyn_pt[2] + offset[2],
-        "postsyn_x": postsyn_pt[0] + offset[0],
-        "postsyn_y": postsyn_pt[1] + offset[1],
-        "postsyn_z": postsyn_pt[2] + offset[2],
+        "presyn_x": add_if_valid(presyn_pt[0], offset[0]),
+        "presyn_y": add_if_valid(presyn_pt[1], offset[1]),
+        "presyn_z": add_if_valid(presyn_pt[2], offset[2]),
+        "postsyn_x": add_if_valid(postsyn_pt[0], offset[0]),
+        "postsyn_y": add_if_valid(postsyn_pt[1], offset[1]),
+        "postsyn_z": add_if_valid(postsyn_pt[2], offset[2]),
         "presyn_basin": presyn_wshed_id,
         "postsyn_basin": postsyn_wshed_id
     }
