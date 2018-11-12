@@ -14,7 +14,7 @@ parser = argparse.ArgumentParser()
 # Inputs & Outputs
 parser.add_argument("proc_dir_path")
 
-# Processing Parameters
+
 args = parser.parse_args()
 print(vars(args))
 

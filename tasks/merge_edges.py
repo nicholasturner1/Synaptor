@@ -19,7 +19,8 @@ parser.add_argument("proc_dir_path")
 # Processing Parameters
 parser.add_argument("dist_thr", type=int)
 parser.add_argument("size_thr", type=int)
-parser.add_argument("--voxel_res",nargs="+", type=int)
+parser.add_argument("--voxel_res", nargs="+", type=int)
+
 
 args = parser.parse_args()
 print(vars(args))

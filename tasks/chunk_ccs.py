@@ -25,9 +25,15 @@ parser.add_argument("sz_thresh", type=int)
 parser.add_argument("--chunk_begin", nargs="+", type=int, required=True)
 parser.add_argument("--chunk_end", nargs="+", type=int, required=True)
 parser.add_argument("--parallel", type=int, default=1)
-parser.add_argument("--mip", type=int, default=0)
+parser.add_argument("--mip", nargs="+", type=int, default=(0,))
+
+
+# MIP arguments can specify voxel resolutions or mip index
+def mip_or_res(x): return x[0] if (x is not None and len(x) == 1) else x
+
 
 args = parser.parse_args()
+args.mip = mip_or_res(args.mip)
 print(vars(args))
 
 
