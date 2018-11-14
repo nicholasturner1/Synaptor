@@ -79,8 +79,8 @@ def chunk_edges_task(img_cvname, cleft_cvname, seg_cvname,
                      chunk_begin, chunk_end, patchsz,
                      num_samples_per_cleft, dil_param,
                      proc_dir_path, wshed_cvname=None,
-                     mip=0, img_mip=None, seg_mip=None,
-                     mip0_begin=None, mip0_end=None,
+                     resolution=(4, 4, 40), num_downsamples=0,
+                     base_res_begin=None, base_res_end=None,
                      parallel=1):
     """
     Runs tasks.chunk_edges_task after reading the relevant
@@ -95,41 +95,31 @@ def chunk_edges_task(img_cvname, cleft_cvname, seg_cvname,
     these can both be left as None, in which case they'll assume the
     mip arg value
 
-    mip0_{begin,end} specify a base level bbox in case upsampling the
+    base_res_{begin,end} specify a base level bbox in case upsampling the
     other chunk bounds doesn't translate to the same box (e.g. 3//2*2)
     """
 
     chunk_bounds = types.BBox3d(chunk_begin, chunk_end)
 
-    img_mip = mip if img_mip is None else img_mip
-    seg_mip = mip if seg_mip is None else seg_mip
-
-    if mip0_begin is None:
-        mip0_bounds = chunk_bounds.scale2d(2 ** mip)
+    if base_res_begin is None:
+        print("Upsampling chunk bounds naively")
+        base_bounds = chunk_bounds.scale2d(2 ** num_downsamples)
     else:
-        mip0_bounds = types.BBox3d(mip0_begin, mip0_end)
+        base_bounds = types.BBox3d(base_res_begin, base_res_end)
 
-    img = timed("Reading img chunk at mip {}".format(img_mip),
+    img = timed("Reading img chunk at {}".format(resolution),
                 io.read_cloud_volume_chunk,
                 img_cvname, chunk_bounds,
-                mip=img_mip, parallel=parallel)
+                mip=resolution, parallel=parallel)
     # clefts won't be downsampled - will do that myself later
     clefts = timed("Reading cleft chunk at mip 0",
                    io.read_cloud_volume_chunk,
-                   cleft_cvname, mip0_bounds,
+                   cleft_cvname, base_bounds,
                    mip=0, parallel=parallel)
-    seg = timed("Reading segmentation chunk at mip {}".format(seg_mip),
+    seg = timed("Reading segmentation chunk at {}".format(resolution),
                 io.read_cloud_volume_chunk,
-                seg_cvname, chunk_bounds, mip=seg_mip,
+                seg_cvname, chunk_bounds, mip=seg_res,
                 parallel=parallel)
-    if wshed_cvname is not None:
-        wshed = timed("Reading watershed chunk at mip {}".format(seg_mip),
-                      io.read_cloud_volume_chunk,
-                      wshed_cvname, chunk_bounds,
-                      mip=seg_mip, parallel=parallel)
-        assert wshed.shape == seg.shape, "mismatched wshed basins"
-    else:
-        wshed = None
 
     asynet = timed("Reading asynet",
                    taskio.read_network_from_proc,
@@ -137,13 +127,13 @@ def chunk_edges_task(img_cvname, cleft_cvname, seg_cvname,
 
     chunk_id_map = timed("Reading chunk id map",
                          taskio.read_chunk_id_map,
-                         proc_dir_path, mip0_bounds)
+                         proc_dir_path, base_bounds)
 
     #Downsampling clefts to match other volumes
-    if mip > 0:
-        clefts = timed("Downsampling seg to mip {}".format(mip),
+    if num_downsamples > 0:
+        clefts = timed("Downsampling clefts to mip {}".format(num_downsamples),
                        seg_utils.downsample_seg_to_mip,
-                       clefts, 0, mip)
+                       clefts, 0, num_downsamples)
 
     assert img.shape == clefts.shape == seg.shape, "mismatched volumes"
 
@@ -153,14 +143,14 @@ def chunk_edges_task(img_cvname, cleft_cvname, seg_cvname,
                                    num_samples_per_cleft=num_samples_per_cleft,
                                    dil_param=dil_param)
 
-    if mip > 0:
+    if num_downsamples > 0:
         edges = timed("Up-sampling edge information",
                       chunk_edges.upsample_edge_info,
-                      edges, mip, chunk_begin)
+                      edges, num_downsamples, chunk_begin)
 
     timed("Writing chunk edges",
           taskio.write_chunk_edge_info,
-          edges, mip0_bounds, proc_dir_path)
+          edges, base_bounds, proc_dir_path)
 
 
 def merge_edges_task(voxel_res, dist_thr, size_thr, proc_dir_path):
