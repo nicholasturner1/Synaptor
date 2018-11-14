@@ -29,10 +29,10 @@ def consolidate_edges1(edge_dframe_arr):
 
     df = pd.concat(map(lambda x: x.reset_index(), edge_dframe_arr.flat),
                    copy=False)
-    df = df[df["size"] == df.groupby(["psd_segid"])["size"].transform(max)]
+    df = df[df["size"] == df.groupby(["cleft_segid"])["size"].transform(max)]
     #keep the first row in the case of a tie (effectively random)
-    df = df.drop_duplicates("psd_segid")
-    return df.set_index("psd_segid")
+    df = df.drop_duplicates("cleft_segid")
+    return df.set_index("cleft_segid")
 
 
 def consolidate_edges2(edge_dframe_arr):
@@ -40,14 +40,14 @@ def consolidate_edges2(edge_dframe_arr):
 
     full_dframe = pd.concat(edge_dframe_arr.flat, copy=False)
 
-    df_grouped = full_dframe.groupby("psd_segid").agg({"size":"max"})
+    df_grouped = full_dframe.groupby("cleft_segid").agg({"size":"max"})
     df_grouped = df_grouped.reset_index()
     df_grouped = df_grouped.rename(columns={"size":"size_max"})
 
-    full_dframe = pd.merge(full_dframe, df_grouped, how="left", on="psd_segid")
+    full_dframe = pd.merge(full_dframe, df_grouped, how="left", on="cleft_segid")
     full_dframe = full_dframe[full_dframe["size"] == full_dframe["size_max"]]
     #keep the first row in the case of a tie (random)
-    return full_dframe.drop_duplicates("psd_segid")
+    return full_dframe.drop_duplicates("cleft_segid")
 
 
 def consolidate_edges3(edge_dframe_arr):
@@ -55,7 +55,7 @@ def consolidate_edges3(edge_dframe_arr):
 
     full_dframe = pd.concat(edge_dframe_arr.flat, copy=False)
 
-    indices_to_keep = full_dframe.groupby("psd_segid")["size"].idxmax()
+    indices_to_keep = full_dframe.groupby("cleft_segid")["size"].idxmax()
 
     return full_dframe.loc[indices_to_keep]
 
