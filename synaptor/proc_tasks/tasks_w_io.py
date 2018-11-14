@@ -118,12 +118,12 @@ def chunk_edges_task(img_cvname, cleft_cvname, seg_cvname,
                    mip=0, parallel=parallel)
     seg = timed("Reading segmentation chunk at {}".format(resolution),
                 io.read_cloud_volume_chunk,
-                seg_cvname, chunk_bounds, mip=seg_res,
+                seg_cvname, chunk_bounds, mip=resolution,
                 parallel=parallel)
 
     asynet = timed("Reading asynet",
                    taskio.read_network_from_proc,
-                   proc_dir_path)
+                   proc_dir_path).cuda()
 
     chunk_id_map = timed("Reading chunk id map",
                          taskio.read_chunk_id_map,
@@ -139,7 +139,7 @@ def chunk_edges_task(img_cvname, cleft_cvname, seg_cvname,
 
     edges = tasks.chunk_edges_task(img, clefts, seg, asynet,
                                    chunk_begin, chunk_end, patchsz,
-                                   id_map=chunk_id_map, wshed=wshed,
+                                   id_map=chunk_id_map, wshed=None,
                                    num_samples_per_cleft=num_samples_per_cleft,
                                    dil_param=dil_param)
 

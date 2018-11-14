@@ -148,7 +148,8 @@ def chunk_edges_task(img, clefts, seg, asynet,
     edges = timed("Inferring edges",
                   chunk_edges.infer_edges,
                   asynet, img, clefts, seg,
-                  offset, patchsz, samples_per_cleft=num_samples_per_cleft,
+                  offset=offset, patchsz=patchsz, 
+                  samples_per_cleft=num_samples_per_cleft,
                   wshed=wshed, dil_param=dil_param)
 
     edges = timed("Computing cleft size and adding to edge dframe",
