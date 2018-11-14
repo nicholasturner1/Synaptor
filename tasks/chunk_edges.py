@@ -35,7 +35,7 @@ parser.add_argument("--parallel", type=int, default=1)
 
 
 args = parser.parse_args()
-print(**vars(args))
+print(vars(args))
 
 
 s.proc_tasks.tasks_w_io.chunk_edges_task(**vars(args))
