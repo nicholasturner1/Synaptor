@@ -1,17 +1,3 @@
-#!/usr/bin/env python3
-
-#Pasteurize
-from __future__ import unicode_literals
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from builtins import dict
-from builtins import zip
-from builtins import map
-from builtins import filter
-from future import standard_library
-standard_library.install_aliases()
-
 from collections import Counter
 
 import numpy as np
@@ -20,12 +6,25 @@ from scipy import sparse
 
 from . import _seg_utils
 from .. import bbox
-import time
 
 
 def relabel_data(d, mapping, copy=True):
     """
-    Remapping data according to an id mapping using cython loops
+    Relabel data according to a mapping dict.
+
+    Modify the entries of :param:d according to a :param:mapping dictionary.
+    If a value within :param:d doesn't match a key for :param:mapping,
+    leave it unchanged.
+
+    Args:
+        d (3darray): A data volume.
+        mapping (dict): A mapping from data values in d to new desired values.
+        copy (bool): Whether or not to perform relabeling in-place. Defaults
+            to True, which will create a new volume.
+
+    Returns:
+        3darray: A modified or newly created volume with the
+            desired modifications.
     """
     if copy:
         d = np.copy(d)
@@ -33,31 +32,60 @@ def relabel_data(d, mapping, copy=True):
 
 
 def relabel_data_1N(d, copy=True):
-    """ Condenses data values to 1:N """
-    mapping = {v: i+1 for (i,v) in enumerate(nonzero_unique_ids(d))}
+    """
+    Relabel segment values from 1:N
+
+    Args:
+        d (3darray): A segmentation.
+        copy (bool): Whether or not to perform relabeling in-place. Defaults
+            to True, which will create a new volume.
+
+    Returns:
+        3darray: A modified or newly created volume with new segids.
+    """
+    mapping = {v: i+1 for (i, v) in enumerate(nonzero_unique_ids(d))}
     return relabel_data(d, mapping, copy=copy)
 
 
 def relabel_data_iterative(d, mapping):
     """
+    Python-based iterative relabeling
+
     Remapping data according to an id mapping using an iterative strategy.
-    Best when only modifying a few ids
+    Best when only modifying a few ids. If a value within d doesn't match
+    a key for mapping, leave it unchanged.
+
+    Args:
+        d (3darray): A segmentation.
+        mapping (dict): A mapping from data values in d to new desired values.
+
+    Returns:
+        3darray: A new volume with the desired modifications.
     """
     r = np.copy(d)
 
     src_ids = set(np.unique(d))
     mapping = dict(filter(lambda x: x[0] in src_ids, mapping.items()))
 
-    for k,v in mapping.items():
-        r[d==k] = v
+    for (k, v) in mapping.items():
+        r[d == k] = v
     return r
 
 
 def relabel_data_lookup_arr(d, mapping):
     """
+    Python-based lookup array relabeling
+
     Remapping data according to an id mapping using a lookup np array.
     Best when modifying several ids at once and ids are approximately dense
     within 1:max
+
+    Args:
+        d (3darray): A segmentation.
+        mapping (dict): A mapping from data values in d to new desired values.
+
+    Returns:
+        3darray: A new volume with the desired modifications.
     """
 
     if len(mapping) == 0:
@@ -66,51 +94,109 @@ def relabel_data_lookup_arr(d, mapping):
     map_keys = np.array(list(mapping.keys()))
     map_vals = np.array(list(mapping.values()))
 
-    map_arr = np.arange(0,d.max()+1)
+    map_arr = np.arange(0, d.max()+1)
     map_arr[map_keys] = map_vals
     return map_arr[d]
 
 
+def split_by_overlap(seg_to_split, overlap_seg, copy=True):
+    """
+    Split segments by overlap with a separate segmentation.
+
+    Args:
+        seg_to_split (3darray): A segmentation to split.
+        overlap_seg (3darray): A segmentation which determines splits.
+        copy (bool): Whether to perform the splitting in-place.
+            Defaults to True, which creates a new volume.
+
+    Returns:
+        3darray: A new volume with each segment in :param:seg_to_split assigned
+            a new id based on its overlap with ids in :param:overlap_seg.
+    """
+    overlaps, row_ids, col_ids = count_overlaps(seg_to_split, overlap_seg)
+    rs, cs, _ = sparse.find(overlaps)
+
+    dict_of_dicts = dict((r, dict()) for r in row_ids)
+    for (v, (r, c)) in enumerate(zip(rs, cs)):
+        row = row_ids[r]
+        col = col_ids[c]
+        dict_of_dicts[row][col] = v+1
+
+    if copy:
+        seg_to_split = np.copy(seg_to_split)
+
+    return _seg_utils.relabel_paired_data(seg_to_split,
+                                          overlap_seg, dict_of_dicts)
+
+
 def nonzero_unique_ids(seg):
-    """ Finds the nonzero ids in a np array """
+    """ Find the nonzero ids in a np array. """
     ids = np.unique(seg)
-    return ids[ids!=0]
+    return ids[ids != 0]
 
 
-def centers_of_mass(ccs, offset=(0,0,0)):
+def centers_of_mass(seg, offset=(0, 0, 0)):
+    """
+    Compute segment centroids.
 
-    coords = _seg_utils.centers_of_mass(ccs, offset)
+    Args:
+        seg (3darray): A volume segmentation.
+        offset (tuple): A 3d coordinate offset for each centroid.
 
-    #keeping the datatype consistent until we can test it
-    coords_dict = {i : tuple(map(int,coord))
-                   for (i,coord) in coords.items()}
+    Returns:
+        dict: A mapping from segment id to centroid, where each
+            coordinate has been shifted by :param: offset.
+    """
+    centroids = _seg_utils.centers_of_mass(seg)
 
-    return coords_dict
+    if offset != (0, 0, 0):
+        centroids = {i: (c[0]+offset[0], c[1]+offset[1], c[2]+offset[2])
+                     for (i, c) in centroids.items()}
+
+    return centroids
 
 
-def bounding_boxes(ccs, offset=(0,0,0)):
+def bounding_boxes(ccs, offset=(0, 0, 0)):
+    """
+    Compute bounding boxes.
 
-    ids = list(map(int,nonzero_unique_ids(ccs)))
+    Args:
+        seg (3darray): A volume segmentation.
+        offset (tuple): A 3d coordinate offset for each bounding box.
+
+    Returns:
+        dict: A mapping from segment id to bounding box, where each
+            coordinate has been shifted by :param: offset.
+    """
+    ids = list(map(int, nonzero_unique_ids(ccs)))
 
     bbox_slices = ndimage.find_objects(ccs)
 
-    bboxes = {i : bbox.BBox3d(bbox_slices[i-1]) for i in ids}
+    bboxes = {i: bbox.BBox3d(bbox_slices[i-1]) for i in ids}
 
-    if offset == (0,0,0):
+    if offset == (0, 0, 0):
         return bboxes
 
-    shifted = {segid : bbox.translate(offset)
-               for (segid,bbox) in bboxes.items()}
+    shifted = {segid: bbox.translate(offset)
+               for (segid, bbox) in bboxes.items()}
 
     return shifted
 
 
 def segment_sizes(seg):
-    """ Computes the voxel sizes of each nonzero segment """
+    """
+    Compute the voxel counts of each nonzero segment.
 
-    #unique is best for this since it works over arbitrary vals
+    Args:
+        seg (3darray): A volume segmentation.
+        offset (tuple): A 3d coordinate offset for each bounding box.
+
+    Returns:
+        dict: A mapping from segment id to voxel count.
+    """
+    # unique is best for this since it works over arbitrary vals
     ids, sizes = np.unique(seg, return_counts=True)
-    size_dict = { i : sz  for (i,sz) in zip(ids,sizes) }
+    size_dict = {i: sz for (i, sz) in zip(ids, sizes)}
 
     if 0 in size_dict:
         del size_dict[0]
@@ -119,12 +205,29 @@ def segment_sizes(seg):
 
 
 def filter_segs_by_size(seg, thresh, szs=None, to_ignore=None, copy=True):
+    """
+    Remove segments under a size threshold.
 
+    Args:
+        seg (3darray): A volume segmentation.
+        thresh (int): A size threshold. All segments with a size under this
+            value will be removed.
+        szs (dict): A mapping from segment id to size. Defaults to None, in
+            which case, it will be computed from seg.
+        to_ignore (list): A list of segment ids to ignore. Defaults to None.
+        copy (bool): Whether to perform the splitting in-place.
+            Defaults to True, which creates a new volume.
+
+    Returns:
+        3darray: A volume segmentation with the segments of size under
+            :param:thresh removed.
+        dict: A mapping from segment id to size for the remaining segments.
+    """
     if szs is None:
         szs = segment_sizes(seg)
 
     to_remove = set(map(lambda x: x[0],
-                        filter( lambda pair: pair[1] < thresh, szs.items())))
+                        filter(lambda pair: pair[1] < thresh, szs.items())))
 
     if to_ignore is not None:
         to_remove = to_remove.difference(to_ignore)
@@ -139,8 +242,17 @@ def filter_segs_by_size(seg, thresh, szs=None, to_ignore=None, copy=True):
 
 
 def filter_segs_by_id(seg, ids, copy=True):
+    """
+    Remove segments with given ids.
 
-    removal_mapping = { v : 0 for v in ids }
+    Args:
+        seg (3darray): A volume segmentation.
+        ids (list): A list of segment ids to remove.
+
+    Returns:
+        3darray: A volume segmentation with the desired segments removed.
+    """
+    removal_mapping = {v: 0 for v in ids}
 
     if len(removal_mapping) > 0:
         return relabel_data(seg, removal_mapping, copy=copy)
@@ -149,8 +261,17 @@ def filter_segs_by_id(seg, ids, copy=True):
 
 
 def downsample_seg_to_mip(seg, mip_start, mip_end):
-    """Downsamples a segmentation to the desired mip level"""
+    """
+    Downsample a segmentation to the desired mip level.
 
+    Args:
+        seg (3darray): A volume segmentation.
+        mip_start (int): The MIP level of seg.
+        mip_end (int): The desired MIP level.
+
+    Returns:
+        3darray: seg downsampled to :param: mip_end
+    """
     assert mip_end > mip_start
 
     mip = mip_start
@@ -163,8 +284,15 @@ def downsample_seg_to_mip(seg, mip_start, mip_end):
 
 def downsample_seg(seg):
     """
-    Applying the COUNTLESS algorithm slice-wise
-    https://towardsdatascience.com/countless-3d-vectorized-2x-downsampling-of-labeled-volume-images-using-python-and-numpy-59d686c2f75
+    Apply the COUNTLESS algorithm slice-wise.
+
+    See: https://towardsdatascience.com/countless-3d-vectorized-2x-downsampling-of-labeled-volume-images-using-python-and-numpy-59d686c2f75 # noqa
+
+    Args:
+        seg (3darray): A volume segmentation.
+
+    Returns:
+        3darray: A new volume segmentation downsampled by 2 in XY.
     """
 
     assert len(seg.shape) == 3, "need 3d vol"
@@ -175,42 +303,49 @@ def downsample_seg(seg):
     res = np.empty(new_shape, dtype=seg.dtype)
 
     for i in range(seg.shape[2]):
-        res[...,i] = countless(seg[...,i])
+        res[..., i] = countless(seg[..., i])
 
     return res
 
 
 def countless(data):
     """
+    Apply the COUNTLESS algorithm to a single slice.
+
     Vectorized implementation of downsampling a 2D
     image by 2 on each side using Will Silversmith's COUNTLESS algorithm.
-    https://towardsdatascience.com/countless-3d-vectorized-2x-downsampling-of-labeled-volume-images-using-python-and-numpy-59d686c2f75
+    See: https://towardsdatascience.com/countless-3d-vectorized-2x-downsampling-of-labeled-volume-images-using-python-and-numpy-59d686c2f75 # noqa
 
-    data is a 2D numpy array with even dimensions.
+    Args:
+        data (2darray): An image segmentation.
+
+    Returns:
+        2darray: A new image segmentation downsampled by 2 in XY.
     """
     # allows us to prevent losing 1/2 a bit of information
-    # at the top end by using a bigger type. Without this 255 is handled incorrectly.
+    # at the top end by using a bigger type. Without this
+    # 255 is handled incorrectly.
     data, upgraded = upgrade_type(data)
 
-    data = data + 1 # don't use +=, it will affect the original data.
+    data = data + 1  # don't use +=, it will affect the original data.
 
     sections = []
 
     # This loop splits the 2D array apart into four arrays that are
     # all the result of striding by 2 and offset by (0,0), (0,1), (1,0),
     # and (1,1) representing the A, B, C, and D positions from Figure 1.
-    factor = (2,2)
+    factor = (2, 2)
     for offset in np.ndindex(factor):
         part = data[tuple(np.s_[o::f] for o, f in zip(offset, factor))]
         sections.append(part)
 
     a, b, c, d = sections
 
-    ab_ac = a * ((a == b) | (a == c)) # PICK(A,B) || PICK(A,C) w/ optimization
-    bc = b * (b == c) # PICK(B,C)
+    ab_ac = a * ((a == b) | (a == c))  # PICK(A,B) || PICK(A,C) w/ optimization
+    bc = b * (b == c)  # PICK(B,C)
 
-    a = ab_ac | bc # (PICK(A,B) || PICK(A,C)) or PICK(B,C)
-    result = a + (a == 0) * d - 1 # (matches or d) - 1
+    a = ab_ac | bc  # (PICK(A,B) || PICK(A,C)) or PICK(B,C)
+    result = a + (a == 0) * d - 1  # (matches or d) - 1
 
     if upgraded:
         return downgrade_type(result)
@@ -219,6 +354,7 @@ def countless(data):
 
 
 def upgrade_type(arr):
+    """ Represent an integer ndarray as a larger datatype."""
     dtype = arr.dtype
 
     if dtype == np.uint8:
@@ -232,39 +368,47 @@ def upgrade_type(arr):
 
 
 def downgrade_type(arr):
-  dtype = arr.dtype
+    """ Represent an integer ndarray as a smaller datatype. """
+    dtype = arr.dtype
 
-  if dtype == np.uint64:
-    return arr.astype(np.uint32)
-  elif dtype == np.uint32:
-    return arr.astype(np.uint16)
-  elif dtype == np.uint16:
-    return arr.astype(np.uint8)
+    if dtype == np.uint64:
+        return arr.astype(np.uint32)
+    elif dtype == np.uint32:
+        return arr.astype(np.uint16)
+    elif dtype == np.uint16:
+        return arr.astype(np.uint8)
 
-  return arr
+    return arr
 
 
 def label_surfaces3d(seg):
+    """
+    Label the voxels which change label in any dimension.
 
+    Args:
+        seg (3darray): A volume segmentation
+
+    Returns:
+        3darray: A surface mask filled with the values from :param: seg.
+    """
     surface_mask = np.zeros(seg.shape, dtype=np.bool)
 
-    #Z
-    surface_mask[1:,:,:] = seg[1:,:,:] != seg[:-1,:,:]
-    surface_mask[:-1,:,:] = np.logical_or(surface_mask[:-1,:,:],
-                                          seg[:-1,:,:] != seg[1:,:,:])
+    # Z
+    surface_mask[1:, :, :] = seg[1:, :, :] != seg[:-1, :, :]
+    surface_mask[:-1, :, :] = np.logical_or(surface_mask[:-1, :, :],
+                                            seg[:-1, :, :] != seg[1:, :, :])
 
-    #Y
-    surface_mask[:,1:,:] = np.logical_or(surface_mask[:,1:,:],
-                                         seg[:,1:,:] != seg[:,:-1,:])
-    surface_mask[:,:-1,:] = np.logical_or(surface_mask[:,:-1,:],
-                                          seg[:,:-1,:] != seg[:,1:,:])
+    # Y
+    surface_mask[:, 1:, :] = np.logical_or(surface_mask[:, 1:, :],
+                                           seg[:, 1:, :] != seg[:, :-1, :])
+    surface_mask[:, :-1, :] = np.logical_or(surface_mask[:, :-1, :],
+                                            seg[:, :-1, :] != seg[:, 1:, :])
 
-
-    #X
-    surface_mask[:,:,1:] = np.logical_or(surface_mask[:,:,1:],
-                                         seg[:,:,1:] != seg[:,:,:-1])
-    surface_mask[:,:,:-1] = np.logical_or(surface_mask[:,:,:-1],
-                                          seg[:,:,:-1] != seg[:,:,1:])
+    # X
+    surface_mask[:, :, 1:] = np.logical_or(surface_mask[:, :, 1:],
+                                           seg[:, :, 1:] != seg[:, :, :-1])
+    surface_mask[:, :, :-1] = np.logical_or(surface_mask[:, :, :-1],
+                                            seg[:, :, :-1] != seg[:, :, 1:])
 
     surface_voxels = np.zeros(seg.shape, dtype=seg.dtype)
 
@@ -274,21 +418,28 @@ def label_surfaces3d(seg):
 
 
 def label_surfaces2d(seg):
+    """
+    Label the voxels which change label in XY.
 
+    Args:
+        seg (3darray): A volume segmentation
+
+    Returns:
+        3darray: A 2d surface mask filled with the values from :param: seg.
+    """
     surface_mask = np.zeros(seg.shape, dtype=np.bool)
 
-    #Y
-    surface_mask[:,1:,:] = np.logical_or(surface_mask[:,1:,:],
-                                         seg[:,1:,:] != seg[:,:-1,:])
-    surface_mask[:,:-1,:] = np.logical_or(surface_mask[:,:-1,:],
-                                          seg[:,:-1,:] != seg[:,1:,:])
+    # Y
+    surface_mask[:, 1:, :] = np.logical_or(surface_mask[:, 1:, :],
+                                           seg[:, 1:, :] != seg[:, :-1, :])
+    surface_mask[:, :-1, :] = np.logical_or(surface_mask[:, :-1, :],
+                                            seg[:, :-1, :] != seg[:, 1:, :])
 
-
-    #X
-    surface_mask[:,:,1:] = np.logical_or(surface_mask[:,:,1:],
-                                         seg[:,:,1:] != seg[:,:,:-1])
-    surface_mask[:,:,:-1] = np.logical_or(surface_mask[:,:,:-1],
-                                          seg[:,:,:-1] != seg[:,:,1:])
+    # X
+    surface_mask[:, :, 1:] = np.logical_or(surface_mask[:, :, 1:],
+                                           seg[:, :, 1:] != seg[:, :, :-1])
+    surface_mask[:, :, :-1] = np.logical_or(surface_mask[:, :, :-1],
+                                            seg[:, :, :-1] != seg[:, :, 1:])
 
     surface_voxels = np.zeros(seg.shape, dtype=seg.dtype)
 
@@ -299,15 +450,26 @@ def label_surfaces2d(seg):
 
 def count_overlaps(seg1, seg2):
     """
-    Count the overlapping voxels under each pair of overlapping
+    Computing an overlap matrix,
+
+    Count the overlapping voxels for each pair of overlapping
     objects. Returns a scipy.sparse matrix
+
+    Args:
+        seg1 (3darray): A volume segmentation.
+        seg2 (3darray): Another volume segmentation.
+
+    Returns:
+        scipy.sparse.coo_matrix: A representation of the overlaps
+        1darray: The :param: seg1 ids represented by each row.
+        1darray: The :param: seg2 ids represented by each column.
     """
 
     seg1_ids = nonzero_unique_ids(seg1)
     seg2_ids = nonzero_unique_ids(seg2)
 
-    seg1_index = {v:i for (i,v) in enumerate(seg1_ids)}
-    seg2_index = {v:i for (i,v) in enumerate(seg2_ids)}
+    seg1_index = {v: i for (i, v) in enumerate(seg1_ids)}
+    seg2_index = {v: i for (i, v) in enumerate(seg2_ids)}
 
     overlap_mask = np.logical_and(seg1 != 0, seg2 != 0)
 
@@ -319,12 +481,33 @@ def count_overlaps(seg1, seg2):
 
     counts = Counter(zip(seg1_vals, seg2_vals))
 
-    rs, cs, vs = [],[],[]
-    for ((r,c),v) in counts.items():
+    rs, cs, vs = [], [], []
+    for ((r, c), v) in counts.items():
         # subtracting one from indices so val 1 -> index 0
         rs.append(seg1_index[r])
         cs.append(seg2_index[c])
         vs.append(v)
 
-    overlap_mat = sparse.coo_matrix((vs,(rs,cs)), shape=(n_rows, n_cols))
+    overlap_mat = sparse.coo_matrix((vs, (rs, cs)), shape=(n_rows, n_cols))
     return overlap_mat, seg1_ids, seg2_ids
+
+
+def upsample2d(seg):
+    """
+    A naive 2d upsampling
+
+    Args:
+        seg (3darray): A volume segmentation.
+
+    Returns:
+        3darray: A new volume segmentation upsampled by 2 in XY.
+    """
+    new_shape = tuple(bbox.Vec3d(seg.shape) * (2, 2, 1))
+    ups = np.empty(new_shape, dtype=seg.dtype)
+
+    ups[::2, ::2, :] = seg
+    ups[1::2, ::2, :] = seg
+    ups[::2, 1::2, :] = seg
+    ups[1::2, 1::2, :] = seg
+
+    return ups
