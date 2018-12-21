@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 __doc__ == """
 An implementation of the CREMI score metrics for synaptic clefts
-(should be accurate as of 6/?/18)
+(should be accurate as of June 2018)
 
 Nicholas Turner, 2018
 """

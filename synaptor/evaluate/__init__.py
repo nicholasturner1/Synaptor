@@ -1,9 +1,6 @@
 from . import score
 from . import overlap
+from . import edge
 from . import gridsearch
-from . import toolbox
-
-from . import dataset
-from . import full
-
-from . import edgepoints
+from . import auto
+from . import partnerprox

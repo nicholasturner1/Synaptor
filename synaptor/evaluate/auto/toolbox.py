@@ -1,11 +1,11 @@
 import numpy as np
 
-from ..proc_tasks import chunk_ccs
-from ..proc_tasks import chunk_edges
-from ..proc_tasks import merge_edges
-from .. import seg_utils
-from . import score
-from . import overlap
+from ...proc_tasks import chunk_ccs
+from ...proc_tasks import chunk_edges
+from ...proc_tasks import merge_edges
+from ... import seg_utils
+from .. import overlap
+from .. import score
 from . import dataset
 
 

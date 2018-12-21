@@ -1,17 +1,17 @@
 import numpy as np
 
-from ..proc_tasks import chunk_ccs
-from ..proc_tasks import merge_edges
-from .. import seg_utils
-from .. import io
+from ...proc_tasks import chunk_ccs
+from ...proc_tasks import merge_edges
+from ... import seg_utils
+from ... import io
+from .. import overlap
+from .. import score
 
 from . import dataset
-from . import score
-from . import overlap
 from . import toolbox as tb
 
 
-def full_eval(train_set, val_set, test_set=None,
+def auto_eval(train_set, val_set, test_set=None,
               asynet=None, patchsz=(160,160,18),
               output_prefix=None, write=False,
               voxel_beta=1.5, cleft_beta=1.5,

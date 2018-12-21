@@ -1,4 +1,8 @@
-#!/usr/bin/env python3
+__doc__ = """
+General purpose function for ROC curve functions
+
+Nicholas Turner, 2017-8
+"""
 
 import operator
 from collections import Counter

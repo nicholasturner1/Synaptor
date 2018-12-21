@@ -1,5 +1,8 @@
-#!/usr/bin/env python3
+__doc__ = """
+Evaluation functions for scoring segments by overlap
 
+Nicholas Turner, 2017-8
+"""
 
 import numpy as np
 import scipy.sparse as sp
@@ -151,7 +154,7 @@ def matched_id_rate(overlaps, axis, ids=None, default_rate=None):
     """
     Computes how often a row/col id is matched with a col/row.
     This corresponds to precision or recall when mapped to the
-    appropriate axis.
+    appropriate axis of an overlap matrix.
 
     Assumes that the sparse matrix has dense indices (e.g. all rows
     and cols refer to an object)

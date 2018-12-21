@@ -1,4 +1,8 @@
-#!/usr/bin/env python3
+__doc__ = """
+Grid search functions
+
+Nicholas Turner, 2018
+"""
 
 import itertools
 
@@ -7,7 +11,7 @@ import numpy as np
 from ..proc_tasks import chunk_ccs
 from ..proc_tasks import chunk_edges as edges
 from .. import seg_utils
-from . import toolbox as tb
+from .auto import toolbox as tb
 from . import overlap
 from . import cremi
 from . import score
