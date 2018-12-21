@@ -1,5 +1,6 @@
 import numpy as np
 
+from . import describe
 from . import _relabel
 
 
@@ -23,7 +24,7 @@ def relabel_data(d, mapping, copy=True):
     """
     if copy:
         d = np.copy(d)
-    return _seg_utils.relabel_data(d, mapping)
+    return _relabel.relabel_data(d, mapping)
 
 
 def relabel_data_1N(d, copy=True):
@@ -38,7 +39,7 @@ def relabel_data_1N(d, copy=True):
     Returns:
         3darray: A modified or newly created volume with new segids.
     """
-    mapping = {v: i+1 for (i, v) in enumerate(nonzero_unique_ids(d))}
+    mapping = {v: i+1 for (i, v) in enumerate(describe.nonzero_unique_ids(d))}
     return relabel_data(d, mapping, copy=copy)
 
 

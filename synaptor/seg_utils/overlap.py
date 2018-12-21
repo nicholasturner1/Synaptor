@@ -3,6 +3,7 @@ from collections import Counter
 import numpy as np
 from scipy import sparse
 
+from . import describe
 from . import _relabel
 
 
@@ -23,8 +24,8 @@ def count_overlaps(seg1, seg2):
         1darray: The :param: seg2 ids represented by each column.
     """
 
-    seg1_ids = nonzero_unique_ids(seg1)
-    seg2_ids = nonzero_unique_ids(seg2)
+    seg1_ids = describe.nonzero_unique_ids(seg1)
+    seg2_ids = describe.nonzero_unique_ids(seg2)
 
     seg1_index = {v: i for (i, v) in enumerate(seg1_ids)}
     seg2_index = {v: i for (i, v) in enumerate(seg2_ids)}
