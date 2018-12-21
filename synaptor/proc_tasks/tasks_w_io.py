@@ -20,7 +20,6 @@ def chunk_ccs_task(output_cvname, cleft_cvname, proc_dir_path,
 
     chunk_bounds = types.BBox3d(chunk_begin, chunk_end)
 
-
     net_output = timed("Reading network output chunk: {}".format(chunk_bounds),
                        io.read_cloud_volume_chunk,
                        output_cvname, chunk_bounds,
@@ -47,7 +46,6 @@ def chunk_ccs_task(output_cvname, cleft_cvname, proc_dir_path,
 
 def merge_ccs_task(proc_dir_path, size_thr, max_face_shape):
 
-
     cont_info_arr, _ = timed("Reading continuations",
                              taskio.read_all_continuations,
                              proc_dir_path)
@@ -58,13 +56,12 @@ def merge_ccs_task(proc_dir_path, size_thr, max_face_shape):
 
     chunk_bounds = io.extract_sorted_bboxes(local_dir)
 
-    #Processing
+    # Processing
     cons_cleft_info, chunk_id_maps = tasks.merge_ccs_task(cont_info_arr,
                                                           cleft_info_arr,
                                                           chunk_bounds,
                                                           size_thr,
                                                           max_face_shape)
-
 
     timed("Writing merged cleft info",
           taskio.write_merged_cleft_info,
@@ -129,7 +126,7 @@ def chunk_edges_task(img_cvname, cleft_cvname, seg_cvname,
                          taskio.read_chunk_id_map,
                          proc_dir_path, base_bounds)
 
-    #Downsampling clefts to match other volumes
+    # Downsampling clefts to match other volumes
     if num_downsamples > 0:
         clefts = timed("Downsampling clefts to mip {}".format(num_downsamples),
                        seg_utils.downsample_seg_to_mip,
@@ -155,9 +152,9 @@ def chunk_edges_task(img_cvname, cleft_cvname, seg_cvname,
 
 def merge_edges_task(voxel_res, dist_thr, size_thr, proc_dir_path):
 
-    edges_arr, _ = timed("Reading all edges",
-                         taskio.read_all_edge_infos,
-                         proc_dir_path)
+    edges_arr = timed("Reading all edges",
+                      taskio.read_all_chunk_edge_infos,
+                      proc_dir_path)
     merged_cleft_info = timed("Reading merged cleft info",
                               taskio.read_merged_cleft_info,
                               proc_dir_path)
@@ -171,7 +168,7 @@ def merge_edges_task(voxel_res, dist_thr, size_thr, proc_dir_path):
           taskio.write_dup_id_map,
           dup_id_map, proc_dir_path)
     timed("Writing merged edge list",
-          taskio.write_final_edge_info,
+          taskio.write_merged_edge_info,
           merged_edge_df, proc_dir_path)
     timed("Writing final & complete DataFrame",
           taskio.write_full_info,
@@ -207,11 +204,10 @@ def chunk_overlaps_task(seg_cvname, base_seg_cvname,
 def merge_overlaps_task(proc_dir_path):
 
     overlap_arr, _ = timed("Reading overlap matrices",
-                        taskio.read_all_overlap_mats,
-                        proc_dir_path)
+                           taskio.read_all_overlap_mats,
+                           proc_dir_path)
 
     max_overlaps = tasks.merge_overlaps_task(overlap_arr)
-
 
     timed("Writing max overlaps",
           taskio.write_max_overlaps,
