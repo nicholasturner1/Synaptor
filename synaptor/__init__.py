@@ -17,7 +17,7 @@ from .proc_tasks.merge_ccs import apply_chunk_id_maps, update_chunk_id_maps
 from .proc_tasks.merge_ccs import merge_cleft_df, enforce_size_threshold
 from .proc_tasks.chunk_edges import infer_edges
 from .proc_tasks.merge_edges import merge_duplicate_clefts
-from .proc_tasks.io import read_all_cleft_infos, read_all_continuations
+from .proc_tasks.io import read_all_chunk_cleft_infos, read_all_continuations
 
 from . import evaluate
 
