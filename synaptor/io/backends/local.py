@@ -1,22 +1,15 @@
-#!/usr/bin/env python3
-from __future__ import unicode_literals
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from future import standard_library
-standard_library.install_aliases()
-
-
 __doc__ = """
 Local Filesystem IO
 
 Nicholas Turner <nturner@cs.princeton.edu>, 2018
 """
 
-
-import os, glob, shutil
+import os
+import glob
+import shutil
 import itertools
-import importlib, types
+import importlib
+import types
 
 import torch
 import h5py
@@ -24,62 +17,67 @@ import pandas as pd
 
 
 def pull_file(fname):
+    """ Ensure that a file exists locally. """
     assert os.path.exists, "File {} doesn't exist".format(fname)
     return fname
 
 
 def pull_directory(dirname):
+    """ Find which files exist within a local directory. """
     return glob.glob(os.path.join(dirname, "*"))
 
 
 def send_file(src, dst):
+    """ Copy a file. """
     shutil.copyfile(src, dst)
 
 
 def send_directory(dirname, dst):
-    full_dst = os.path.join(dst,dirname)
+    """ Move a directory. """
+    full_dst = os.path.join(dst, dirname)
     if os.path.abspath(full_dst) != os.path.abspath(dirname):
         shutil.move(dirname, dst)
 
 
 def read_dframe(path):
-    """ Simple for now """
+    """ Read a dataframe from local disk. """
+    assert os.path.isfile(path)
     return pd.read_csv(path, index_col=0)
 
 
 def write_dframe(dframe, path):
-    """ Simple for now """
+    """ Write a dataframe to local disk. """
     dframe.to_csv(path, index_label="cleft_segid")
 
 
 def read_network(net_fname, chkpt_fname):
-    """ Reads a PyTorch model from disk """
+    """ Read a PyTorch model from disk. """
     model = load_source(net_fname).InstantiatedModel
     model.load_state_dict(torch.load(chkpt_fname))
 
-    return model
+    return model.cuda()
 
 
 def write_network(net, path):
-    """ Writes a PyTorch model to disk """
+    """ Write a PyTorch model to disk. """
     torch.save(net, path)
 
 
 def open_h5(fname):
-    """ Opens an hdf5 file, returns the object """
+    """ Open an hdf5 file, return the file object. """
     f = h5py.File(fname)
     return f
 
 
 def read_h5(fname, dset_name="/main"):
-    """ Reads a specific dataset from an hdf5 """
+    """ Read a specific dataset from an hdf5. """
     assert os.path.isfile(fname), "File {} doesn't exist".format(fname)
     with h5py.File(fname) as f:
         return f[dset_name].value
 
 
 def write_h5(data, fname, dset_name="/main", chunk_size=None):
-    """ Writes a data array to a specific dataset within an hdf5 """
+    """ Write a data array to a specific dataset within an hdf5. """
     if os.path.exists(fname):
         os.remove(fname)
 
@@ -91,8 +89,9 @@ def write_h5(data, fname, dset_name="/main", chunk_size=None):
             f.create_dataset(dset_name, data=data, chunks=chunk_size,
                              compression="gzip", compression_opts=4)
 
-def read_edge_csv(fname, delim=";", only_confident=False):
 
+def read_edge_csv(fname, delim=";", only_confident=False):
+    """ Read the first three fields of a csv file. """
     edges = []
     with open(fname) as f:
         for l in f.readlines():
@@ -102,29 +101,34 @@ def read_edge_csv(fname, delim=";", only_confident=False):
             field1 = eval(fields[1])
             field2 = eval(fields[2])
 
-            if isinstance(field1,int):
+            if isinstance(field1, int):
                 field1 = [field1]
-            if isinstance(field2,int):
+            if isinstance(field2, int):
                 field2 = [field2]
 
             if only_confident and int(fields[3]) == 0:
-                continue 
+                continue
 
-            for (pre,post) in itertools.product(field1,field2):
-                edges.append((edgeid,pre,post))
+            for (pre, post) in itertools.product(field1, field2):
+                edges.append((edgeid, pre, post))
 
     return edges
 
-def write_edge_csv(edges, fname, delim=";"):
 
+def write_edge_csv(edges, fname, delim=";"):
+    """
+    Write a three-field csv file formatted as
+    (cleft_id, presyn_segid, postsyn_segid).
+    """
     with open(fname, "w+") as f:
         for (cleft_id, presyn_id, postsyn_id) in edges:
             content = delim.join(map(str, (cleft_id, presyn_id, postsyn_id)))
             f.write(f"{content}\n")
 
-def load_source(fname, module_name="something"):
-    """ Imports a module from source """
-    loader = importlib.machinery.SourceFileLoader(module_name,fname)
+
+def load_source(fname, module_name="importedmodule"):
+    """ Import a module from source """
+    loader = importlib.machinery.SourceFileLoader(module_name, fname)
     mod = types.ModuleType(loader.name)
     loader.exec_module(mod)
     return mod
