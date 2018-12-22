@@ -58,7 +58,7 @@ def read_chunk_edge_info(proc_url, chunk_bounds=None, chunk_id=None,
 
 
 def read_hashed_edge_info(proc_url, hash_index):
-    assert is_db_url(proc_url), "reading by hash not supported for files"
+    assert io.is_db_url(proc_url), "reading by hash not supported for files"
 
     metadata = io.open_db_metadata(proc_url)
 
@@ -75,7 +75,7 @@ def write_chunk_edge_info(dframe, proc_url, chunk_bounds=None, chunk_id=None):
         dframe["chunk_id"] = chunk_id
         dframe["merged"] = False
         dframe["final"] = False
-        io.write_db_dframe(dframe, proc_url, "edges")
+        io.write_db_dframe(dframe, proc_url, "edges", index=False)
 
     else:
         assert chunk_bounds is not None, "chunk id writing not impl for files"

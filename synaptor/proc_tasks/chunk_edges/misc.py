@@ -21,7 +21,8 @@ def add_cleft_sizes(edges_dframe, clefts):
 
     szs = seg_utils.segment_sizes(clefts)
 
-    szs_s = pd.Series(szs, name=SZ_SCHEMA[0])
+    szs_s = pd.Series((szs[clf] for clf in edges_dframe["cleft_segid"]), 
+                      name=SZ_SCHEMA[0])
     full_df = pd.concat((edges_dframe, szs_s), axis=1)
 
     return full_df
