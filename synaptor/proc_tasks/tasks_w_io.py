@@ -78,7 +78,7 @@ def chunk_edges_task(img_cvname, cleft_cvname, seg_cvname,
                      proc_dir_path, wshed_cvname=None,
                      resolution=(4, 4, 40), num_downsamples=0,
                      base_res_begin=None, base_res_end=None,
-                     parallel=1):
+                     parallel=1, hashmax=None):
     """
     Runs tasks.chunk_edges_task after reading the relevant
     cloud volume chunks and downsampling the cleft volume
@@ -138,7 +138,7 @@ def chunk_edges_task(img_cvname, cleft_cvname, seg_cvname,
                                    chunk_begin, chunk_end, patchsz,
                                    id_map=chunk_id_map, wshed=None,
                                    num_samples_per_cleft=num_samples_per_cleft,
-                                   dil_param=dil_param)
+                                   dil_param=dil_param, hashmax=hashmax)
 
     if num_downsamples > 0:
         edges = timed("Up-sampling edge information",
@@ -147,7 +147,7 @@ def chunk_edges_task(img_cvname, cleft_cvname, seg_cvname,
 
     timed("Writing chunk edges",
           taskio.write_chunk_edge_info,
-          edges, base_bounds, proc_dir_path)
+          edges, proc_dir_path, base_bounds)
 
 
 def merge_edges_task(voxel_res, dist_thr, size_thr, proc_dir_path):

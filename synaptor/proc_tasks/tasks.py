@@ -122,7 +122,8 @@ def merge_ccs_task(cont_info_arr, cleft_info_arr, chunk_bounds,
 def chunk_edges_task(img, clefts, seg, asynet,
                      chunk_begin, chunk_end, patchsz,
                      wshed=None, num_samples_per_cleft=2,
-                     dil_param=5, id_map=None):
+                     dil_param=5, id_map=None, hashmax=None,
+                     hash_fillval=-1):
     """
     -Applies an id map to a chunk (if passed)
     NOTE: Modifies the clefts array if id_map exists
@@ -153,21 +154,11 @@ def chunk_edges_task(img, clefts, seg, asynet,
                   chunk_edges.add_cleft_sizes,
                   edges, clefts)
 
-    return edges
-
-
-def infer_edges_w_hash_task(img, clefts, seg, asynet,
-                            chunk_begin, chunk_end, patchsz, hashmax,
-                            wshed=None, num_samples_per_cleft=2,
-                            dil_param=5, id_map=None):
-
-    edges = chunk_edges_task(img, clefts, seg, asynet,
-                             chunk_begin, chunk_end, patchsz,
-                             wshed=wshed, dil_param=dil_param, id_map=id_map,
-                             num_samples_per_cleft=num_samples_per_cleft)
-
-    hashcolumns = ["presyn_segid", "postsyn_segid"]
-    edges["hashed_index"] = hashing.hashcolumns(edges, hashcolumns, hashmax)
+    if hashmax is not None:
+        hashcolumns = ["presyn_segid", "postsyn_segid"]
+        edges = timed("Hashing partner id combinations",
+                      hashing.add_hashed_index,
+                      edges, hashcolumns, hashmax, hash_fillval)
 
     return edges
 
