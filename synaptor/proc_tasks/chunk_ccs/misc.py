@@ -11,8 +11,8 @@ import pandas as pd
 
 SZ_SCHEMA = ["size"]
 CENTROID_SCHEMA = ["centroid_x","centroid_y","centroid_z"]
-BBOX_SCHEMA = ["BBOX_bx","BBOX_by","BBOX_bz",
-               "BBOX_ex","BBOX_ey","BBOX_ez"]
+BBOX_SCHEMA = ["bbox_bx","bbox_by","bbox_bz",
+               "bbox_ex","bbox_ey","bbox_ez"]
 
 
 def make_cleft_info_dframe(centers, sizes, bboxes):

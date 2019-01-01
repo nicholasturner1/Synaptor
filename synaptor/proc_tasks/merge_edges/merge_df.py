@@ -46,7 +46,8 @@ def merge_full_df1(full_info_df, id_map):
 
     #Setting index to the original if not remapped
     no_new_id = pd.isnull(full_info_df["new_ids"])
-    full_info_df["new_ids"][no_new_id] = full_info_df["cleft_segid"][no_new_id]
+    full_info_df.loc[no_new_id, "new_ids"] = full_info_df.loc[no_new_id, 
+                                                              "cleft_segid"]
     #taking all other fields from largest cleft
     new_df = full_info_df.sort_values(SZ_SCHEMA).drop_duplicates("new_ids")
 

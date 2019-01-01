@@ -28,7 +28,7 @@ def consolidate_edges(edge_dframe_arr):
 def consolidate_edges1(edge_dframe_arr):
 
     df = pd.concat(map(lambda x: x.reset_index(), edge_dframe_arr.flat),
-                   copy=False)
+                   copy=False, sort=False)
     df = df[df["size"] == df.groupby(["cleft_segid"])["size"].transform(max)]
     #keep the first row in the case of a tie (effectively random)
     df = df.drop_duplicates("cleft_segid")
