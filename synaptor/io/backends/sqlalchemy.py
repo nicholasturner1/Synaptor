@@ -3,14 +3,17 @@ Database functionality through SQLAlchemy
 """
 
 import re
+import shutil
+import tempfile
 import sqlalchemy as sa
 import pandas as pd
+
+from . import local
 
 
 __all__ = ["open_db_metadata", "create_db_tables",
            "execute_db_statement", "execute_db_statements",
-           "read_dframe", "write_dframe"]
-
+           "read_dframe", "write_dframe_direct", "write_dframe_copy_from"]
 
 # Pool of engines to databases used so far
 ENGINES = dict()
@@ -97,16 +100,69 @@ def read_dframes(url, statements, index_cols=None):
     return results
 
 
-def write_dframe(dframe, url, table, if_exists="append", index=True):
+def write_dframe_direct(dframe, url, table, if_exists="append", index=True):
     engine = init_engine(url)
     dframe.to_sql(table, engine, if_exists=if_exists, index=index)
 
 
-def write_dframes(dframes, url, tables, if_exists="append", index=True):
+def write_dframe_copy_from(dframe, url, table, index=False):
+    """ COPY FROM a csv is often MUCH faster than dframe.to_sql """
+    if index:
+        dframe = dframe.reset_index()
+
+    temp_file = tempfile.NamedTemporaryFile()
+    local.write_dframe(dframe, temp_file.name, index=False, header=False)
+    clean_file_floats(temp_file.name)
+    columns = list(str(c) for c in dframe.columns)
+
+    copy_from_fname(temp_file.name, table, columns=columns, url=url)
+
+
+def copy_from_fname(fname, table, columns=None, conn=None, url=None):
+    assert url is not None or conn is not None, "need conn or url specified"
+
+    commit = conn is None
+    if conn is None:
+        engine = init_engine(url)
+        conn = engine.raw_connection()
+
+    with conn.cursor() as cur:
+        with open(fname) as f:
+            cur.copy_from(f, table, sep=",", null="", columns=columns)
+
+    if commit:
+        conn.commit()
+        conn.close()
+
+
+def write_dframes_copy_from(dframes, url, tables, index=True):
     """ Write multiple tables as a single transaction. """
     assert len(dframes) == len(tables)
     engine = init_engine(url)
 
-    with engine.begin() as connection:
-        for (dframe, table) in zip(dframes, tables):
-            dframe.to_sql(table, connection, if_exists=if_exists, index=index)
+    conn = engine.raw_connection()
+    temp_file = tempfile.NamedTemporaryFile()
+    for (dframe, table) in zip(dframes, tables):
+
+        if index:
+            dframe = dframe.reset_index()
+
+        local.write_dframe(dframe, temp_file.name, index=False, header=False)
+        clean_file_floats(temp_file.name)
+        columns = list(str(c) for c in dframe.columns)
+
+        copy_from_fname(temp_file.name, table, columns=columns, conn=conn)
+
+    conn.commit()
+    conn.close()
+
+
+def clean_file_floats(fname):
+    temp_file = tempfile.NamedTemporaryFile()
+
+    with open(fname) as f:
+        with open(temp_file.name, "w+") as f2:
+            for line in f:
+                f2.write(line.replace(".0", ""))
+
+    shutil.copy(temp_file.name, fname)

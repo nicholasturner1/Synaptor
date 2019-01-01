@@ -257,9 +257,9 @@ def write_h5(data, path_or_head, basename=None, chunk_size=None):
 
 # Defining db versions of a few functions
 read_db_dframe = bck.sqlalchemy.read_dframe
-write_db_dframe = bck.sqlalchemy.write_dframe
+write_db_dframe = bck.sqlalchemy.write_dframe_copy_from
 read_db_dframes = bck.sqlalchemy.read_dframes
-write_db_dframes = bck.sqlalchemy.write_dframes
+write_db_dframes = bck.sqlalchemy.write_dframes_copy_from
 
 
 def is_remote_path(uri):
