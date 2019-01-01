@@ -22,8 +22,8 @@ MERGED_CLEFT_FNAME = "merged_cleft_info.df"
 # This needs to match columns within `initdb.py`
 CLEFT_INFO_COLUMNS = ["cleft_segid", "size",
                       "centroid_x", "centroid_y", "centroid_z",
-                      "BBOX_bx", "BBOX_by", "BBOX_bz",
-                      "BBOX_ex", "BBOX_ey", "BBOX_ez"]
+                      "bbox_bx", "bbox_by", "bbox_bz",
+                      "bbox_ex", "bbox_ey", "bbox_ez"]
 CHUNK_START_COLUMNS = ["id", "begin_x", "begin_y", "begin_z"]
 NULL_CHUNK_ID = initdb.NULL_CHUNK_ID
 
@@ -127,7 +127,7 @@ def write_merged_cleft_info(dframe, proc_url):
         dframe["chunk_id"] = NULL_CHUNK_ID
         dframe["merged"] = True
         dframe["final"] = False
-        io.write_db_dframe(dframe, proc_url, "clefts")
+        io.write_db_dframe(dframe, proc_url, "clefts", index=False)
 
     else:
         io.write_dframe(dframe, proc_url, MERGED_CLEFT_FNAME)

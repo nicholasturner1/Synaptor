@@ -48,8 +48,8 @@ def write_full_info(dframe, proc_url):
     """
     if io.is_db_url(proc_url):
         dframe = dframe.reset_index()
-        cleft_info = dframe[CLEFT_INFO_COLUMNS]
-        edge_info = dframe[EDGE_INFO_COLUMNS]
+        cleft_info = dframe[CLEFT_INFO_COLUMNS].copy()
+        edge_info = dframe[EDGE_INFO_COLUMNS].copy()
 
         cleft_info["chunk_id"] = NULL_CHUNK_ID
         cleft_info["merged"] = True

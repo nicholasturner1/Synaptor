@@ -12,6 +12,7 @@ from .network import read_network_from_proc, write_network_to_proc
 
 from . import edgeinfo
 from .edgeinfo import read_chunk_edge_info, write_chunk_edge_info
+from .edgeinfo import read_hashed_edge_info, read_max_n_edge_per_cleft
 from .edgeinfo import read_all_chunk_edge_infos
 from .edgeinfo import read_merged_edge_info, write_merged_edge_info
 

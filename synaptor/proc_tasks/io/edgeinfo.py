@@ -57,14 +57,15 @@ def read_chunk_edge_info(proc_url, chunk_bounds=None, chunk_id=None,
         return io.read_dframe(chunk_info_fname(proc_url, chunk_bounds))
 
 
-def read_hashed_edge_info(proc_url, hash_index):
+def read_hashed_edge_info(proc_url, hash_index, merged=True):
     assert io.is_db_url(proc_url), "reading by hash not supported for files"
 
     metadata = io.open_db_metadata(proc_url)
 
     edges = metadata.tables["edges"]
     columns = list(edges.c[name] for name in EDGE_INFO_COLUMNS)
-    statement = select(columns).where(edges.c.hashed_index == hash_index)
+    statement = select(columns).where(and_(edges.c.hashed_index == hash_index,
+                                           edges.c.merged == merged))
     return io.read_db_dframe(proc_url, statement, index_col="cleft_segid")
 
 
@@ -133,13 +134,29 @@ def read_all_chunk_edge_infos(proc_url):
     return io.utils.make_info_arr(dframe_lookup)
 
 
-def read_merged_edge_info(df, proc_url):
+def read_max_n_edge_per_cleft(proc_url, n):
+    assert io.is_db_url(proc_url)
+
+    metadata = io.open_db_metadata(proc_url)
+    edges = metadata.tables["edges"]
+
+    n_column = edges.columns[n]
+    statement = edges.select().distinct(edges.c.cleft_segid).\
+                          order_by(edges.c.cleft_segid, n_column.desc()).\
+                          where(edges.c.merged == false())
+
+    return io.read_db_dframe(proc_url, statement, index_col="cleft_segid")
+
+
+def read_merged_edge_info(proc_url, read_optional=False):
     """Reads the merged edge info dataframe from a processing directory"""
     if io.is_db_url(proc_url):
         metadata = io.open_db_metadata(proc_url)
 
         edges = metadata.tables["edges"]
         columns = list(edges.c[name] for name in EDGE_INFO_COLUMNS)
+        if read_optional:
+            columns += list(edges.c[name] for name in OPTIONAL_COLUMNS)
         statement = select(columns).where(and_(edges.c.merged == true(),
                                                edges.c.final == false()))
         return io.read_db_dframe(proc_url, statement, index_col="cleft_segid")
@@ -152,11 +169,15 @@ def write_merged_edge_info(dframe, proc_url):
     """ Writes a merged edge info dataframe to storage. """
     if io.is_db_url(proc_url):
         dframe = dframe.reset_index()
-        dframe = dframe[EDGE_INFO_COLUMNS]
-        dframe["chunk_id"] = NULL_CHUNK_ID
-        dframe["merged"] = True
-        dframe["final"] = False
-        io.write_db_dframe(dframe, proc_url, "edges", index=False)
+        to_write = dframe[EDGE_INFO_COLUMNS].copy()
+        for col in OPTIONAL_COLUMNS:
+            if col in dframe.columns:
+                to_write[col] = dframe[col]
+                
+        to_write["chunk_id"] = NULL_CHUNK_ID
+        to_write["merged"] = True
+        to_write["final"] = False
+        io.write_db_dframe(to_write, proc_url, "edges", index=False)
 
     else:
         io.write_dframe(dframe, proc_url, MERGED_EDGES_FNAME)

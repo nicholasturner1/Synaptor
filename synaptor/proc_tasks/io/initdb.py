@@ -1,5 +1,5 @@
 from sqlalchemy import Table, Column, ForeignKey
-from sqlalchemy import Integer, Boolean
+from sqlalchemy import Integer, Boolean, Float, BigInteger
 
 import pandas as pd
 
@@ -16,7 +16,7 @@ __all__ = ["init_db", "drop_db", "fill_chunks"]
 TABLES = ["edges", "clefts", "continuations",
           "chunks", "cleft_map", "dup_map",
           "overlaps"]
-NULL_CHUNK_ID = 0
+NULL_CHUNK_ID = 1
 
 
 def init_db(url, metadata=None, edges=True, overlaps=False):
@@ -61,16 +61,16 @@ def init_clefts(metadata):
                         default=NULL_CHUNK_ID),
                  Column("size", Integer),
                  # centroid coordinates
-                 Column("centroid_x", Integer),
-                 Column("centroid_y", Integer),
-                 Column("centroid_z", Integer),
+                 Column("centroid_x", Float),
+                 Column("centroid_y", Float),
+                 Column("centroid_z", Float),
                  # cleft bbox
-                 Column("BBOX_bx", Integer),
-                 Column("BBOX_by", Integer),
-                 Column("BBOX_bz", Integer),
-                 Column("BBOX_ex", Integer),
-                 Column("BBOX_ey", Integer),
-                 Column("BBOX_ez", Integer),
+                 Column("bbox_bx", Integer),
+                 Column("bbox_by", Integer),
+                 Column("bbox_bz", Integer),
+                 Column("bbox_ex", Integer),
+                 Column("bbox_ey", Integer),
+                 Column("bbox_ez", Integer),
                  # merged across chunks?
                  Column("merged", Boolean, default=False),
                  # final version?
@@ -94,8 +94,8 @@ def init_edges(metadata):
                  Column("id", Integer, primary_key=True),
                  Column("cleft_segid", Integer),
                  Column("chunk_id", None, ForeignKey("chunks.id")),
-                 Column("presyn_segid", Integer),
-                 Column("postsyn_segid", Integer),
+                 Column("presyn_segid", BigInteger),
+                 Column("postsyn_segid", BigInteger),
                  Column("size", Integer),
                  # Anchor points
                  Column("presyn_x", Integer),
@@ -139,4 +139,4 @@ def fill_chunks(url, bboxes):
                       "end_x", "end_y", "end_z"]
     dframe.index.name = "id"
 
-    io.write_db_dframe(dframe, url, "chunks", if_exists="append")
+    io.write_db_dframe(dframe, url, "chunks")
