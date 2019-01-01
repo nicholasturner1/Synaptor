@@ -1,5 +1,5 @@
 # Synaptor v3
-Processing voxelwise convnet output to predict synpatic clefts, and assigning synaptic partners using Asynet
+A package for processing voxelwise convolutional network output for connectomics.
 
 See scripts and tasks directories for example use cases
 
