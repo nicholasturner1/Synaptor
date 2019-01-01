@@ -169,12 +169,12 @@ def consolidate_edges_task(edges_arr):
                  edges_arr)
 
 
-def merge_duplicates_task(merged_cleft_info, merged_edge_df,
-                          dist_thr, voxel_res, size_thr, join="inner"):
+def merge_duplicates_task(merged_cleft_info, edge_df,
+                          dist_thr, voxel_res, size_thr):
     """ Parallelizable merge_edges """
     full_df = timed("Merging edge DataFrame to cleft DataFrame",
                     merge_edges.merge_to_cleft_df,
-                    merged_cleft_info, merged_edge_df)
+                    merged_cleft_info, edge_df)
 
     dup_id_map = timed("Merging duplicate clefts",
                        merge_edges.merge_duplicate_clefts2,
@@ -213,8 +213,7 @@ def merge_edges_task(edges_arr, merged_cleft_info,
 
     full_df, merged_id_map = merge_duplicates_task(merged_cleft_info,
                                                    merged_edge_df, voxel_res,
-                                                   dist_thr, size_thr,
-                                                   join="left")
+                                                   dist_thr, size_thr)
 
     return full_df, merged_id_map, merged_edge_df
 
