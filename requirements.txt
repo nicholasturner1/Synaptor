@@ -4,7 +4,7 @@ python-igraph
 pandas
 h5py
 cloud-volume
-pytorch=0.4.0
+pytorch==0.4.0
 torchvision
 future
 pybind11>=2.2
