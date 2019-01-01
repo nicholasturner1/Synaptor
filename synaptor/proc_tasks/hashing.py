@@ -1,6 +1,7 @@
 __doc__ = """
 Some utilities for hashing groups of values for distributed processing.
 """
+import random
 import struct
 import hashlib
 import collections
@@ -8,20 +9,28 @@ import collections
 import pandas as pd
 
 HASHED_INDEX_NAME = "hashed_index"
+PRIME = 670177
 
-
-def basehash(v):
+def basehash(v, seed=54321, verbose=False):
     """ Hash an object, return a hash object. """
-    return hashlib.sha224(v)
+    random.seed(seed)
+    a = random.randint(1, PRIME-1)
+    b = random.randint(0, PRIME-1)
+    ret = (a*v + b) % PRIME
+    if verbose:
+        print((v, a, b, ret))
+    return ret
 
 
-def pack_many(v):
+def pack_many(v, verbose=False):
     if isinstance(v, collections.Iterable):
-        fmt = "".join(get_format(elem) for elem in v)
-        return struct.pack(fmt, *v)
+        if verbose:
+            print(",".join(map(str, v)))
+        return int.from_bytes(",".join(map(str, v)).encode(),
+                              byteorder="little")
 
     else:
-        return struct.pack(get_format(v), v)
+        return int.from_bytes(str(v).encode(), byteorder="little")
     
 
 def get_format(v):
@@ -30,7 +39,7 @@ def get_format(v):
 
 def hashval(v, maxval):
     """ Hash a value to an index below maxval. """
-    return int(basehash(pack_many(v)).hexdigest(), 16) % maxval
+    return basehash(pack_many(v)) % maxval
 
 
 def hashtuple(t, maxval):
