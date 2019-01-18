@@ -41,7 +41,7 @@ def merge_duplicate_clefts1(full_info_df, dist_thr, res):
         if df.shape[0] == 1:
             continue
 
-        cleft_ids = df.index.values
+        cleft_ids = df.cleft_segid.values
         cleft_coords = df[["centroid_x","centroid_y","centroid_z"]].values
 
         cleft_pairs = find_pairs_within_dist(cleft_ids, cleft_coords,
@@ -57,7 +57,7 @@ def merge_duplicate_clefts2(full_info_df, dist_thr, res):
     conn_comps = []
     def find_new_comps(group):
         if len(group) > 1:
-            ids = group.index.values
+            ids = group.cleft_segid.values
             coords = group[["centroid_x","centroid_y","centroid_z"]].values
 
             pairs = find_pairs_within_dist(ids, coords, dist_thr, res)
@@ -106,7 +106,7 @@ def find_pairs_within_dist(ids, coords, dist_thr, res):
 def match_clefts_by_partners(cleft_info_df):
 
     cleft_by_partners = {}
-    for (cid, pre, post, x,y,z) in zip(cleft_info_df.index,
+    for (cid, pre, post, x,y,z) in zip(cleft_info_df.cleft_segid,
                                        cleft_info_df.presyn_segid,
                                        cleft_info_df.postsyn_segid,
                                        cleft_info_df.centroid_x,
