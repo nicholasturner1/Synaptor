@@ -155,22 +155,32 @@ def chunk_edges_task(img, clefts, seg, asynet,
                   edges, clefts)
 
     if hashmax is not None:
-        hashcolumns = ["presyn_segid", "postsyn_segid"]
         edges = timed("Hashing partner id combinations",
                       hashing.add_hashed_index,
-                      edges, hashcolumns, hashmax, hash_fillval)
+                      edges, ["presyn_segid", "postsyn_segid"], hashmax,
+                      indexname="partnerhash",
+                      null_fillval=hash_fillval)
+        edges = timed("Hashing cleft ids",
+                      hashing.add_hashed_index,
+                      edges, ["cleft_segid"], hashmax,
+                      indexname="clefthash")
 
     return edges
 
 
-def consolidate_edges_task(edges_arr):
-    return timed("Merging edges",
-                 merge_edges.consolidate_edges1,
-                 edges_arr)
+def consolidate_edges_task(edges, single_dframe=False):
+    if single_dframe:
+        return timed("Merging edges",
+                     merge_edges.consolidate_edges,
+                     edges)
+    else:
+        return timed("Merging edges",
+                     merge_edges.consolidate_edge_arr,
+                     edges)
 
 
 def merge_duplicates_task(merged_cleft_info, edge_df,
-                          dist_thr, voxel_res, size_thr):
+                          voxel_res, dist_thr, size_thr):
     """ Parallelizable merge_edges """
     full_df = timed("Merging edge DataFrame to cleft DataFrame",
                     merge_edges.merge_to_cleft_df,

@@ -107,7 +107,8 @@ def init_edges(metadata):
                  # final version of cleft_id?
                  Column("merged", Boolean, default=False),
                  Column("final", Boolean, default=False),
-                 Column("hashed_index", Integer, default=-1))
+                 Column("clefthash", Integer, default=-1),
+                 Column("partnerhash", Integer, default=-1))
 
 
 def init_dup_map(metadata):

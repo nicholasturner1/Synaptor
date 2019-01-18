@@ -175,42 +175,37 @@ def merge_edges_task(voxel_res, dist_thr, size_thr, proc_dir_path):
           full_df, proc_dir_path)
 
 
-def consolidate_edges_task(proc_url):
+def consolidate_edges_task(proc_url, clefthash=None):
 
-    edges_arr = timed("Reading all chunkwise edge info",
+    if clefthash is None:
+        edges = timed("Reading all chunkwise edge info",
                       taskio.read_all_chunk_edge_infos,
                       proc_url)
+    else:
+        edges = timed(f"Reading edge info for cleft id hash {clefthash}",
+                      taskio.read_hashed_edge_info,
+                      proc_url,
+                      clefthash=clefthash, merged=False)
 
-    merged_edge_df = tasks.consolidate_edges_task(edges_arr)
-
-    timed("Writing merged edge list",
-          taskio.write_merged_edge_info,
-          merged_edge_df, proc_url)
-    
-
-def consolidate_edges_db_task(proc_url):
-
-    merged_edge_df = timed("Querying for max size assignment",
-                           taskio.read_max_n_edge_per_cleft,
-                           proc_url, "size")
+    merged_edge_df = tasks.consolidate_edges_task(edges, clefthash is not None)
 
     timed("Writing merged edge list",
           taskio.write_merged_edge_info,
           merged_edge_df, proc_url)
 
-    
+
 def merge_duplicates_task(voxel_res, dist_thr, size_thr, proc_url, hash_index):
 
     edge_df = timed(f"Reading edges for hash index {hash_index}",
                     taskio.read_hashed_edge_info,
                     proc_url, hash_index)
 
-    merged_cleft_info = timed("Reading merged cleft info",
+    merged_cleft_info = timed("Reading merged cleft info for ind {hash_index}",
                               taskio.read_merged_cleft_info,
-                              proc_url)
+                              proc_url, hash_index)
 
-    full_df, dup_id_map = tasks.merge_duplicates_task(merged_cleft_info, 
-                                                      edge_df, dist_thr, 
+    full_df, dup_id_map = tasks.merge_duplicates_task(merged_cleft_info,
+                                                      edge_df, dist_thr,
                                                       voxel_res, size_thr)
 
     timed("Writing duplicate id mapping for hash index",
@@ -219,7 +214,7 @@ def merge_duplicates_task(voxel_res, dist_thr, size_thr, proc_url, hash_index):
     timed("Writing final DataFrame for hash index",
           taskio.write_full_info,
           full_df, proc_url)
-    
+
 
 def chunk_overlaps_task(seg_cvname, base_seg_cvname,
                         chunk_begin, chunk_end,

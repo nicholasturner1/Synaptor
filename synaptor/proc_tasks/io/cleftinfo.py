@@ -106,15 +106,23 @@ def read_all_chunk_cleft_infos(proc_url):
     return io.utils.make_info_arr(dframe_lookup)
 
 
-def read_merged_cleft_info(proc_url):
+def read_merged_cleft_info(proc_url, hash_index=None):
     """ Reads the merged cleft info dataframe from storage. """
     if io.is_db_url(proc_url):
         metadata = io.open_db_metadata(proc_url)
 
         clefts = metadata.tables["clefts"]
         columns = list(clefts.c[name] for name in CLEFT_INFO_COLUMNS)
-        statement = select(columns).where(and_(clefts.c.merged == true(),
-                                               clefts.c.final == false()))
+        if hash_index is None:
+            statement = select(columns).where(and_(clefts.c.merged == true(),
+                                                   clefts.c.final == false()))
+        else:
+            edges = metadata.tables["edges"]
+            statement = select(columns).select_from(
+                            clefts.join(edges,
+                                        clefts.c.cleft_segid == edges.c.cleft_segid)
+                            ).where(and_(clefts.c.merged == true(),
+                                         edges.c.partnerhash == hash_index))
         return io.read_db_dframe(proc_url, statement, index_col="cleft_segid")
 
     else:
