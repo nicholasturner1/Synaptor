@@ -37,10 +37,11 @@ def add_cleft_locs(edges_dframe, clefts):
 
     df = pd.DataFrame.from_dict(coms, orient="index")
     df.columns = CENTROID_SCHEMA
+    df = df.reset_index()
 
     return pd.merge(df, edges_dframe,
-                    left_index=True, right_index=True,
-                    copy=False)
+                    left_on="index", right_on="cleft_segid",
+                    copy=False).drop(["index"], axis=1)
 
 def upsample_edge_info(edges_dframe, mip, offset):
     """pass"""

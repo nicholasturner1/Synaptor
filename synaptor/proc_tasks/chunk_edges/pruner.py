@@ -72,7 +72,7 @@ def prune_candidates(net, img, seg, patchsz, candidates, cleft=None,
         output = predict_candidate(net, img_p, syn_p, seg_p,
                                    presyn_id, postsyn_id)
 
-        if output > 0:
+        if output > output_thresh:
             pruned.append((cid, presyn_id, postsyn_id))
             outputs.append(output)
 
