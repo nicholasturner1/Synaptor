@@ -93,6 +93,9 @@ def single_fscore_PR(prec, rec, beta):
 
     betasq = beta ** 2
 
+    if prec == 0. or rec == 0.:
+        return 0.
+
     return (1+betasq) / (1./prec + betasq/rec)
 
 

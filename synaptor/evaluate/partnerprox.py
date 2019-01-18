@@ -27,7 +27,7 @@ def score_at_thresholds(net, prox, img, seg, clf, labels,
     pre_terms, post_terms = find_prox_terminals(prox, seg,
                                                 presyn_thresh=presyn_thresh,
                                                 postsyn_thresh=postsyn_thresh,
-                                                sz_thresh=seg_sz_thresh)
+                                                sz_thresh=term_sz_thresh)
 
     # Extracting candidates
     find_candidates = candidates.extract_terminal_candidates
@@ -57,7 +57,8 @@ def score_at_thresholds(net, prox, img, seg, clf, labels,
     returns = prec_rec_curve(preds_fmt, scores, labels)
 
     if return_aux_data:
-        aux_returns = (pre_terms, post_terms, cands_fmt, locs_fmt, scores)
+        aux_returns = (pre_terms, post_terms, cands_fmt,
+                       preds_fmt, locs_fmt, scores)
         return returns, aux_returns
     else:
         return returns

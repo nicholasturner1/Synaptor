@@ -3,6 +3,7 @@ Evaluation functions for scoring connectivity graph edges
 
 Nicholas Turner, 2018
 """
+import numpy as np
 
 from . import score
 from .. import seg_utils
@@ -40,7 +41,7 @@ def find_max_overlaps(overlaps, row_ids, col_ids):
     if overlaps.shape[0] == 0:
         return dict()
 
-    max_inds = overlaps.argmax(1).toarray().ravel()
+    max_inds = np.array(overlaps.argmax(1)).ravel()
 
     return {row_ids[i]: col_ids[j] for (i, j) in enumerate(max_inds)}
 

@@ -94,13 +94,12 @@ def opt_threshold(tps, fps, fns, voxel_beta=1.5, voxel_bins=None):
 def merge_duplicate_clefts(asynet, patchsz, img, seg, clf,
                            dist_thr=1000, voxel_res=[4,4,40]):
 
-    clf = clf.astype("uint32")#hopefully temporary, relies on seg_utils.relabel_data
-    edges = chunk_edges.infer_edges(asynet, img, clf, seg, (0,0,0), patchsz)
+    edges = chunk_edges.infer_edges(asynet, img, clf, seg, patchsz)
 
     full_info_df = chunk_edges.add_cleft_locs(edges, clf)
 
-    dup_id_map = merge_edges.merge_duplicate_clefts(full_info_df, dist_thr,
-                                                    voxel_res)
+    dup_id_map = merge_edges.merge_duplicate_clefts2(full_info_df, dist_thr,
+                                                     voxel_res)
 
     return seg_utils.relabel_data(clf, dup_id_map), dup_id_map
 
