@@ -16,7 +16,7 @@ from ... import seg_utils
 def extract_label_candidates(clefts, seg, dil_param=5, overlap_thresh=25):
 
     if dil_param > 0:
-        clefts = seg_utils._seg_utils.dilate_by_k(clefts, dil_param)
+        clefts = seg_utils.dilate_by_k(clefts, dil_param)
 
     return overlapping_pairs(clefts, seg, overlap_thresh)
 

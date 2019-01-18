@@ -132,12 +132,21 @@ def filter_by_dist(candidates, sep_thr,
     return filtered, locs
 
 
-def extract_label_candidates(clefts, seg, dil_param=5, overlap_thresh=25):
+def extract_label_candidates(clefts, seg, dil_param=5, overlap_thresh=25, 
+                             filter_self=False):
 
     if dil_param > 0:
-        clefts = seg_utils._seg_utils.dilate_by_k(clefts, dil_param)
+        clefts = clefts.transpose((2, 1, 0))
+        clefts = seg_utils.dilate_by_k(clefts, dil_param)
+        clefts = clefts.transpose((2, 1, 0))
 
-    return overlapping_pairs(clefts, seg, overlap_thresh)
+    candidates = overlapping_pairs(clefts, seg, overlap_thresh)
+
+    if filter_self:
+        candidates = [candidate for candidate in candidates 
+                      if candidate[0] != candidate[1]]
+
+    return candidates
 
 
 def overlapping_pairs(clefts, seg, overlap_thresh):

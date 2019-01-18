@@ -107,8 +107,17 @@ def pairs_within_dist(centroids1, centroids2, dist_thr, voxel_res=[40, 4, 4]):
     ids1 = list(centroids1.keys())
     ids2 = list(centroids2.keys())
 
-    cents1 = np.array([centroids1[i] for i in ids1]) * voxel_res
-    cents2 = np.array([centroids2[i] for i in ids2]) * voxel_res
+    empty = np.zeros((0, 3), dtype=np.float32)
+
+    if len(centroids1) > 0:
+        cents1 = np.array([centroids1[i] for i in ids1]) * voxel_res
+    else:
+        cents1 = empty
+
+    if len(centroids2) > 0:
+        cents2 = np.array([centroids2[i] for i in ids2]) * voxel_res
+    else:
+        cents2 = empty
 
     pairs = np.nonzero(spatial.distance.cdist(cents1, cents2) < dist_thr)
     # converting to original ids
