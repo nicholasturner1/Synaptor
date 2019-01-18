@@ -15,6 +15,7 @@ from .auto import toolbox as tb
 from . import overlap
 from . import cremi
 from . import score
+from . import edge
 
 
 def gridsearch_edgethresh(seg_weights, labels, pre_threshs, post_threshs):
@@ -144,11 +145,15 @@ def multi_cremi_score(preds, labels, edts=None, dist_thr=200, voxel_res=[4,4,40]
     return ((dgt/fns + df/fps)/2), full_fscore, setwise_scores
 
 
-def gridsearch(net_output, gt_clefts, cc_threshs, sz_threshs,
-               score_mode="liberal"):
+def gridsearch(img, seg, net_output, cleft_lbls, edge_lbls,
+               cc_threshs, asynet, patchsz, sz_threshs,
+               score_mode="conservative", beta=1):
 
     precs = np.zeros((len(cc_threshs), len(sz_threshs)))
     recs = np.zeros((len(cc_threshs), len(sz_threshs)))
+    fscores = np.zeros((len(cc_threshs), len(sz_threshs)))
+
+    max_fscore = 0.
 
     for (cc_i, sz_i) in np.ndindex(precs.shape):
 
@@ -156,14 +161,29 @@ def gridsearch(net_output, gt_clefts, cc_threshs, sz_threshs,
         print("PARAMS: CC @ {cc}, SZ @ {sz}".format(cc=cc_thr, sz=sz_thr))
 
         print("Thresholding and filtering...")
-        ccs = clefts.dilated_components(net_output, 0, cc_thr)
+        ccs = chunk_ccs.connected_components3d(net_output, cc_thr)
         ccs, _ = seg_utils.filter_segs_by_size(ccs, sz_thr)
 
+        edge_df = edges.infer_edges(asynet, img, ccs, seg,
+                                    patchsz=patchsz,
+                                    samples_per_cleft=1)
+
+        preds = list(zip(edge_df.cleft_segid,
+                         edge_df.presyn_segid,
+                         edge_df.postsyn_segid))
+
         print("Scoring...")
-        prec, rec = overlap.score_overlaps(ccs, gt_clefts,
-                                           mode=score_mode)
+        prec, rec = edge.score_segmented_edges(ccs, preds,
+                                               cleft_lbls, edge_lbls)
 
         precs[cc_i, sz_i] = prec[0] # score only
         recs[cc_i, sz_i] = rec[0] # score only
+        fscore = score.single_fscore_PR(prec[0], rec[0], beta)
+        fscores[cc_i, sz_i] = fscore
 
-    return precs, recs
+        if fscore > max_fscore:
+            max_fscore = fscore
+            max_cc_thr = cc_thr
+            max_sz_thr = sz_thr
+
+    return precs, recs, fscores, (max_fscore, max_cc_thr, max_sz_thr)
