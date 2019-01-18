@@ -23,8 +23,9 @@ RUN apt-get update && \
     #conda update python && \
 #Python Dependencies
 #For some reason, pip works for h5py and pandas, and conda doesn't
-    pip --no-cache-dir install h5py pandas cloud-volume==0.37.1 python-igraph future && \
-    conda install scipy pytorch==0.4.0 cython torchvision pybind11 -c pytorch && \
+    pip --no-cache-dir install h5py pandas cloud-volume python-igraph future && \
+    pip --no-cache-dir install requests psycopg2-binary && \
+    conda install scipy pytorch==0.4.0 torchvision pybind11 sqlalchemy -c pytorch && \
     git clone https://github.com/nicholasturner1/Synaptor.git && \
     pip install -e /Synaptor && \
     conda clean -t -p && \
