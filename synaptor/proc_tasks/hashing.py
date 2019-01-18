@@ -9,7 +9,7 @@ import collections
 import pandas as pd
 
 HASHED_INDEX_NAME = "hashed_index"
-PRIME = 670177
+PRIME = 4839472903831
 
 def basehash(v, seed=54321, verbose=False):
     """ Hash an object, return a hash object. """
@@ -31,7 +31,7 @@ def pack_many(v, verbose=False):
 
     else:
         return int.from_bytes(str(v).encode(), byteorder="little")
-    
+
 
 def get_format(v):
     return 'i' if isinstance(v, int) else "d"
@@ -66,14 +66,16 @@ def hashcolumns2(dframe, columns, maxval):
     return list(hashtuple(t, maxval) for t in columnvals)
 
 
-def add_hashed_index(dframe, columns, maxval, null_fillval=None):
-    dframe[HASHED_INDEX_NAME] = hashcolumns(dframe, columns, maxval)
-    if null_fillval is not None:    
-        dframe = fill_nulls(dframe, columns, null_fillval)
+def add_hashed_index(dframe, columns, maxval,
+                     indexname=HASHED_INDEX_NAME, null_fillval=None):
+    dframe[indexname] = hashcolumns(dframe, columns, maxval)
+    if null_fillval is not None:
+        dframe = fill_nulls(dframe, columns, null_fillval,
+                            indexname=indexname)
     return dframe
 
 
-def fill_nulls(dframe, columns, fillval):
+def fill_nulls(dframe, columns, fillval, indexname=HASHED_INDEX_NAME):
     for col in columns:
-        dframe.loc[pd.isnull(dframe[col]), HASHED_INDEX_NAME] = fillval
+        dframe.loc[pd.isnull(dframe[col]), indexname] = fillval
     return dframe
