@@ -7,7 +7,7 @@ See: https://github.com/paragt/EMSynConn/blob/master/vertebrate/candidate/genera
 import numpy as np
 
 from ... import seg_utils
-from . import conn_comps
+from . import conncomps
 
 
 def find_prox_terminals(prox, seg=None, presyn_thresh=0,
@@ -19,8 +19,8 @@ def find_prox_terminals(prox, seg=None, presyn_thresh=0,
     presyn_v = prox > presyn_thresh
     postsyn_v = prox < postsyn_thresh
 
-    presyn_ccs = conn_comps.connected_components3d(presyn_v).astype(np.uint32)
-    postsyn_ccs = conn_comps.connected_components3d(postsyn_v).astype(np.uint32)
+    presyn_ccs = conncomps.connected_components3d(presyn_v).astype(np.uint32)
+    postsyn_ccs = conncomps.connected_components3d(postsyn_v).astype(np.uint32)
 
     if seg is not None:
         presyn_ccs = seg_utils.split_by_overlap(presyn_ccs, seg)
