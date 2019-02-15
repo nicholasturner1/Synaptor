@@ -4,8 +4,6 @@ Connected Components for Synaptic Partner-Signed Proximity
 See: https://github.com/paragt/EMSynConn/blob/master/vertebrate/candidate/generate_proposals.py # noqa
 """
 
-import numpy as np
-
 from ... import seg_utils
 from . import conncomps
 
@@ -19,8 +17,8 @@ def find_prox_terminals(prox, seg=None, presyn_thresh=0,
     presyn_v = prox > presyn_thresh
     postsyn_v = prox < postsyn_thresh
 
-    presyn_ccs = conncomps.connected_components3d(presyn_v).astype(np.uint32)
-    postsyn_ccs = conncomps.connected_components3d(postsyn_v).astype(np.uint32)
+    presyn_ccs = conncomps.connected_components(presyn_v)
+    postsyn_ccs = conncomps.connected_components(postsyn_v)
 
     if seg is not None:
         presyn_ccs = seg_utils.split_by_overlap(presyn_ccs, seg)
