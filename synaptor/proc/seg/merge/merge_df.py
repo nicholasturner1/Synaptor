@@ -52,4 +52,4 @@ def enforce_size_threshold(cleft_info_df, size_thr):
     violations = cleft_info_df[cleft_info_df[sch.size] < size_thr].index
     cleft_info_df.drop(violations.tolist(), inplace=True)
 
-    return {v : 0 for v in violations}
+    return {v: 0 for v in violations}
