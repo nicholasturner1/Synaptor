@@ -22,6 +22,7 @@ bbox_cols = [bbox_bx, bbox_by, bbox_bz,
 
 # Size of a segment
 size = "size"
+size_cols = [size]
 
 # ====================================================
 # Synapse assignment descriptors

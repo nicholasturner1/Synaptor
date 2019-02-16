@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 __doc__ = """
 Connected Component ID management
 
@@ -8,30 +7,21 @@ Nicholas Turner <nturner@cs.princeton.edu>, 2018
 import numpy as np
 import pandas as pd
 
-from ...types import continuation
 
-
-def consolidate_cleft_info_arr(cleft_info_arr):
+def assign_unique_ids_serial(cleft_info_arr):
     """ Assigns new ids to every cleft segment """
 
-    #init
-    #full_df = None
+    # init
     chunk_id_maps = empty_obj_array(cleft_info_arr.shape)
     df_parts = []
     next_id = 1
 
-    for (x,y,z) in np.ndindex(cleft_info_arr.shape):
+    for (x, y, z) in np.ndindex(cleft_info_arr.shape):
 
-        new_df = cleft_info_arr[x,y,z]
-        chunk_id_maps[x,y,z], next_id = new_id_map(new_df, next_id)
+        new_df = cleft_info_arr[x, y, z]
+        chunk_id_maps[x, y, z], next_id = new_id_map(new_df, next_id)
 
-        df_parts.append(remap_ids(new_df, chunk_id_maps[x,y,z]))
-        #if full_df is None:
-        #    full_df = remap_ids(new_df, chunk_id_maps[x,y,z])
-        #else:
-        #    full_df = pd.concat((full_df,
-        #                        remap_ids(new_df, chunk_id_maps[x,y,z])),
-        #                        copy=False)
+        df_parts.append(remap_ids(new_df, chunk_id_maps[x, y, z]))
 
     full_df = pd.concat(df_parts, copy=False)
 
@@ -40,6 +30,7 @@ def consolidate_cleft_info_arr(cleft_info_arr):
 
 def empty_obj_array(shape):
     size = np.prod(shape)
+
     return np.array([None for _ in range(size)]).reshape(shape)
 
 
@@ -48,8 +39,8 @@ def new_id_map(df, next_id):
 
     segids = df.index.tolist()
 
-    id_map = { segid : n for (segid,n) in
-               zip(segids,range(next_id, next_id+len(segids)))}
+    id_map = {segid: n for (segid, n) in
+              zip(segids, range(next_id, next_id+len(segids)))}
 
     return id_map, next_id+len(segids)
 
@@ -57,6 +48,7 @@ def new_id_map(df, next_id):
 def remap_ids(df, id_map):
     """ Remaps the index ids of a dataframe """
     df.rename(id_map, inplace=True)
+
     return df
 
 
@@ -73,7 +65,7 @@ def apply_id_map(cont_dict, id_map):
     Applies an id map to a set of continuations organized in
     dictionaries: face -> [continuations]
     """
-    for (face,conts) in cont_dict.items():
+    for (face, conts) in cont_dict.items():
         for continuation in conts:
             continuation.segid = id_map[continuation.segid]
 
@@ -85,7 +77,7 @@ def update_chunk_id_maps(chunk_id_maps, cont_id_map):
     """
 
     for mapping in chunk_id_maps.flat:
-        for (k,v) in mapping.items():
-            mapping[k] = cont_id_map.get(v,v)
+        for (k, v) in mapping.items():
+            mapping[k] = cont_id_map.get(v, v)
 
     return chunk_id_maps

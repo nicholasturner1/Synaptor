@@ -1,5 +1,5 @@
 from . import assign_ids
-from .assign_ids import consolidate_cleft_info_arr
+from .assign_ids import assign_unique_ids_serial 
 from .assign_ids import apply_chunk_id_maps, update_chunk_id_maps
 
 from . import merge_ccs
