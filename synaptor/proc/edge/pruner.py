@@ -10,8 +10,6 @@ from ...types import bbox
 from ... import seg_utils
 from . import locs
 
-from ... import io
-
 
 def prune_candidates(net, img, seg, patchsz, candidates, cleft=None,
                      output_thresh=0, cleft_locs=None, prox=None,

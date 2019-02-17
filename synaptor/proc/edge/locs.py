@@ -102,7 +102,8 @@ def covering_patches(cleft, cleft_ids, patchsz):
 
 def vol_center(cleft, cleft_ids, patchsz):
 
-    assert all(c >= p for (c,p) in zip(cleft.shape, patchsz)), "patchsz too large"
+    assert all(c >= p for (c, p) in zip(cleft.shape, patchsz))
 
     middle = tuple(bbox.Vec3d(cleft.shape) // 2)
-    return {cid : [middle] for cid in cleft_ids}
+
+    return {cid: [middle] for cid in cleft_ids}

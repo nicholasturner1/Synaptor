@@ -134,7 +134,6 @@ if __name__ == "__main__":
             avg_res = {0: ({0: 0,  1: 1,  2: 0}, {0: 0,  1: 0,  2: 1}),
                        1: ({0: 0,  1: 0,  2: 1}, {0: 0,  1: 1,  2: 0})}
             self.assertEqual(compute_all(avgs, sums, szs), avg_res)
-            #TODO: more tests here
-
+            # TODO: more tests here
 
     unittest.main()
