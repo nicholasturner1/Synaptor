@@ -24,6 +24,14 @@ bbox_cols = [bbox_bx, bbox_by, bbox_bz,
 size = "size"
 size_cols = [size]
 
+chunk_id = "chunk_id"
+chunk_bx = "begin_x"
+chunk_by = "begin_y"
+chunk_bz = "begin_z"
+chunk_ex = "end_x"
+chunk_ey = "end_y"
+chunk_ez = "end_z"
+
 # ====================================================
 # Synapse assignment descriptors
 

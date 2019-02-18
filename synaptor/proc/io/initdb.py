@@ -5,6 +5,7 @@ import pandas as pd
 
 from ... import io
 from ... import types
+from ..utils import schema as sch
 
 
 __all__ = ["init_db", "drop_db", "fill_chunks"]
@@ -45,32 +46,32 @@ def init_db(url, metadata=None, edges=True, overlaps=False):
 def init_chunks(metadata):
     return Table("chunks", metadata,
                  Column("id", Integer, primary_key=True),
-                 Column("begin_x", Integer),
-                 Column("begin_y", Integer),
-                 Column("begin_z", Integer),
-                 Column("end_x", Integer),
-                 Column("end_y", Integer),
-                 Column("end_z", Integer))
+                 Column(sch.chunk_bx, Integer),
+                 Column(sch.chunk_by, Integer),
+                 Column(sch.chunk_bz, Integer),
+                 Column(sch.chunk_ex, Integer),
+                 Column(sch.chunk_ey, Integer),
+                 Column(sch.chunk_ez, Integer))
 
 
 def init_clefts(metadata):
     return Table("clefts", metadata,
                  Column("id", Integer, primary_key=True),
-                 Column("cleft_segid", Integer),
-                 Column("chunk_id", None, ForeignKey("chunks.id"),
+                 Column(sch.cleft_id, Integer),
+                 Column(sch.chunk_id, None, ForeignKey("chunks.id"),
                         default=NULL_CHUNK_ID),
-                 Column("size", Integer),
+                 Column(sch.size, Integer),
                  # centroid coordinates
-                 Column("centroid_x", Float),
-                 Column("centroid_y", Float),
-                 Column("centroid_z", Float),
+                 Column(sch.centroid_x, Float),
+                 Column(sch.centroid_y, Float),
+                 Column(sch.centroid_z, Float),
                  # cleft bbox
-                 Column("bbox_bx", Integer),
-                 Column("bbox_by", Integer),
-                 Column("bbox_bz", Integer),
-                 Column("bbox_ex", Integer),
-                 Column("bbox_ey", Integer),
-                 Column("bbox_ez", Integer),
+                 Column(sch.bbox_bx, Integer),
+                 Column(sch.bbox_by, Integer),
+                 Column(sch.bbox_bz, Integer),
+                 Column(sch.bbox_ex, Integer),
+                 Column(sch.bbox_ey, Integer),
+                 Column(sch.bbox_ez, Integer),
                  # merged across chunks?
                  Column("merged", Boolean, default=False),
                  # final version?
@@ -84,7 +85,7 @@ def init_continuations(metadata):
 def init_cleft_map(metadata):
     return Table("cleft_map", metadata,
                  Column("id", Integer, primary_key=True),
-                 Column("chunk_id", None, ForeignKey("chunks.id")),
+                 Column(sch.chunk_id, None, ForeignKey("chunks.id")),
                  Column("prev_id", Integer),
                  Column("new_id", Integer))
 
@@ -92,18 +93,18 @@ def init_cleft_map(metadata):
 def init_edges(metadata):
     return Table("edges", metadata,
                  Column("id", Integer, primary_key=True),
-                 Column("cleft_segid", Integer),
-                 Column("chunk_id", None, ForeignKey("chunks.id")),
-                 Column("presyn_segid", BigInteger),
-                 Column("postsyn_segid", BigInteger),
-                 Column("size", Integer),
+                 Column(sch.cleft_id, Integer),
+                 Column(sch.chunk_id, None, ForeignKey("chunks.id")),
+                 Column(sch.presyn_id, BigInteger),
+                 Column(sch.postsyn_id, BigInteger),
+                 Column(sch.size, Integer),
                  # Anchor points
-                 Column("presyn_x", Integer),
-                 Column("presyn_y", Integer),
-                 Column("presyn_z", Integer),
-                 Column("postsyn_x", Integer),
-                 Column("postsyn_y", Integer),
-                 Column("postsyn_z", Integer),
+                 Column(sch.presyn_x, Integer),
+                 Column(sch.presyn_y, Integer),
+                 Column(sch.presyn_z, Integer),
+                 Column(sch.postsyn_x, Integer),
+                 Column(sch.postsyn_y, Integer),
+                 Column(sch.postsyn_z, Integer),
                  # final version of cleft_id?
                  Column("merged", Boolean, default=False),
                  Column("final", Boolean, default=False),
@@ -136,8 +137,8 @@ def fill_chunks(url, bboxes):
     dframe = pd.DataFrame([(0,0,0,0,0,0)] +
                           [bbox.astuple() for bbox in bboxes])
 
-    dframe.columns = ["begin_x", "begin_y", "begin_z",
-                      "end_x", "end_y", "end_z"]
+    dframe.columns = [sch.chunk_bx, sch.chunk_by, sch.chunk_bz,
+                      sch.chunk_ex, sch.chunk_ey, sch.chunk_ez]
     dframe.index.name = "id"
 
     io.write_db_dframe(dframe, url, "chunks")
