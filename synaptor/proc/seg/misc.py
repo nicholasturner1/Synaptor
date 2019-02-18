@@ -8,10 +8,10 @@ import itertools
 
 import pandas as pd
 
-from ..utils import schema as sch
+from .. import colnames as cn
 
 
-def make_seg_info_dframe(centers, sizes, bboxes, index_name=sch.cleft_id):
+def make_seg_info_dframe(centers, sizes, bboxes, index_name=cn.cleft_id):
     """
     Collects the three dictionaries describing the segments of a volume
     into a DataFrame
@@ -22,21 +22,21 @@ def make_seg_info_dframe(centers, sizes, bboxes, index_name=sch.cleft_id):
         return empty_cleft_df()
 
     # Segment Size
-    sizes_df = pd.Series(sizes, name=sch.size)
+    sizes_df = pd.Series(sizes, name=cn.size)
 
     # Segment Centroid
-    centers_df = dframe_from_tuple_dict(centers, sch.centroid_cols)
+    centers_df = dframe_from_tuple_dict(centers, cn.centroid_cols)
 
     # Segment Bounding Boxes
     bbox_tuples = {k: bbox.astuple() for (k, bbox) in bboxes.items()}
-    bbox_df = dframe_from_tuple_dict(bbox_tuples, sch.bbox_cols)
+    bbox_df = dframe_from_tuple_dict(bbox_tuples, cn.bbox_cols)
 
     return pd.concat((sizes_df, centers_df, bbox_df), axis=1)
 
 
 def empty_cleft_df():
     """Creates an empty DataFrame with the proper columns"""
-    columns = itertools.chain([sch.size], sch.centroid_cols, sch.bbox_cols)
+    columns = itertools.chain([cn.size], cn.centroid_cols, cn.bbox_cols)
 
     return pd.DataFrame({k: [] for k in columns})
 

@@ -1,5 +1,5 @@
 __doc__ = """
-Column Schema for Database Tables and Dataframes
+Column Names for Database Tables and Dataframes
 """
 
 # NOTE: All coordinate types should be XYZ ordered

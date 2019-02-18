@@ -12,17 +12,17 @@ import pandas as pd
 
 from ...types import bbox
 from ... import seg_utils
-from ..utils import schema as sch
+from .. import colnames as cn
 from . import locs
 from . import score
 from . import assign
 
 
-RECORD_SCHEMA = [sch.cleft_id, sch.presyn_id, sch.postsyn_id,
-                 *sch.presyn_coord_cols, *sch.postsyn_coord_cols,
-                 sch.presyn_wt, sch.postsyn_wt,
-                 sch.presyn_sz, sch.postsyn_sz]
-SCHEMA_W_BASINS = RECORD_SCHEMA + [sch.presyn_basin, sch.postsyn_basin]
+RECORD_SCHEMA = [cn.cleft_id, cn.presyn_id, cn.postsyn_id,
+                 *cn.presyn_coord_cols, *cn.postsyn_coord_cols,
+                 cn.presyn_wt, cn.postsyn_wt,
+                 cn.presyn_sz, cn.postsyn_sz]
+SCHEMA_W_BASINS = RECORD_SCHEMA + [cn.presyn_basin, cn.postsyn_basin]
 
 
 def infer_edges(net, img, cleft, seg, patchsz, wshed=None, offset=(0, 0, 0),

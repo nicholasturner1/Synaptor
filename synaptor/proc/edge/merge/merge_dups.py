@@ -10,7 +10,7 @@ import numpy as np
 import scipy.spatial
 
 from ... import utils
-from ...utils import schema as sch
+from ... import colnames as cn
 
 
 def merge_duplicate_clefts(full_info_df, dist_thr, res):
@@ -38,13 +38,13 @@ def merge_duplicate_clefts(full_info_df, dist_thr, res):
 def merge_duplicate_clefts1(full_info_df, dist_thr, res):
 
     conn_comps = []
-    for _, df in full_info_df.groupby([sch.presyn_id, sch.postsyn_id]):
+    for _, df in full_info_df.groupby([cn.presyn_id, cn.postsyn_id]):
 
         if df.shape[0] == 1:
             continue
 
         cleft_ids = df.cleft_segid.values
-        cleft_coords = df[sch.centroid_cols].values
+        cleft_coords = df[cn.centroid_cols].values
 
         cleft_pairs = find_pairs_within_dist(cleft_ids, cleft_coords,
                                              dist_thr, res)
@@ -61,14 +61,14 @@ def merge_duplicate_clefts2(full_info_df, dist_thr, res):
     def find_new_comps(group):
         if len(group) > 1:
             ids = group.cleft_segid.values
-            coords = group[sch.centroid_cols].values
+            coords = group[cn.centroid_cols].values
 
             pairs = find_pairs_within_dist(ids, coords, dist_thr, res)
 
             conn_comps.extend(utils.find_connected_components(pairs))
         return 0
 
-    full_info_df.groupby([sch.presyn_id, sch.postsyn_id]).apply(find_new_comps)
+    full_info_df.groupby([cn.presyn_id, cn.postsyn_id]).apply(find_new_comps)
 
     return utils.make_id_map(conn_comps)
 
@@ -109,12 +109,12 @@ def find_pairs_within_dist(ids, coords, dist_thr, res):
 def match_clefts_by_partners(cleft_info_df):
 
     cleft_by_partners = {}
-    for (cid, pre, post, x, y, z) in zip(cleft_info_df[sch.cleft_id],
-                                         cleft_info_df[sch.presyn_id],
-                                         cleft_info_df[sch.postsyn_id],
-                                         cleft_info_df[sch.centroid_x],
-                                         cleft_info_df[sch.centroid_y],
-                                         cleft_info_df[sch.centroid_z]):
+    for (cid, pre, post, x, y, z) in zip(cleft_info_df[cn.cleft_id],
+                                         cleft_info_df[cn.presyn_id],
+                                         cleft_info_df[cn.postsyn_id],
+                                         cleft_info_df[cn.centroid_x],
+                                         cleft_info_df[cn.centroid_y],
+                                         cleft_info_df[cn.centroid_z]):
 
         partners = (pre, post)
 
