@@ -50,3 +50,4 @@ postsyn_sz = "postsyn_sz"
 # Watershed ID which maps to the assigned segment
 presyn_basin = "presyn_basin"
 postsyn_basin = "postsyn_basin"
+basin_cols = [presyn_basin, postsyn_basin]

@@ -1,15 +1,16 @@
-#!/usr/bin/env python3
 __doc__ = """
 Merging Duplicates - defined as two clefts which connect the same
 partners within some threshold distance
 """
 
-import math, operator
+import math
+import operator
 
 import numpy as np
 import scipy.spatial
 
-from .. import utils
+from ... import utils
+from ...utils import schema as sch
 
 
 def merge_duplicate_clefts(full_info_df, dist_thr, res):
@@ -33,16 +34,17 @@ def merge_duplicate_clefts(full_info_df, dist_thr, res):
 
     return utils.make_id_map(conn_comps)
 
+
 def merge_duplicate_clefts1(full_info_df, dist_thr, res):
 
     conn_comps = []
-    for _,df in full_info_df.groupby(["presyn_segid","postsyn_segid"]):
+    for _, df in full_info_df.groupby([sch.presyn_id, sch.postsyn_id]):
 
         if df.shape[0] == 1:
             continue
 
         cleft_ids = df.cleft_segid.values
-        cleft_coords = df[["centroid_x","centroid_y","centroid_z"]].values
+        cleft_coords = df[sch.centroid_cols].values
 
         cleft_pairs = find_pairs_within_dist(cleft_ids, cleft_coords,
                                              dist_thr, res)
@@ -55,17 +57,18 @@ def merge_duplicate_clefts1(full_info_df, dist_thr, res):
 def merge_duplicate_clefts2(full_info_df, dist_thr, res):
 
     conn_comps = []
+
     def find_new_comps(group):
         if len(group) > 1:
             ids = group.cleft_segid.values
-            coords = group[["centroid_x","centroid_y","centroid_z"]].values
+            coords = group[sch.centroid_cols].values
 
             pairs = find_pairs_within_dist(ids, coords, dist_thr, res)
 
             conn_comps.extend(utils.find_connected_components(pairs))
         return 0
 
-    full_info_df.groupby(["presyn_segid","postsyn_segid"]).apply(find_new_comps)
+    full_info_df.groupby([sch.presyn_id, sch.postsyn_id]).apply(find_new_comps)
 
     return utils.make_id_map(conn_comps)
 
@@ -98,7 +101,7 @@ def find_pairs_within_dist(ids, coords, dist_thr, res):
     dists = scipy.spatial.distance.pdist(coord_array)
     under_thr = np.nonzero(dists < dist_thr)[0]
 
-    pairs = [row_col_from_condensed_index(len(ids),i) for i in under_thr]
+    pairs = [row_col_from_condensed_index(len(ids), i) for i in under_thr]
 
     return list(map(lambda tup: (ids[tup[0]], ids[tup[1]]), pairs))
 
@@ -106,19 +109,19 @@ def find_pairs_within_dist(ids, coords, dist_thr, res):
 def match_clefts_by_partners(cleft_info_df):
 
     cleft_by_partners = {}
-    for (cid, pre, post, x,y,z) in zip(cleft_info_df.cleft_segid,
-                                       cleft_info_df.presyn_segid,
-                                       cleft_info_df.postsyn_segid,
-                                       cleft_info_df.centroid_x,
-                                       cleft_info_df.centroid_y,
-                                       cleft_info_df.centroid_z):
+    for (cid, pre, post, x, y, z) in zip(cleft_info_df[sch.cleft_id],
+                                         cleft_info_df[sch.presyn_id],
+                                         cleft_info_df[sch.postsyn_id],
+                                         cleft_info_df[sch.centroid_x],
+                                         cleft_info_df[sch.centroid_y],
+                                         cleft_info_df[sch.centroid_z]):
 
-        partners = (pre,post)
+        partners = (pre, post)
 
         if partners not in cleft_by_partners:
-            cleft_by_partners[partners] = [ (cid, (x,y,z)) ]
+            cleft_by_partners[partners] = [(cid, (x, y, z))]
         else:
-            cleft_by_partners[partners].append( (cid,(x,y,z)) )
+            cleft_by_partners[partners].append((cid, (x, y, z)))
 
     return cleft_by_partners
 
@@ -133,16 +136,16 @@ def match_clefts_by_presyn(edge_list):
         else:
             clefts_by_presyn[pre].add(cid)
 
-    #Converting to lists
-    for (k,v) in clefts_by_presyn.items():
+    # Converting to lists
+    for (k, v) in clefts_by_presyn.items():
         clefts_by_presyn[k] = list(v)
 
     return clefts_by_presyn
 
 
-def row_col_from_condensed_index(d,i):
-    #https://stackoverflow.com/questions/5323818/condensed-matrix-function-to-find-pairs
-    b = 1 -2*d
+def row_col_from_condensed_index(d, i):
+    # https://stackoverflow.com/questions/5323818/condensed-matrix-function-to-find-pairs  # noqa
+    b = 1 - 2 * d
     x = math.floor((-b - math.sqrt(b**2 - 8*i))/2)
     y = i + x*(b + x + 2)/2 + 1
-    return (x,int(y))
+    return (x, int(y))
