@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 __doc__ = """
 Synaptor Processing Tasks
 """
@@ -7,19 +6,15 @@ import time
 
 from .. import types
 from .. import seg_utils
-
-from . import chunk_ccs
-from . import merge_ccs
-from . import chunk_edges
-from . import merge_edges
-from . import chunk_overlaps
-from . import merge_overlaps
+from . import seg
+from . import edge
+from . import overlap
 from . import anchor
 from . import hashing
 
 
 def timed(fn_desc, fn, *args, **kwargs):
-    """ Measures the execution time of the passed fn """
+    """ Measures the execution time of the passed function """
     print("{fn_desc}".format(fn_desc=fn_desc))
     start = time.time()
     result = fn(*args, **kwargs)
@@ -44,10 +39,9 @@ def chunk_ccs_task(net_output, chunk_begin, chunk_end,
     """
     chunk_bounds = types.BBox3d(chunk_begin, chunk_end)
 
-    # Processing
     ccs = timed("Running connected components",
-                chunk_ccs.connected_components3d,
-                net_output, cc_thresh).astype("uint32")
+                seg.connected_components,
+                net_output, cc_thresh)
 
     continuations = timed("Extracting continuations",
                           types.continuation.extract_all_continuations,
@@ -88,8 +82,8 @@ def merge_ccs_task(cont_info_arr, cleft_info_arr, chunk_bounds,
         -A nparray of id maps for each chunk
     """
 
-    cons_cleft_info, chunk_id_maps = timed("Consolidating cleft dataframes",
-                                           merge_ccs.consolidate_cleft_info_arr,
+    cons_cleft_info, chunk_id_maps = timed("Assigning new cleft ids",
+                                           seg.merge.assign_unique_ids_serial,
                                            cleft_info_arr)
 
     cont_info_arr = timed("Applying chunk_id_maps to continuations",

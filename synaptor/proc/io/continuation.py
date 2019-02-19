@@ -7,10 +7,7 @@ import os
 
 from ... import io
 from ...types import continuation
-
-
-CONTN_DIRNAME = "continuations"
-CONTN_FMTSTR = "conts_{tag}.h5"
+from . import filenames as fn
 
 
 def read_chunk_continuations(fname):
@@ -21,8 +18,8 @@ def read_chunk_continuations(fname):
 def write_chunk_continuations(conts, chunk_bounds, proc_dir_path):
     """Writes the continuations for a chunk to a processing directory"""
     chunk_tag = io.fname_chunk_tag(chunk_bounds)
-    fname = os.path.join(proc_dir_path, CONTN_DIRNAME,
-                         CONTN_FMTSTR.format(tag=chunk_tag))
+    fname = os.path.join(proc_dir_path, fn.contin_dirname,
+                         fn.contin_fmtstr.format(tag=chunk_tag))
 
     fobj = io.open_h5(fname)
     local_fname = fobj.filename
@@ -39,7 +36,7 @@ def read_all_continuations(proc_dir_path):
     Reads all of the continuation files from a processing directory
     Currently assumes that NOTHING else is in the same subdirectory
     """
-    continuation_dir = os.path.join(proc_dir_path, CONTN_DIRNAME)
+    continuation_dir = os.path.join(proc_dir_path, fn.contin_dirname)
     fnames = io.pull_directory(continuation_dir)
 
     starts = [io.bbox_from_fname(f).min() for f in fnames ]

@@ -4,7 +4,7 @@ Column Names for Database Tables and Dataframes
 
 # NOTE: All coordinate types should be XYZ ordered
 
-cleft_id = "cleft_segid"
+seg_id = "cleft_segid"
 
 centroid_x = "centroid_x"
 centroid_y = "centroid_y"
@@ -24,13 +24,15 @@ bbox_cols = [bbox_bx, bbox_by, bbox_bz,
 size = "size"
 size_cols = [size]
 
-chunk_id = "chunk_id"
+chunk_tag = "chunk_tag"
 chunk_bx = "begin_x"
 chunk_by = "begin_y"
 chunk_bz = "begin_z"
 chunk_ex = "end_x"
 chunk_ey = "end_y"
 chunk_ez = "end_z"
+
+clefthash = "clefthash"
 
 # ====================================================
 # Synapse assignment descriptors
@@ -59,3 +61,5 @@ postsyn_sz = "postsyn_sz"
 presyn_basin = "presyn_basin"
 postsyn_basin = "postsyn_basin"
 basin_cols = [presyn_basin, postsyn_basin]
+
+partnerhash = "partnerhash"
