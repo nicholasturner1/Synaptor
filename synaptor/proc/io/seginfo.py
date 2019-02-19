@@ -31,7 +31,7 @@ def read_chunk_seg_info(proc_url, chunk_bounds):
 
         segs = metadata.tables["chunk_segs"]
         columns = list(segs.c[name] for name in SEG_INFO_COLUMNS)
-        statement = select(columns).where(segs.c[cn.chunk_tag] == chunk_tag)
+        statement = select(columns).where(segs.c[cn.chunk_tag] == tag)
 
         return io.read_db_dframe(proc_url, statement, index_col=cn.segid)
 
@@ -43,8 +43,9 @@ def write_chunk_seg_info(dframe, proc_url, chunk_bounds):
     """ Writes seg info to the processing URL """
     if io.is_db_url(proc_url):
         chunk_tag = io.fname_chunk_tag(chunk_bounds)
-        dframe[cn.chunk_tag] = chunk_tag
-        io.write_db_dframe(dframe, proc_url, "chunk_segs")
+        to_write = dframe[SEG_INFO_COLUMNS].copy()
+        to_write[cn.chunk_tag] = chunk_tag
+        io.write_db_dframe(to_write, proc_url, "chunk_segs")
 
     else:
         io.write_dframe(dframe, chunk_info_fname(proc_url, chunk_bounds))
@@ -81,6 +82,11 @@ def read_all_chunk_seg_infos(proc_url):
         dframe_lookup = {chunk_lookup[i]: df
                          for (i, df) in chunk_id_to_df.items()}
 
+        # ensuring that each chunk is represented
+        for chunk_begin in chunk_lookup.values():
+            if chunk_begin not in dframe_lookup:
+                dframe_lookup[chunk_begin] = make_empty_df()
+
     else:
         seginfo_dir = os.path.join(proc_url, fn.seginfo_dirname)
         fnames = io.pull_directory(seginfo_dir)
@@ -92,6 +98,13 @@ def read_all_chunk_seg_infos(proc_url):
         dframe_lookup = {s: df for (s, df) in zip(starts, dframes)}
 
     return io.utils.make_info_arr(dframe_lookup)
+
+
+def make_empty_df():
+    """ Make an empty dataframe as a placeholder. """
+    df = pd.DataFrame(data=None, dtype=int, columns=SEG_INFO_COLUMNS)
+
+    return df.set_index(cn.segid)
 
 
 def read_merged_seg_info(proc_url, hash_index=None):

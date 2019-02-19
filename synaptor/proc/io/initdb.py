@@ -131,7 +131,7 @@ def init_edge_tables(metadata):
     """
     init_edge_table(metadata, "chunk_edges")
     init_edge_table(metadata, "merged_edges")
-    init_segmented_edge_table(metadata, "final")
+    init_final_edge_table(metadata, "final")
 
 
 def init_edge_table(metadata, tablename, chunked=True):
@@ -139,7 +139,7 @@ def init_edge_table(metadata, tablename, chunked=True):
     Specifies a table that tracks information about synaptic connections.
     """
     columns = [Column("id", Integer, primary_key=True),
-               Column(cn.cleft_id, Integer),
+               Column(cn.segid, Integer),
                Column(cn.presyn_id, BigInteger),
                Column(cn.postsyn_id, BigInteger),
                Column(cn.size, Integer),
@@ -151,8 +151,8 @@ def init_edge_table(metadata, tablename, chunked=True):
                Column(cn.postsyn_y, Integer),
                Column(cn.postsyn_z, Integer),
                # Hash values
-               Column("clefthash", Integer, default=-1),
-               Column("partnerhash", Integer, default=-1)]
+               Column(cn.clefthash, Integer, default=-1),
+               Column(cn.partnerhash, Integer, default=-1)]
 
     if chunked:
         columns.append(Column(cn.chunk_tag, Text))
@@ -160,13 +160,13 @@ def init_edge_table(metadata, tablename, chunked=True):
     return Table(tablename, metadata, *columns)
 
 
-def init_segmented_edge_table(metadata, tablename):
+def init_final_edge_table(metadata, tablename):
     """
     Specifies a table that holds all of the information about a set of
-    synaptic connections, paired with their segmentations
+    synaptic connections, paired 1:1 with synapse segmentations
     """
     return Table(tablename, metadata,
-                 Column(cn.cleft_id, Integer, primary_key=True),
+                 Column(cn.segid, Integer, primary_key=True),
                  Column(cn.presyn_id, BigInteger),
                  Column(cn.postsyn_id, BigInteger),
                  Column(cn.size, Integer),
@@ -189,8 +189,8 @@ def init_segmented_edge_table(metadata, tablename):
                  Column(cn.postsyn_y, Integer),
                  Column(cn.postsyn_z, Integer),
                  # Hash values
-                 Column("clefthash", Integer, default=-1),
-                 Column("partnerhash", Integer, default=-1))
+                 Column(cn.clefthash, Integer, default=-1),
+                 Column(cn.partnerhash, Integer, default=-1))
 
 
 def init_overlap_tables(metadata):

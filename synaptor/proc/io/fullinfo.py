@@ -2,22 +2,17 @@ __doc__ = """
 Edge info DataFrame IO for processing tasks
 """
 
-from sqlalchemy import select, and_
-from sqlalchemy.sql.expression import true
+from sqlalchemy import select
 
 from ... import io
-from . import cleftinfo
-from . import edgeinfo
-from . import initdb
+from .. import colnames as cn
+from .. import filenames as fn
 
 
-# FILE STORAGE CONVENTIONS
-FINAL_FULL_DF_FNAME = "final.df"
-
-# This needs to match volumns in `initdb.py`
-EDGE_INFO_COLUMNS = edgeinfo.EDGE_INFO_COLUMNS
-CLEFT_INFO_COLUMNS = cleftinfo.CLEFT_INFO_COLUMNS
-NULL_CHUNK_ID = initdb.NULL_CHUNK_ID
+FULL_INFO_COLUMNS = [cn.segid, cn.presyn_id, cn.postsyn_id, cn.size,
+                     *cn.centroid_cols, *cn.bbox_cols,
+                     *cn.presyn_coord_cols, *cn.postsyn_coord_cols,
+                     cn.clefthash, cn.partnerhash]
 
 
 def read_full_info(proc_url):
@@ -28,17 +23,14 @@ def read_full_info(proc_url):
     if io.is_db_url(proc_url):
         metadata = io.open_db_metadata(proc_url)
 
-        clefts, edges = metadata.tables["clefts"], metadata.tables["edges"]
-        columns = list(clefts.c[name] for name in CLEFT_INFO_COLUMNS)
-        columns += list(clefts.c[name] for name in EDGE_INFO_COLUMNS)
-        statement = select(columns).where(and_(
-                                   clefts.c.cleft_segid == edges.c.cleft_segid,
-                                   clefts.c.final == true(),
-                                   edges.c.final == true()))
-        return io.read_db_dframe(proc_url, statement, index_col="cleft_segid")
+        final = metadata.tables["final"]
+        columns = list(final.c[name] for name in FULL_INFO_COLUMNS)
+        statement = select(columns)
+
+        return io.read_db_dframe(proc_url, statement, index_col=cn.segid)
 
     else:
-        return io.read_dframe(proc_url, FINAL_FULL_DF_FNAME)
+        return io.read_dframe(proc_url, fn.final_edgeinfo_fname)
 
 
 def write_full_info(dframe, proc_url):
@@ -48,19 +40,7 @@ def write_full_info(dframe, proc_url):
     """
     if io.is_db_url(proc_url):
         dframe = dframe.reset_index()
-        cleft_info = dframe[CLEFT_INFO_COLUMNS].copy()
-        edge_info = dframe[EDGE_INFO_COLUMNS].copy()
-
-        cleft_info["chunk_id"] = NULL_CHUNK_ID
-        cleft_info["merged"] = True
-        cleft_info["final"] = True
-
-        edge_info["chunk_id"] = NULL_CHUNK_ID
-        edge_info["merged"] = True
-        edge_info["final"] = True
-
-        io.write_db_dframes([cleft_info, edge_info], proc_url,
-                            ["clefts", "edges"], index=False)
+        io.write_db_dframe(dframe, proc_url, "final", index=False)
 
     else:
-        io.write_dframe(dframe, proc_url, FINAL_FULL_DF_FNAME)
+        io.write_dframe(dframe, proc_url, fn.final_edgeinfo_fname)
