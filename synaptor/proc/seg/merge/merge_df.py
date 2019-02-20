@@ -1,7 +1,5 @@
-__doc__ = """
-Merging Cleft Info Dataframes
-
-Nicholas Turner <nturner@cs.princeton.edu>, 2018
+"""
+Merging Seg Info Dataframes
 """
 
 import itertools
@@ -11,11 +9,11 @@ from ... import utils
 from ... import colnames as cn
 
 
-def merge_cleft_df(cleft_info_df, id_map):
-    return utils.merge_info_df(cleft_info_df, id_map, merge_cleft_rows)
+def merge_seg_df(seg_info_df, id_map):
+    return utils.merge_info_df(seg_info_df, id_map, merge_seg_rows)
 
 
-def merge_cleft_rows(row1, row2):
+def merge_seg_rows(row1, row2):
 
     sz1, com1, bbox1 = unwrap_row(row1)
     sz2, com2, bbox2 = unwrap_row(row2)
@@ -47,9 +45,9 @@ def wrap_row(sz, com, bb):
                     map(int, itertools.chain((sz,), com, bb.astuple()))))
 
 
-def enforce_size_threshold(cleft_info_df, size_thr):
-    """Finds a mapping that removes clefts under the size threshold"""
-    violations = cleft_info_df[cleft_info_df[cn.size] < size_thr].index
-    cleft_info_df.drop(violations.tolist(), inplace=True)
+def enforce_size_threshold(seg_info_df, size_thr):
+    """Finds a mapping that removes segs under the size threshold"""
+    violations = seg_info_df[seg_info_df[cn.size] < size_thr].index
+    seg_info_df.drop(violations.tolist(), inplace=True)
 
     return {v: 0 for v in violations}

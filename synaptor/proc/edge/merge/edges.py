@@ -1,24 +1,22 @@
-__doc__ = """
-Edge consolidation (w/o cleft information)
+""" Resolving edge assignments across chunks. """
 
-Nicholas Turner <nturner@cs.princeton.edu>, 2018-9
-"""
 
 import pandas as pd
 
 from ... import colnames as cn
 
 
-def concat_edge_arr(edge_dframe_arr):
+def pick_largest_edges_arr(edge_dframe_arr):
 
     df = pd.concat(map(lambda x: x.reset_index(), edge_dframe_arr.flat),
                    copy=False, sort=False, axis="index")
 
-    return consolidate_edges(df)
+    return pick_largest_edges(df)
 
 
-def pick_largest_edges(df, indexname=cn.cleft_id):
+def pick_largest_edges(df, indexname=cn.seg_id):
     df = df[df[cn.size] == df.groupby([indexname])[cn.size].transform(max)]
+
     # keeps the first row in the case of a tie (effectively random)
     df = df.drop_duplicates(indexname)
 

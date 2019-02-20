@@ -53,9 +53,9 @@ def read_hashed_edge_info(proc_url, partnerhash=None,
     metadata = io.open_db_metadata(proc_url)
 
     if merged:
-        edges = metadata.tables["edges"]
-    else:
         edges = metadata.tables["merged_edges"]
+    else:
+        edges = metadata.tables["chunk_edges"]
 
     columns = list(edges.c[name] for name in EDGE_INFO_COLUMNS)
 

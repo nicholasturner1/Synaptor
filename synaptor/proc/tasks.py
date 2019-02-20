@@ -1,6 +1,5 @@
-__doc__ = """
-Synaptor Processing Tasks
-"""
+""" Base processing tasks for cloud workflows """
+
 
 import time
 
@@ -23,8 +22,7 @@ def timed(fn_desc, fn, *args, **kwargs):
     return result
 
 
-def chunk_ccs_task(net_output, chunk_begin, chunk_end,
-                   cc_thresh, sz_thresh):
+def cc_task(desc_vol, cc_thresh, sz_thresh, offset=(0, 0, 0)):
     """
     - Performs connected components over a chunk of data
     - Extracts clefts that possibly continue to the next chunk (continuations)
@@ -37,11 +35,9 @@ def chunk_ccs_task(net_output, chunk_begin, chunk_end,
     - Continuations for the chunk
     - DataFrame of cleft info
     """
-    chunk_bounds = types.BBox3d(chunk_begin, chunk_end)
-
     ccs = timed("Running connected components",
                 seg.connected_components,
-                net_output, cc_thresh)
+                desc_vol, cc_thresh)
 
     continuations = timed("Extracting continuations",
                           types.continuation.extract_all_continuations,
@@ -52,16 +48,15 @@ def chunk_ccs_task(net_output, chunk_begin, chunk_end,
                        seg_utils.filter_segs_by_size,
                        ccs, sz_thresh, to_ignore=cont_ids)
 
-    offset = chunk_bounds.min()
-    centers = timed("Computing cleft centroids",
+    centers = timed("Computing seg centroids",
                     seg_utils.centers_of_mass,
                     ccs, offset=offset)
-    bboxes = timed("Computing cleft bounding boxes",
+    bboxes = timed("Computing seg bounding boxes",
                    seg_utils.bounding_boxes,
                    ccs, offset=offset)
 
-    cleft_info = timed("Making cleft info DataFrame",
-                       chunk_ccs.make_cleft_info_dframe,
+    cleft_info = timed("Making seg info DataFrame",
+                       seg.make_seg_info_dframe,
                        centers, sizes, bboxes)
 
     return ccs, continuations, cleft_info
@@ -87,37 +82,36 @@ def merge_ccs_task(cont_info_arr, cleft_info_arr, chunk_bounds,
                                            cleft_info_arr)
 
     cont_info_arr = timed("Applying chunk_id_maps to continuations",
-                          merge_ccs.apply_chunk_id_maps,
+                          seg.merge.apply_chunk_id_maps,
                           cont_info_arr, chunk_id_maps)
 
     cont_id_map = timed("Merging connected continuations",
-                        merge_ccs.merge_connected_continuations,
+                        seg.merge.merge_continuations,
                         cont_info_arr, max_face_shape)
 
     chunk_id_maps = timed("Updating chunk id maps",
-                          merge_ccs.update_chunk_id_maps,
+                          seg.merge.update_chunk_id_maps,
                           chunk_id_maps, cont_id_map)
 
     cons_cleft_info = timed("Merging cleft dataframes",
-                            merge_ccs.merge_cleft_df,
+                            seg.merge.merge_seg_df,
                             cons_cleft_info, cont_id_map)
 
     size_thr_map = timed("Enforcing size threshold over merged ccs",
-                         merge_ccs.enforce_size_threshold,
+                         seg.merge.enforce_size_threshold,
                          cons_cleft_info, size_thr)
 
     chunk_id_maps = timed("Updating chunk id maps (for size thresholding)",
-                          merge_ccs.update_chunk_id_maps,
+                          seg.merge.update_chunk_id_maps,
                           chunk_id_maps, size_thr_map)
 
     return cons_cleft_info, chunk_id_maps
 
 
-def chunk_edges_task(img, clefts, seg, asynet,
-                     chunk_begin, chunk_end, patchsz,
-                     wshed=None, num_samples_per_cleft=2,
-                     dil_param=5, id_map=None, hashmax=None,
-                     hash_fillval=-1):
+def edge_task(img, clefts, seg, assoc_net,
+              patchsz, offset=(0, 0, 0), root_seg=None,
+              samples_per_cleft=2, dil_param=5, 
+              id_map=None, hashmax=None, hash_fillval=-1):
     """
     -Applies an id map to a chunk (if passed)
     NOTE: Modifies the clefts array if id_map exists
@@ -129,78 +123,76 @@ def chunk_edges_task(img, clefts, seg, asynet,
      -A DataFrame of info for each edge within this chunk
     """
 
-    chunk_bounds = types.BBox3d(chunk_begin, chunk_end)
-
     if id_map is not None:
         clefts = timed("Remapping cleft ids",
                        seg_utils.relabel_data,
                        clefts, id_map, copy=False)
 
-    offset = chunk_bounds.min()
     edges = timed("Inferring edges",
-                  chunk_edges.infer_edges,
-                  asynet, img, clefts, seg,
+                  edge.infer_edges,
+                  assoc_net, img, clefts, seg,
                   offset=offset, patchsz=patchsz,
-                  samples_per_cleft=num_samples_per_cleft,
-                  wshed=wshed, dil_param=dil_param)
+                  samples_per_cleft=samples_per_cleft,
+                  root_seg=root_seg, dil_param=dil_param)
 
-    edges = timed("Computing cleft size and adding to edge dframe",
-                  chunk_edges.add_cleft_sizes,
+    edges = timed("Computing cleft size and adding it to dframe",
+                  edge.add_cleft_sizes,
                   edges, clefts)
 
     if hashmax is not None:
         edges = timed("Hashing partner id combinations",
                       hashing.add_hashed_index,
-                      edges, ["presyn_segid", "postsyn_segid"], hashmax,
-                      indexname="partnerhash",
+                      edges, [cn.presyn_id, cn.postsyn_id], hashmax,
+                      indexname=cn.partnerhash,
                       null_fillval=hash_fillval)
+
         edges = timed("Hashing cleft ids",
                       hashing.add_hashed_index,
-                      edges, ["cleft_segid"], hashmax,
-                      indexname="clefthash")
+                      edges, [cn.segid], hashmax,
+                      indexname=cn.clefthash)
 
     return edges
 
 
-def consolidate_edges_task(edges, single_dframe=False):
+def pick_largest_edges_task(edges, single_dframe=False):
     if single_dframe:
         return timed("Merging edges",
-                     merge_edges.consolidate_edges,
+                     edge.merge.pick_largest_edges,
                      edges)
     else:
         return timed("Merging edges",
-                     merge_edges.consolidate_edge_arr,
+                     edge.merge.pick_largest_edges_arr,
                      edges)
 
 
-def merge_duplicates_task(merged_cleft_info, edge_df,
+def merge_duplicates_task(cleft_info, edge_info,
                           voxel_res, dist_thr, size_thr):
-    """ Parallelizable merge_edges """
+    """ Parallelizable edge.merge """
     full_df = timed("Merging edge DataFrame to cleft DataFrame",
-                    merge_edges.merge_to_cleft_df,
-                    merged_cleft_info, edge_df)
+                    edge.merge.merge_to_cleft_df,
+                    cleft_info, edge_info)
 
     dup_id_map = timed("Merging duplicate clefts",
-                       merge_edges.merge_duplicate_clefts2,
+                       edge.merge.merge_duplicate_clefts,
                        full_df, dist_thr, voxel_res)
 
     full_df = timed("Merging duplicates within full dataframe",
-                    merge_edges.merge_full_df1,
+                    edge.merge.merge_full_df,
                     full_df, dup_id_map)
 
     size_thr_map = timed("Enforcing size threshold over merged ccs",
-                         merge_ccs.enforce_size_threshold,
+                         seg.merge.enforce_size_threshold,
                          full_df, size_thr)
 
     merged_id_map = timed("Updating duplicate id map with size threshold map",
-                          merge_edges.update_id_map,
+                          edge.merge.update_id_map,
                           dup_id_map, size_thr_map)
 
     return full_df, merged_id_map
 
 
-def merge_edges_task(edges_arr, merged_cleft_info,
-                     voxel_res, dist_thr, size_thr):
+def merge_edges_task(edge_info, cleft_info, voxel_res,
+                     dist_thr, size_thr, single_edge_info=False):
     """
     -Maps together any edges that connect the same partners
      and are within some distance apart
@@ -213,23 +205,24 @@ def merge_edges_task(edges_arr, merged_cleft_info,
      -A merged edge dataframe (mostly for debugging along with #1)
     """
 
-    merged_edge_df = consolidate_edges_task(edges_arr)
+    merged_edge_info = pick_largest_edges_task(
+                           edge_info, single_dframe=single_edge_info)
 
-    full_df, merged_id_map = merge_duplicates_task(merged_cleft_info,
-                                                   merged_edge_df, voxel_res,
+    full_df, merged_id_map = merge_duplicates_task(cleft_info,
+                                                   merged_edge_info, voxel_res,
                                                    dist_thr, size_thr)
 
-    return full_df, merged_id_map, merged_edge_df
+    return full_df, merged_id_map, merged_edge_info
 
 
-def chunk_overlaps_task(segs_of_interest, base_segs):
+def chunk_overlaps_task(segs, base_segs):
     """
-    -Determines which segments of interest overlap with
-    which base segs, returns the overlap matrix
+    Determines the overlap matrix between segments of interest overlap with
+    a base segmentation
     """
     return timed("Counting overlaps",
                  chunk_overlaps.count_overlaps,
-                 segs_of_interest, base_segs)
+                 segs, base_segs)
 
 
 def merge_overlaps_task(overlaps_arr):
@@ -238,11 +231,11 @@ def merge_overlaps_task(overlaps_arr):
     -Returns a mapping from segment to base segment of max overlap
     """
     full_overlap = timed("Merging overlap matrices",
-                         merge_overlaps.consolidate_overlaps,
+                         overlap.merge.consolidate_overlaps,
                          overlaps_arr)
 
     return timed("Finding segments with maximal overlap",
-                 merge_overlaps.find_max_overlaps,
+                 overlap.merge.find_max_overlaps,
                  full_overlap)
 
 
@@ -258,7 +251,7 @@ def remap_ids_task(clefts, *id_maps, copy=False):
     id_map = id_maps[0]
     for (i, next_map) in enumerate(id_maps[1:]):
         id_map = timed("Updating id map: round {i}".format(i=i+1),
-                       merge_edges.update_id_map,
+                       edge.merge.update_id_map,
                        id_map, next_map, reused_ids=True)
 
     clefts = timed("Relabeling data by id map",
@@ -268,9 +261,9 @@ def remap_ids_task(clefts, *id_maps, copy=False):
     return clefts
 
 
-def anchor_task(edge_df, seg, clf, chunk_begin,
+def anchor_task(edge_info, seg, clf, chunk_begin,
                 voxel_res=[4, 4, 40], min_box_width=[100, 100, 5],
-                wshed=None):
+                root_seg=None):
     """
     -Places centralized anchor points for presynaptic and postsynaptic
     terminals
@@ -278,6 +271,6 @@ def anchor_task(edge_df, seg, clf, chunk_begin,
 
     return timed("Placing anchor points",
                  anchor.place_anchor_pts,
-                 edge_df, seg, clf, verbose=True,
+                 edge_info, seg, clf, verbose=True,
                  voxel_res=voxel_res, offset=chunk_begin,
                  min_box_width=min_box_width, wshed=wshed)

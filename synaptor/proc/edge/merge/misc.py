@@ -1,6 +1,4 @@
-__doc__ = """
-Miscellaneous Functionality
-"""
+""" Miscellaneous Functionality """
 
 
 def update_id_map(id_map, next_map, reused_ids=False):
