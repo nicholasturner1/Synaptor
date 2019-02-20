@@ -9,67 +9,138 @@ import pandas as pd
 import scipy.sparse as sp
 
 from ... import io
+from .. import colnames as cn
+from . import filenames as fn
 
-OVERLAPS_DIRNAME = "chunk_overlaps"
-OVERLAPS_FMTSTR = "chunk_overlap_{tag}.df"
-MAX_OVERLAPS_FNAME = "max_overlaps.df"
+
+OVERLAP_COLS = [cn.rows, cn.cols, cn.vals]
 
 
 def read_chunk_overlap_mat(fname):
-    """Reads an overlap matrix for a single chunk by filename"""
+    """ Reads an overlap matrix for a single chunk by filename. """
     df = io.read_dframe(fname)
 
-    rs = list(df.rows)
-    cs = list(df.cols)
-    vs = list(df.vals)
+    return overlap_mat_from_dframe(df)
+
+
+def overlap_mat_from_dframe(df):
+    """
+    Converts a dataframe specifying a sparse matrix to a scipy sparse matrix
+    """
+    rs = list(df[cn.rows])
+    cs = list(df[cn.cols])
+    vs = list(df[cn.vals])
 
     return sp.coo_matrix((vs,(rs,cs)))
 
 
-def write_chunk_overlap_mat(overlap_mat, chunk_bounds, proc_dir_path):
+def write_chunk_overlap_mat(overlap_mat, chunk_bounds, proc_url):
     """Writes an overlap matrix for a chunk to a processing directory"""
     chunk_tag = io.fname_chunk_tag(chunk_bounds)
-    mat_fname = os.path.join(proc_dir_path, OVERLAPS_DIRNAME,
-                             OVERLAPS_FMTSTR.format(tag=chunk_tag))
 
     rs, cs, vs = sp.find(overlap_mat)
     df = pd.DataFrame(dict(rows=rs, cols=cs, vals=vs))
 
-    io.write_dframe(df, mat_fname)
+    if io.is_db_url(proc_url):
+        metadata = io.open_db_metadata(proc_url)
+        to_write[cn.chunk_tag] = chunk_tag
+        io.write_db_dframe(to_write, proc_url, "chunk_overlaps")
+
+    else:
+        mat_fname = os.path.join(proc_dir_path, fn.overlaps_dirname,
+                                 fn.overlaps_fmtstr.format(tag=chunk_tag))
+        io.write_dframe(df, mat_fname)
 
 
-def read_all_overlap_mats(proc_dir_path):
+def read_all_overlap_mats(proc_url):
     """
     Reads all overlap matrix files within the proper subdirectory 
     within the processing directory. Currently assumes that 
     NOTHING else is in the overlap matrix subdirectory
     """
-    overlap_mat_dir = os.path.join(proc_dir_path, OVERLAPS_DIRNAME)
-    fnames = io.pull_directory(overlap_mat_dir)
-    assert len(fnames) > 0, "No filenames returned"
+    if io.is_db_url(proc_url):
+        metadata = io.open_db_metadata(proc_url)
+        overlaps = metadata.tables["chunk_overlaps"]
+        chunks = metadata.tables["chunks"]
 
-    starts = [io.bbox_from_fname(f).min() for f in fnames]
-    mats = [read_chunk_overlap_mat(f) for f in fnames]
+        overlapcols = list(overlaps.c[name] for name in OVERLAP_COLS)
+        overlapcols.append(overlaps.c[cn.chunk_tag])
+        overlapstmt = select(overlapcols)
 
-    info_arr = io.utils.make_info_arr({s : mat
-                                       for (s,mat) in zip(starts, mats)})
-    return info_arr, os.path.dirname(fnames[0])
+        chunkcols = list(chunks.c[name] for name in CHUNK_START_COLS)
+        chunkstmt = select(chunk_cols)
+
+        results = io.read_db_dframes(proc_url, (overlapstmt, chunkstmt),
+                                     index_cols=("id", "id"))
+
+        overlap_df, chunk_df = results[0], results[1]
+
+        chunk_id_to_df = dict(iter(overlap_df.groupby(cn.chunk_tag)))
+        chunk_lookup = dict(zip(chunk_df[cn.chunk_tag],
+                                list(zip(chunk_df[cn.chunk_bx],
+                                         chunk_df[cn.chunk_by],
+                                         chunk_id[cn.chunk_bz]))))
+
+        dframe_lookup = {chunk_lookup[i]: overlap_mat_from_dframe(df)
+                         for (i, df) in chunk_id_to_df.items()}
+
+        # ensuring that each chunk is represented
+        represented_keys = set(dframe_lookup.keys())
+        for chunk_begin in chunk_lookup.values():
+            if chunk_begin not in represented_keys:
+                empty_mat = overlap_mat_from_dframe(make_empty_df())
+                dframe_lookup[chunk_begin] = empty_mat
+
+    else:
+        overlap_mat_dir = os.path.join(proc_dir_path, fn.overlaps_dirname)
+        fnames = io.pull_directory(overlap_mat_dir)
+        assert len(fnames) > 0, "No filenames returned"
+    
+        starts = [io.bbox_from_fname(f).min() for f in fnames]
+        mats = [read_chunk_overlap_mat(f) for f in fnames]
+    
+        dframe_lookup = {s: mat for (s, mat) in zip(starts, mats)}
+
+    return io.utils.make_info_arr(dframe_lookup)
 
 
-def read_max_overlaps(proc_dir_path):
+def make_empty_df():
+    """ Make an empty dataframe as a placeholder. """
+    df = pd.DataFrame(data=None, dtype=int, columns=OVERLAP_COLUMNS)
+
+    return df.set_index(cn.segid)
+
+
+def read_max_overlaps(proc_url):
     """
     Reads the mapping from segment to base segment of maximal overlap 
     from a processing directory
     """
-    df = io.read_dframe(proc_dir_path, MAX_OVERLAPS_FNAME)
-    return dict(zip(df.index, df.max_overlap))
+    if io.is_db_url(proc_url):
+        metadata = io.open_db_metadata(proc_url)
+
+        overlaps = metadata.tables["max_overlaps"]
+        columns = list(overlaps.c[name] for name in OVERLAPS_COLUMNS)
+        df = io.read_db_dframe(proc_url, select(columns), index=cn.rows)
+
+    else:
+        df = io.read_dframe(proc_url, fn.max_overlaps_fname)
+
+    return dict(zip(df.index, df[cn.cols]))
 
 
-def write_max_overlaps(max_overlaps, proc_dir_path):
+def write_max_overlaps(max_overlaps, proc_url):
     """
     Writes a mapping from segment to base segment of maximal overlap
     to a processing directory
     """
+
+    rs, cs, vs = sp.find(overlap_mat)
+    df = pd.DataFrame(dict(rows=rs, cols=cs, vals=vs))
+    if io.is_db_url(proc_url):
+        metadata = io.open_db_metadata(proc_url)
+
+        io.write_db_dframe(
     df = pd.DataFrame(pd.Series(max_overlaps), columns=["max_overlap"])
-    io.write_dframe(df, proc_dir_path, MAX_OVERLAPS_FNAME)
+    io.write_dframe(df, proc_dir_path, fn.max_overlaps_fname)
 

@@ -198,7 +198,21 @@ def init_overlap_tables(metadata):
     Specifies the tables which track information about amounts of
     overlap between sets of segments.
     """
-    pass
+    init_overlap_table(metadata, "chunk_overlaps", chunked=True)
+    init_overlap_table(metadata, "max_overlaps", chunked=False)
+
+
+def init_overlap_table(metadata, tablename, chunked=True):
+    """ Specifies a table that holds an id mapping. """
+    columns = [Column("id", Integer, primary_key=True),
+               Column(cn.rows, BigInteger),
+               Column(cn.cols, BigInteger),
+               Column(cn.vals, Integer)]
+
+    if chunked:
+        columns.append(Column(cn.chunk_tag, Text))
+
+    return Table(tablename, metadata, *columns)
 
 
 def drop_db(url, metadata=None):

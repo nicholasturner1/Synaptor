@@ -75,9 +75,9 @@ def read_all_chunk_seg_infos(proc_url):
 
         chunk_id_to_df = dict(iter(seg_df.groupby(cn.chunk_tag)))
         chunk_lookup = dict(zip(chunk_df[cn.chunk_tag],
-                                zip(chunk_df[cn.chunk_bx],
-                                    chunk_df[cn.chunk_by],
-                                    chunk_df[cn.chunk_bz])))
+                                list(zip(chunk_df[cn.chunk_bx],
+                                         chunk_df[cn.chunk_by],
+                                         chunk_df[cn.chunk_bz]))))
 
         dframe_lookup = {chunk_lookup[i]: df
                          for (i, df) in chunk_id_to_df.items()}

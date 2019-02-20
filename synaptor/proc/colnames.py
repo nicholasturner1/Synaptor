@@ -34,6 +34,22 @@ chunk_ez = "end_z"
 
 clefthash = "clefthash"
 
+
+# ====================================================
+# Segmentation id maps
+
+src_id = "src_id"
+dst_id = "dst_id"
+
+
+# ====================================================
+# Overlap tables
+
+rows = "row_id"
+cols = "col_id"
+vals = "vals"
+
+
 # ====================================================
 # Synapse assignment descriptors
 
