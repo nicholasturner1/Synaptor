@@ -10,6 +10,7 @@ from . import edge
 from . import overlap
 from . import anchor
 from . import hashing
+from . import colnames as cn
 
 
 def timed(fn_desc, fn, *args, **kwargs):
@@ -110,7 +111,7 @@ def merge_ccs_task(cont_info_arr, cleft_info_arr, chunk_bounds,
 
 def edge_task(img, clefts, seg, assoc_net,
               patchsz, offset=(0, 0, 0), root_seg=None,
-              samples_per_cleft=2, dil_param=5, 
+              samples_per_cleft=2, dil_param=5,
               id_map=None, hashmax=None, hash_fillval=-1):
     """
     -Applies an id map to a chunk (if passed)
@@ -221,7 +222,7 @@ def chunk_overlaps_task(segs, base_segs):
     a base segmentation
     """
     return timed("Counting overlaps",
-                 chunk_overlaps.count_overlaps,
+                 overlap.count_overlaps,
                  segs, base_segs)
 
 
@@ -273,4 +274,4 @@ def anchor_task(edge_info, seg, clf, chunk_begin,
                  anchor.place_anchor_pts,
                  edge_info, seg, clf, verbose=True,
                  voxel_res=voxel_res, offset=chunk_begin,
-                 min_box_width=min_box_width, wshed=wshed)
+                 min_box_width=min_box_width, root_seg=root_seg)

@@ -1,4 +1,4 @@
-""" 
+"""
 Processing tasks with standardized IO - using seung-lab/CloudVolume, and
 either (1) a file-based cloud-storage platform (AWS S3 or Google Cloud
 Storage) or (2) a SQLAlchemy-supported database.
@@ -12,7 +12,7 @@ from .. import seg_utils
 from . import io as taskio
 from . import tasks
 from .tasks import timed
-from . import edge 
+from . import edge
 
 
 def cc_task(desc_cvname, seg_cvname, proc_url,
@@ -22,9 +22,9 @@ def cc_task(desc_cvname, seg_cvname, proc_url,
     chunk_bounds = types.BBox3d(chunk_begin, chunk_end)
 
     desc_vol = timed(f"Reading network output chunk: {chunk_bounds}",
-                       io.read_cloud_volume_chunk,
-                       output_cvname, chunk_bounds,
-                       mip=mip, parallel=parallel)
+                     io.read_cloud_volume_chunk,
+                     desc_cvname, chunk_bounds,
+                     mip=mip, parallel=parallel)
 
     ccs, continuations, seg_info = tasks.cc_task(desc_vol,
                                                  cc_thresh, sz_thresh,
@@ -41,7 +41,7 @@ def cc_task(desc_cvname, seg_cvname, proc_url,
 
     timed("Writing cleft info",
           taskio.write_chunk_cleft_info,
-          cleft_info, chunk_bounds, proc_url)
+          seg_info, chunk_bounds, proc_url)
 
 
 def merge_ccs_task(proc_url, size_thr, max_face_shape):
@@ -73,9 +73,9 @@ def merge_ccs_task(proc_url, size_thr, max_face_shape):
 
 
 def edge_task(img_cvname, cleft_cvname, seg_cvname,
-              chunk_begin, chunk_end, patchsz,
+              chunk_begin, chunk_end, patchsz, proc_url,
               samples_per_cleft=2, dil_param=5,
-              proc_url, root_seg_cvname=None,
+              root_seg_cvname=None,
               resolution=(4, 4, 40), num_downsamples=0,
               base_res_begin=None, base_res_end=None,
               parallel=1, hashmax=None):
@@ -144,7 +144,7 @@ def edge_task(img_cvname, cleft_cvname, seg_cvname,
     if num_downsamples > 0:
         edge_info = timed("Up-sampling edge information",
                           edge.upsample_edge_info,
-                          edges, num_downsamples, chunk_begin)
+                          edge_info, num_downsamples, chunk_begin)
 
     timed("Writing chunk edges",
           taskio.write_chunk_edge_info,
@@ -187,7 +187,6 @@ def pick_largest_edges_task(proc_url, clefthash=None):
                       proc_url,
                       clefthash=clefthash, merged=False)
 
-    single_dframe = clefthash is not None
     largest_info = tasks.pick_largest_edges_task(edges, clefthash is not None)
 
     timed("Writing merged edge list",
@@ -270,17 +269,16 @@ def remap_ids_task(seg_in_cvname, seg_out_cvname,
                        taskio.read_dup_id_map,
                        proc_url)
 
-    cleft_chunk = timed("Reading cleft chunk",
-                        io.read_cloud_volume_chunk,
-                        cleft_in_cvname, chunk_bounds,
-                        mip=mip, parallel=parallel)
+    seg = timed("Reading cleft chunk",
+                io.read_cloud_volume_chunk,
+                seg_in_cvname, chunk_bounds,
+                mip=mip, parallel=parallel)
 
-    cleft_chunk = tasks.remap_ids_task(cleft_chunk, chunk_id_map,
-                                       dup_id_map, copy=False)
+    seg = tasks.remap_ids_task(seg, chunk_id_map, dup_id_map, copy=False)
 
     timed("Writing results",
           io.write_cloud_volume_chunk,
-          cleft_chunk, cleft_out_cvname, chunk_bounds,
+          seg, seg_out_cvname, chunk_bounds,
           mip=mip, parallel=parallel)
 
 
@@ -308,7 +306,7 @@ def anchor_task(cleft_cvname, seg_cvname, proc_url,
                       io.read_cloud_volume_chunk,
                       root_seg_cvname, chunk_bounds,
                       mip=seg_mip, parallel=parallel)
-        assert roots.shape == seg_chunk.shape, "mismatched root segmentation"
+        assert roots.shape == seg.shape, "mismatched root segmentation"
     else:
         roots = None
 
@@ -317,7 +315,7 @@ def anchor_task(cleft_cvname, seg_cvname, proc_url,
                     proc_url)
 
     anchor_df = tasks.anchor_task(edge_df, seg, clefts, chunk_begin,
-                                  voxel_res=voxel_res, root_seg=root_seg,
+                                  voxel_res=voxel_res, root_seg=roots,
                                   min_box_width=min_box_width)
 
     timed("Writing chunk anchor info",
