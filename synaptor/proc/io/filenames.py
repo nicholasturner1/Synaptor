@@ -1,16 +1,12 @@
-__doc__ = """
-File storage conventions
-"""
+""" File storage conventions """
 
-# Segment info files for a single chunk
+# Segment info files
 seginfo_dirname = "seg_infos"
 seginfo_fmtstr = "seg_info_{tag}.df"
-
-# Segment info file merged across chunks
 merged_seginfo_fname = "merged_cleft_info.df"
 
 
-# Segment continuations for a chunk
+# Segment continuations
 contin_dirname = "continuations"
 contin_fmtstr = "continuations_{tag}.h5"
 
@@ -20,20 +16,15 @@ idmap_dirname = "id_maps"
 idmap_fmtstr = "id_map_{tag}.df"
 
 
-# Edge info files for a single chunk
-edgeinfo_dirname = "chunk_edges"
-edgeinfo_fmtstr = "chunk_edges_{tag}.df"
-
-
 # Duplicate connection merging id map
 dup_map_fname = "dup_id_map.df"
 
 
-# Edge info file merged across chunks
+# Edge info files
+edgeinfo_dirname = "chunk_edges"
+edgeinfo_fmtstr = "chunk_edges_{tag}.df"
 merged_edgeinfo_fname = "merged_edges.df"
-# w/ duplicates removed
 final_edgeinfo_fname = "final_edges.df"
-# Final edge info
 final_edgeinfo_fname = "final.df"
 
 

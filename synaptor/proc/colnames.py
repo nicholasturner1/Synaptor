@@ -1,6 +1,5 @@
-__doc__ = """
-Column Names for Database Tables and Dataframes
-"""
+""" Column Names for Database Tables and Dataframes """
+
 
 # NOTE: All coordinate types should be XYZ ordered
 
@@ -35,16 +34,12 @@ chunk_ez = "end_z"
 clefthash = "clefthash"
 
 
-# ====================================================
 # Segmentation id maps
-
 src_id = "src_id"
 dst_id = "dst_id"
 
 
-# ====================================================
 # Overlap tables
-
 rows = "row_id"
 cols = "col_id"
 vals = "vals"
