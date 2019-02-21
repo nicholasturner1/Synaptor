@@ -3,8 +3,8 @@
 
 import os
 
-from sqlalchemy import select, and_
-from sqlalchemy.sql.expression import true, false
+from sqlalchemy import select
+import pandas as pd
 
 from ... import io
 from .. import colnames as cn
@@ -131,7 +131,7 @@ def read_merged_seg_info(proc_url, hash_index=None):
 
     else:
         assert hash_index is None, "hash_index not implemented for file IO"
-        dframe = io.read_dframe(proc_url, fn.merged_seginfo_fname)
+        return io.read_dframe(proc_url, fn.merged_seginfo_fname)
 
 
 def write_merged_seg_info(dframe, proc_url):

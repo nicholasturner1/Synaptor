@@ -37,9 +37,9 @@ def read_all_continuations(proc_dir_path):
     continuation_dir = os.path.join(proc_dir_path, fn.contin_dirname)
     fnames = io.pull_directory(continuation_dir)
 
-    starts = [io.bbox_from_fname(f).min() for f in fnames ]
-    cont_dicts = [ read_chunk_continuations(f) for f in fnames ]
+    starts = [io.bbox_from_fname(f).min() for f in fnames]
+    cont_dicts = [read_chunk_continuations(f) for f in fnames]
 
-    start_lookup = {s:cd for (s,cd) in zip(starts, cont_dicts)}
+    start_lookup = {s: cd for (s, cd) in zip(starts, cont_dicts)}
     info_arr = io.utils.make_info_arr(start_lookup)
     return info_arr, os.path.dirname(fnames[0])

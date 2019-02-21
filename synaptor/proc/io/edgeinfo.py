@@ -3,8 +3,7 @@
 
 import os
 
-from sqlalchemy import select, and_
-from sqlalchemy.sql.expression import true, false
+from sqlalchemy import select
 import pandas as pd
 
 from ... import io
@@ -28,7 +27,6 @@ def chunk_info_fname(proc_url, chunk_bounds):
 def read_chunk_edge_info(proc_url, chunk_bounds):
     """ Reads the edge info for a single chunk from storage """
     if io.is_db_url(proc_url):
-        assert chunk_id is not None, "bounds reading not yet impl for dbs"
         tag = io.fname_chunk_tag(chunk_bounds)
         metadata = io.open_db_metadata(proc_url)
 
@@ -104,7 +102,7 @@ def read_all_chunk_edge_infos(proc_url):
         chunk_lookup = dict(zip(chunk_df[cn.chunk_tag],
                                 list(zip(chunk_df[cn.chunk_bx],
                                          chunk_df[cn.chunk_by],
-                                         chunk_df[cn.chunk_bz])))
+                                         chunk_df[cn.chunk_bz]))))
 
         dframe_lookup = {chunk_lookup[i]: df
                          for (i, df) in chunk_id_to_df.items()}
@@ -142,8 +140,8 @@ def read_max_n_edge_per_cleft(proc_url, n):
     edges = metadata.tables["chunk_edges"]
 
     n_column = edges.columns[n]
-    statement = edges.select().distinct(edges.c.cleft_segid).\
-                          order_by(edges.c.cleft_segid, n_column.desc()))
+    statement = edges.select().distinct(edges.c[cn.seg_id]).\
+        order_by(edges.c[cn.seg_id], n_column.desc())
 
     return io.read_db_dframe(proc_url, statement, index_col=cn.segid)
 
@@ -182,4 +180,4 @@ def write_final_edge_info(dframe, proc_url):
         io.write_db_dframe(dframe, proc_url, "final")
 
     else:
-        io.write_dframe(dframe, proc_url, final_edgeinfo_fname)
+        io.write_dframe(dframe, proc_url, fn.final_edgeinfo_fname)

@@ -23,7 +23,7 @@ from ... import io
 from .. import colnames as cn
 
 
-__all__ = ["init_db", "drop_db", "fill_chunks", "TABLES", "NULL_CHUNK_ID"]
+__all__ = ["init_db", "drop_db", "fill_chunks", "TABLES"]
 
 
 # NOTE: These need to be listed in a certain order to resolve dependencies when
@@ -69,6 +69,7 @@ def init_chunks(metadata):
                  Column(cn.chunk_ey, Integer),
                  Column(cn.chunk_ez, Integer),
                  Column(cn.chunk_tag, Text))
+
 
 def init_seg_tables(metadata, segid_colname=cn.seg_id):
     """
