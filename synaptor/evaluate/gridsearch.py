@@ -8,11 +8,9 @@ import itertools
 
 import numpy as np
 
-from ..proc_tasks import chunk_ccs
-from ..proc_tasks import chunk_edges as edges
+from .. import proc
 from .. import seg_utils
 from .auto import toolbox as tb
-from . import overlap
 from . import cremi
 from . import score
 from . import edge
@@ -24,9 +22,9 @@ def gridsearch_edgethresh(seg_weights, labels, pre_threshs, post_threshs):
     opt_preds = list()
     opt_pre_t, opt_post_t = 0., 0.
 
-    for (pre_t,post_t) in itertools.product(pre_threshs, post_threshs):
-        preds = edges.assign.assign_all_by_thresh(all_weights,
-                                                        pre_t, post_t)
+    for (pre_t, post_t) in itertools.product(pre_threshs, post_threshs):
+        preds = proc.edge.assign.assign_all_by_thresh(seg_weights,
+                                                      pre_t, post_t)
         new_f1 = score.f1score(preds, labels)[0]
 
         if new_f1 > max_f1:
@@ -43,7 +41,7 @@ def gridsearch_edgethresh_avg(dset_avgs, dset_sums, dset_szs, dset_labels,
                               score_type="avg",
                               alphas=[1], pre_type=None, post_type=None):
 
-    #Init
+    # Init
     max_avg_f1 = -1.
     opt_preds = list()
     opt_pre_t, opt_post_t = 0., 0.
@@ -53,10 +51,11 @@ def gridsearch_edgethresh_avg(dset_avgs, dset_sums, dset_szs, dset_labels,
         # for each dataset - precompute scores to use for thresholding
         dset_scores = list()
         for (avgs, sums, szs) in zip(dset_avgs, dset_sums, dset_szs):
-            new_scores = edges.score.compute_all(avgs, sums, szs, alpha=alpha,
-                                                 pre_type=pre_type,
-                                                 post_type=post_type,
-                                                 score_type=score_type)
+            new_scores = proc.edge.score.compute_all(avgs, sums, szs,
+                                                     alpha=alpha,
+                                                     pre_type=pre_type,
+                                                     post_type=post_type,
+                                                     score_type=score_type)
             dset_scores.append(new_scores)
 
         # for each pair of thresholds
@@ -64,9 +63,9 @@ def gridsearch_edgethresh_avg(dset_avgs, dset_sums, dset_szs, dset_labels,
             # for each dataset - assign edges using the scores and eval them
             dset_preds = list()
             for scores in dset_scores:
-                new_preds = edges.assign.assign_all(scores, thresh=pre_t,
-                                                    thresh2=post_t,
-                                                    assign_type=assign_type)
+                new_preds = proc.edge.assign.assign_all(
+                                scores, thresh=pre_t, thresh2=post_t,
+                                assign_type=assign_type)
 
                 dset_preds.append(new_preds)
 
@@ -86,7 +85,7 @@ def gridsearch_edgethresh_avg(dset_avgs, dset_sums, dset_szs, dset_labels,
 
 
 def cremi_gridsearch_dset(dset, cc_threshs, sz_threshs,
-                          dist_thr=200, voxel_res=[4,4,40],
+                          dist_thr=200, voxel_res=[4, 4, 40],
                           delete=True):
 
     tb.read_dataset(dset)
@@ -104,9 +103,6 @@ def cremi_gridsearch_dset(dset, cc_threshs, sz_threshs,
         print("Thresholding and filtering...")
         preds = tb.make_clefts_at_params(dset, cc_thr, sz_thr)
 
-        #Looping over volumes
-        tps, fps, fns = 0, 0, 0
-
         print("Scoring...")
         new_score, setwise_scores = multi_cremi_score(preds, dset.labels,
                                                       label_edts, dist_thr,
@@ -120,25 +116,26 @@ def cremi_gridsearch_dset(dset, cc_threshs, sz_threshs,
     return scores
 
 
-def multi_cremi_score(preds, labels, edts=None, dist_thr=200, voxel_res=[4,4,40]):
+def multi_cremi_score(preds, labels, edts=None,
+                      dist_thr=200, voxel_res=[4, 4, 40]):
 
     if edts is None:
         edts = [cremi.edt_to_nonzero(label != 0) for label in labels]
 
     setwise_scores = []
     tps, fps, fns, dgt, df = 0, 0, 0, 0, 0
-    for (p,l,dt) in zip(preds, labels, edts):
+    for (p, l, dt) in zip(preds, labels, edts):
 
         (new_score, new_tps, new_fps,
-        new_fns, new_dgt, new_df) = cremi.cremi_score(p,l,
-                                                      dist_thr=dist_thr,
-                                                      labels_edt=dt,
-                                                      voxel_res=voxel_res)
+         new_fns, new_dgt, new_df) = cremi.cremi_score(p, l,
+                                                       dist_thr=dist_thr,
+                                                       labels_edt=dt,
+                                                       voxel_res=voxel_res)
         tps += new_tps
         fps += new_fps
         fns += new_fns
         dgt += new_dgt
-        df  += new_df
+        df += new_df
         setwise_scores.append(new_score)
 
     full_fscore = 1-score.single_f1score(tps, fps, fns)
@@ -161,12 +158,12 @@ def gridsearch(img, seg, net_output, cleft_lbls, edge_lbls,
         print("PARAMS: CC @ {cc}, SZ @ {sz}".format(cc=cc_thr, sz=sz_thr))
 
         print("Thresholding and filtering...")
-        ccs = chunk_ccs.connected_components3d(net_output, cc_thr)
+        ccs = proc.seg.connected_components3d(net_output, cc_thr)
         ccs, _ = seg_utils.filter_segs_by_size(ccs, sz_thr)
 
-        edge_df = edges.infer_edges(asynet, img, ccs, seg,
-                                    patchsz=patchsz,
-                                    samples_per_cleft=1)
+        edge_df = proc.edge.infer_edges(asynet, img, ccs, seg,
+                                        patchsz=patchsz,
+                                        samples_per_cleft=1)
 
         preds = list(zip(edge_df.cleft_segid,
                          edge_df.presyn_segid,
@@ -176,8 +173,8 @@ def gridsearch(img, seg, net_output, cleft_lbls, edge_lbls,
         prec, rec = edge.score_segmented_edges(ccs, preds,
                                                cleft_lbls, edge_lbls)
 
-        precs[cc_i, sz_i] = prec[0] # score only
-        recs[cc_i, sz_i] = rec[0] # score only
+        precs[cc_i, sz_i] = prec[0]  # score only
+        recs[cc_i, sz_i] = rec[0]  # score only
         fscore = score.single_fscore_PR(prec[0], rec[0], beta)
         fscores[cc_i, sz_i] = fscore
 

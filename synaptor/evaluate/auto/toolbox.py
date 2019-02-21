@@ -1,8 +1,6 @@
 import numpy as np
 
-from ...proc_tasks import chunk_ccs
-from ...proc_tasks import chunk_edges
-from ...proc_tasks import merge_edges
+from ... import proc
 from ... import seg_utils
 from .. import overlap
 from .. import score
@@ -13,7 +11,7 @@ def score_w_params(preds, img, seg, lbl,
                    asynet, patchsz, cc_thresh, sz_thresh,
                    dist_thr=1000, voxel_res=[4,4,40], to_ignore=[]):
 
-    ccs = chunk_ccs.connected_components3d(preds, cc_thresh)
+    ccs = proc.seg.connected_components3d(preds, cc_thresh)
 
     ccs, _ = merge_duplicate_clefts(asynet, patchsz, img, seg, ccs,
                                  dist_thr=dist_thr, voxel_res=voxel_res)
@@ -51,7 +49,7 @@ def tune_cc_threshold(preds, labels, voxel_beta=1.5, voxel_bins=None):
 
     cc_thresh = opt_threshold(tps, fps, fns, voxel_beta, voxel_bins)
 
-    ccs = chunk_ccs.connected_components3d(preds, cc_thresh)
+    ccs = proc.seg.connected_components(preds, cc_thresh)
 
     return cc_thresh, ccs
 
@@ -94,12 +92,12 @@ def opt_threshold(tps, fps, fns, voxel_beta=1.5, voxel_bins=None):
 def merge_duplicate_clefts(asynet, patchsz, img, seg, clf,
                            dist_thr=1000, voxel_res=[4,4,40]):
 
-    edges = chunk_edges.infer_edges(asynet, img, clf, seg, patchsz)
+    edges = proc.edge.infer_edges(asynet, img, clf, seg, patchsz)
 
-    full_info_df = chunk_edges.add_cleft_locs(edges, clf)
+    full_info_df = proc.edge.add_cleft_locs(edges, clf)
 
-    dup_id_map = merge_edges.merge_duplicate_clefts2(full_info_df, dist_thr,
-                                                     voxel_res)
+    dup_id_map = proc.edge.merge.merge_duplicate_clefts(full_info_df, dist_thr,
+                                                        voxel_res)
 
     return seg_utils.relabel_data(clf, dup_id_map), dup_id_map
 
@@ -175,7 +173,7 @@ def make_clefts_at_params(dset, cc_thresh=None, sz_thresh=None):
     dset = read_dataset(dset)
 
     if cc_thresh is not None:
-        clefts = [chunk_ccs.connected_components3d(p, cc_thresh).astype('uint32')
+        clefts = [proc.seg.connected_components3d(p, cc_thresh).astype('uint32')
                   for p in dset.preds]
     else:
         #assume preds are already thresholded
