@@ -11,7 +11,7 @@ def score_w_params(preds, img, seg, lbl,
                    asynet, patchsz, cc_thresh, sz_thresh,
                    dist_thr=1000, voxel_res=[4,4,40], to_ignore=[]):
 
-    ccs = proc.seg.connected_components3d(preds, cc_thresh)
+    ccs = proc.seg.connected_components(preds, cc_thresh)
 
     ccs, _ = merge_duplicate_clefts(asynet, patchsz, img, seg, ccs,
                                  dist_thr=dist_thr, voxel_res=voxel_res)
@@ -173,7 +173,7 @@ def make_clefts_at_params(dset, cc_thresh=None, sz_thresh=None):
     dset = read_dataset(dset)
 
     if cc_thresh is not None:
-        clefts = [proc.seg.connected_components3d(p, cc_thresh).astype('uint32')
+        clefts = [proc.seg.connected_components(p, cc_thresh).astype('uint32')
                   for p in dset.preds]
     else:
         #assume preds are already thresholded
