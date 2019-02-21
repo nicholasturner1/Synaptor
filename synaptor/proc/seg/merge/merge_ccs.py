@@ -1,8 +1,5 @@
-__doc__ = """
-Connected Component Consolidation
+""" Connected Component Consolidation """
 
-Nicholas Turner <nturner@cs.princeton.edu>, 2018
-"""
 
 import numpy as np
 

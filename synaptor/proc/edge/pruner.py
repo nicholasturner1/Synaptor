@@ -1,6 +1,4 @@
-__doc__ = """
-HCBS Pruning Network Inference
-"""
+""" HCBS Pruning Network Inference """
 
 import torch
 

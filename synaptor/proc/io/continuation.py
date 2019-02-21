@@ -1,7 +1,5 @@
-#!/usr/bin/env python3
-__doc__ = """
-Cleft continuation IO for processing tasks
-"""
+""" Cleft continuation IO for processing tasks """
+
 
 import os
 

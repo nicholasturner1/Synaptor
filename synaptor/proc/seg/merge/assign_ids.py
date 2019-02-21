@@ -1,8 +1,5 @@
-__doc__ = """
-Connected Component ID management
+""" Connected Component ID management """
 
-Nicholas Turner <nturner@cs.princeton.edu>, 2018
-"""
 
 import numpy as np
 import pandas as pd

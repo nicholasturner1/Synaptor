@@ -1,7 +1,5 @@
-#!/usr/bin/env python3
-__doc__ = """
-Overlap Matrix IO for processing tasks
-"""
+""" Overlap Matrix IO for processing tasks """
+
 
 import os
 

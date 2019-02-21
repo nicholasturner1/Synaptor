@@ -1,6 +1,5 @@
-__doc__ = """
-Connected Components
-"""
+""" Connected Components """
+
 
 import numpy as np
 from scipy import ndimage

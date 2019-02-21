@@ -13,3 +13,5 @@ from . import score
 from . import misc
 from .misc import add_cleft_sizes, add_cleft_locs
 from .misc import upsample_edge_info
+
+from . import merge

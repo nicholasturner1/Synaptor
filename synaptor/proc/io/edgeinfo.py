@@ -1,6 +1,5 @@
-__doc__ = """
-Edge info DataFrame IO for processing tasks
-"""
+""" Edge info DataFrame IO for processing tasks """
+
 
 import os
 

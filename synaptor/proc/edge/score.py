@@ -1,8 +1,5 @@
-__doc__ = """
-Scoring Methods from network output
+""" Scoring Methods from network output """
 
-Nicholas Turner <nturner@cs.princeton.edu>, 2018
-"""
 
 IMPLEMENTED = ["avg", "sum", "sum mix", "size mix", "pre size mix"]
 

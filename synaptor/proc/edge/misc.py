@@ -1,6 +1,5 @@
-__doc__ = """
-Miscellaneous Functionality
-"""
+""" Miscellaneous Functionality """
+
 
 import pandas as pd
 

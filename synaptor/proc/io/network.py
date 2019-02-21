@@ -1,6 +1,5 @@
-__doc__ = """
-PyTorch Neural Network Model IO for processing tasks
-"""
+""" PyTorch Neural Network Model IO for processing tasks """
+
 
 import os
 

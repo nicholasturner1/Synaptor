@@ -1,6 +1,5 @@
-__doc__ = """
-Overlap Matrix Consolidation
-"""
+""" Overlap Matrix Consolidation """
+
 
 import numpy as np
 import scipy.sparse as sp

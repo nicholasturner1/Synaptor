@@ -1,4 +1,4 @@
-__doc__ = """
+"""
 Connected Components for Synaptic Partner-Signed Proximity
 
 See: https://github.com/paragt/EMSynConn/blob/master/vertebrate/candidate/generate_proposals.py # noqa

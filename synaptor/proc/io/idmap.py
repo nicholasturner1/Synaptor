@@ -1,6 +1,5 @@
-__doc__ = """
-Cleft ID mapping IO for processing tasks
-"""
+""" Cleft ID mapping IO for processing tasks """
+
 
 import os
 

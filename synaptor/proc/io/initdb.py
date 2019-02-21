@@ -1,4 +1,4 @@
-__doc__ = """
+"""
 Database Initialization Functions
 
 NOTE: I use the database as a glorified file store with transactions,

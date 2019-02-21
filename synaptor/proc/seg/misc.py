@@ -1,4 +1,4 @@
-__doc__ = """
+"""
 Misc Functionality
 
 Only a function to make a DataFrame out of the results at the moment

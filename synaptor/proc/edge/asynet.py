@@ -1,3 +1,6 @@
+""" Synapse Assignment by Voxel Association Networks """
+
+
 import random
 import copy
 import operator

@@ -1,6 +1,5 @@
-__doc__ = """
-Segment info DataFrame IO for processing tasks
-"""
+""" Segment info DataFrame IO for processing tasks """
+
 
 import os
 

@@ -1,8 +1,5 @@
-__doc__ = """
-Selecting locations for inference
+""" Selecting locations for inference """
 
-Nicholas Turner <nturner@cs.princeton.edu>, 2018
-"""
 
 import random
 

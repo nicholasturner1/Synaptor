@@ -1,8 +1,5 @@
-__doc__ = """
-Assignment Methods from network output
+""" Assignment Methods from network output """
 
-Nicholas Turner <nturner@cs.princeton.edu>, 2018
-"""
 
 import operator
 import itertools

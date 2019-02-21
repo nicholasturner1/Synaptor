@@ -1,6 +1,5 @@
-"""
-Merging Seg Info Dataframes
-"""
+""" Merging Seg Info Dataframes """
+
 
 import itertools
 
