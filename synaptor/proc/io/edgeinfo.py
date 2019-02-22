@@ -11,9 +11,9 @@ from .. import colnames as cn
 from . import filenames as fn
 
 
-EDGE_INFO_COLUMNS = [cn.segid, cn.size, cn.presyn_id, cn.postsyn_id,
+EDGE_INFO_COLUMNS = [cn.seg_id, cn.size, cn.presyn_id, cn.postsyn_id,
                      *cn.presyn_coord_cols, *cn.postsyn_coord_cols,
-                     cn.seghash, cn.partnerhash]
+                     cn.clefthash, cn.partnerhash]
 CHUNK_START_COLUMNS = [cn.chunk_tag, cn.chunk_bx, cn.chunk_by, cn.chunk_bz]
 
 
@@ -34,7 +34,7 @@ def read_chunk_edge_info(proc_url, chunk_bounds):
         columns = list(edges.c[name] for name in EDGE_INFO_COLUMNS)
         statement = select(columns).where(edges.c[cn.chunk_tag] == tag)
 
-        return io.read_db_dframe(proc_url, statement, index_col=cn.segid)
+        return io.read_db_dframe(proc_url, statement, index_col=cn.seg_id)
 
     else:
         return io.read_dframe(chunk_info_fname(proc_url, chunk_bounds))
@@ -61,7 +61,7 @@ def read_hashed_edge_info(proc_url, partnerhash=None,
     elif clefthash is not None:
         statement = select(columns).where(edges.c.clefthash == clefthash)
 
-    return io.read_db_dframe(proc_url, statement, index_col=cn.segid)
+    return io.read_db_dframe(proc_url, statement, index_col=cn.seg_id)
 
 
 def write_chunk_edge_info(dframe, proc_url, chunk_bounds):
@@ -95,7 +95,7 @@ def read_all_chunk_edge_infos(proc_url):
         chunkstmt = select(chunkcols)
 
         results = io.read_db_dframes(proc_url, (edgestmt, chunkstmt),
-                                     index_cols=(cn.segid, "id"))
+                                     index_cols=(cn.seg_id, "id"))
         edge_df, chunk_df = results[0], results[1]
 
         chunk_id_to_df = dict(iter(edge_df.groupby(cn.chunk_tag)))
@@ -129,7 +129,7 @@ def make_empty_df():
     """ Make an empty dataframe as a placeholder. """
     df = pd.DataFrame(data=None, dtype=int, columns=EDGE_INFO_COLUMNS)
 
-    return df.set_index(cn.segid)
+    return df.set_index(cn.seg_id)
 
 
 def read_max_n_edge_per_cleft(proc_url, n):
@@ -143,7 +143,7 @@ def read_max_n_edge_per_cleft(proc_url, n):
     statement = edges.select().distinct(edges.c[cn.seg_id]).\
         order_by(edges.c[cn.seg_id], n_column.desc())
 
-    return io.read_db_dframe(proc_url, statement, index_col=cn.segid)
+    return io.read_db_dframe(proc_url, statement, index_col=cn.seg_id)
 
 
 def read_merged_edge_info(proc_url):
@@ -155,7 +155,7 @@ def read_merged_edge_info(proc_url):
         columns = list(edges.c[name] for name in EDGE_INFO_COLUMNS)
         statement = select(columns)
 
-        return io.read_db_dframe(proc_url, statement, index_col=cn.segid)
+        return io.read_db_dframe(proc_url, statement, index_col=cn.seg_id)
 
     else:
         return io.read_dframe(proc_url, fn.merged_edgeinfo_fname)

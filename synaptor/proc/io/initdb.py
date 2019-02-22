@@ -34,7 +34,7 @@ TABLES = ["final", "merged_edges", "chunk_edges",
           "chunks", "seg_idmap", "dup_idmap", "overlaps"]
 
 
-def init_db(url, segid_colname=cn.segid, metadata=None,
+def init_db(url, segid_colname=cn.seg_id, metadata=None,
             edges=True, overlaps=False):
     """ Initializes a record database at a SQLAlchemy URL. """
     if metadata is None:
@@ -140,7 +140,7 @@ def init_edge_table(metadata, tablename, chunked=True):
     Specifies a table that tracks information about synaptic connections.
     """
     columns = [Column("id", Integer, primary_key=True),
-               Column(cn.segid, Integer),
+               Column(cn.seg_id, Integer),
                Column(cn.presyn_id, BigInteger),
                Column(cn.postsyn_id, BigInteger),
                Column(cn.size, Integer),

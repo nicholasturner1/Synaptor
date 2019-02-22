@@ -9,7 +9,7 @@ from scipy import spatial
 from scipy.ndimage import distance_transform_edt
 
 from ... import seg_utils
-from .. import chunk_ccs
+from .. import seg
 
 
 def extract_prox_candidates(prox, seg, presyn_thresh=0.3, postsyn_thresh=-0.3,
@@ -21,10 +21,10 @@ def extract_prox_candidates(prox, seg, presyn_thresh=0.3, postsyn_thresh=-0.3,
     Extract candidate synaptic pairs (and their locations) from
     partner-signed proximity output
     """
-    presyn_terms, postsyn_terms = chunk_ccs.find_prox_terminals(prox, seg,
-                                                                presyn_thresh,
-                                                                postsyn_thresh,
-                                                                term_sz_thresh)
+    presyn_terms, postsyn_terms = seg.find_prox_terminals(prox, seg,
+                                                          presyn_thresh,
+                                                          postsyn_thresh,
+                                                          term_sz_thresh)
 
     return extract_terminal_candidates(presyn_terms, postsyn_terms, seg,
                                        term_sz_thresh, seg_sz_thresh,

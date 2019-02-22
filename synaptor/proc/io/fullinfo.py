@@ -5,10 +5,10 @@ from sqlalchemy import select
 
 from ... import io
 from .. import colnames as cn
-from .. import filenames as fn
+from . import filenames as fn
 
 
-FULL_INFO_COLUMNS = [cn.segid, cn.presyn_id, cn.postsyn_id, cn.size,
+FULL_INFO_COLUMNS = [cn.seg_id, cn.presyn_id, cn.postsyn_id, cn.size,
                      *cn.centroid_cols, *cn.bbox_cols,
                      *cn.presyn_coord_cols, *cn.postsyn_coord_cols,
                      cn.clefthash, cn.partnerhash]
@@ -26,7 +26,7 @@ def read_full_info(proc_url):
         columns = list(final.c[name] for name in FULL_INFO_COLUMNS)
         statement = select(columns)
 
-        return io.read_db_dframe(proc_url, statement, index_col=cn.segid)
+        return io.read_db_dframe(proc_url, statement, index_col=cn.seg_id)
 
     else:
         return io.read_dframe(proc_url, fn.final_edgeinfo_fname)

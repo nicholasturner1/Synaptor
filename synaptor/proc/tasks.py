@@ -63,7 +63,7 @@ def cc_task(desc_vol, cc_thresh, sz_thresh, offset=(0, 0, 0)):
     return ccs, continuations, cleft_info
 
 
-def merge_ccs_task(cont_info_arr, cleft_info_arr, chunk_bounds,
+def merge_ccs_task(cont_info_arr, cleft_info_arr,
                    size_thr, max_face_shape):
     """
     -Assigns a global set of cleft segment ids
@@ -81,6 +81,7 @@ def merge_ccs_task(cont_info_arr, cleft_info_arr, chunk_bounds,
     cons_cleft_info, chunk_id_maps = timed("Assigning new cleft ids",
                                            seg.merge.assign_unique_ids_serial,
                                            cleft_info_arr)
+    print(cons_cleft_info.columns)
 
     cont_info_arr = timed("Applying chunk_id_maps to continuations",
                           seg.merge.apply_chunk_id_maps,
@@ -149,7 +150,7 @@ def edge_task(img, clefts, seg, assoc_net,
 
         edges = timed("Hashing cleft ids",
                       hashing.add_hashed_index,
-                      edges, [cn.segid], hashmax,
+                      edges, [cn.seg_id], hashmax,
                       indexname=cn.clefthash)
 
     return edges

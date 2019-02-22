@@ -15,6 +15,7 @@ from ... import colnames as cn
 
 def merge_duplicate_clefts(full_info_df, dist_thr, res):
 
+    full_info_df = full_info_df.reset_index()
     conn_comps = []
 
     def find_new_comps(group):

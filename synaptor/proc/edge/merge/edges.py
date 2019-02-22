@@ -1,6 +1,5 @@
 """ Resolving edge assignments across chunks. """
 
-
 import pandas as pd
 
 from ... import colnames as cn

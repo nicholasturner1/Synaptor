@@ -17,7 +17,7 @@ bbox_ex = "bbox_ex"
 bbox_ey = "bbox_ey"
 bbox_ez = "bbox_ez"
 bbox_cols = [bbox_bx, bbox_by, bbox_bz,
-             bbox_ez, bbox_ey, bbox_ez]
+             bbox_ex, bbox_ey, bbox_ez]
 
 # Size of a segment
 size = "size"

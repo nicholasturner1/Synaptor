@@ -21,14 +21,14 @@ from . import score
 from . import assign
 
 
-RECORD_SCHEMA = [cn.cleft_id, cn.presyn_id, cn.postsyn_id,
+RECORD_SCHEMA = [cn.seg_id, cn.presyn_id, cn.postsyn_id,
                  *cn.presyn_coord_cols, *cn.postsyn_coord_cols,
                  cn.presyn_wt, cn.postsyn_wt,
                  cn.presyn_sz, cn.postsyn_sz]
-SCHEMA_W_BASINS = RECORD_SCHEMA + [cn.presyn_basin, cn.postsyn_basin]
+SCHEMA_W_ROOTS = RECORD_SCHEMA + [cn.presyn_basin, cn.postsyn_basin]
 
 
-def infer_edges(net, img, cleft, seg, patchsz, wshed=None, offset=(0, 0, 0),
+def infer_edges(net, img, cleft, seg, patchsz, root_seg=None, offset=(0, 0, 0),
                 cleft_ids=None, dil_param=5, loc_type="centroid",
                 samples_per_cleft=None, score_type="avg", alpha=1,
                 pre_type=None, post_type=None, assign_type="max",
@@ -47,7 +47,7 @@ def infer_edges(net, img, cleft, seg, patchsz, wshed=None, offset=(0, 0, 0),
                                       samples_per_cleft, patchsz)
 
     # whether or not we should record watershed ids
-    record_basins = wshed is not None
+    record_basins = root_seg is not None
 
     edges = []  # list of dict records
     for (cid, cid_locs) in cleft_locs.items():
@@ -95,8 +95,8 @@ def infer_edges(net, img, cleft, seg, patchsz, wshed=None, offset=(0, 0, 0),
             pre_sz,  post_sz = seg_szs[pre_seg],  seg_szs[post_seg]
 
             if record_basins:
-                pre_basin = pull_basin(wshed, pre_loc, offset)
-                post_basin = pull_basin(wshed, post_loc, offset)
+                pre_basin = pull_root(root_seg, pre_loc, offset)
+                post_basin = pull_root(root_seg, post_loc, offset)
 
                 edges.append(make_record(cid, pre_seg, post_seg,
                                          pre_loc, post_loc, pre_w, post_w,
@@ -464,8 +464,8 @@ def update_locs(new_locs, all_locs):
     return all_locs
 
 
-def pull_basin(wshed, loc, offset=(0, 0, 0)):
-    return wshed[tuple(map(operator.sub, loc, offset))]
+def pull_root(root_seg, loc, offset=(0, 0, 0)):
+    return root_seg[tuple(map(operator.sub, loc, offset))]
 
 
 def make_assignment(weights):
@@ -596,18 +596,22 @@ def make_record(psdid,
     else:
         assert post_basin is not None, "pre but no post basin"
         data += [pre_basin, post_basin]
-        return dict(zip(SCHEMA_W_BASINS, data))
+        return dict(zip(SCHEMA_W_ROOTS, data))
 
 
 def make_record_dframe(record_list, record_basins=True):
 
     if len(record_list) == 0:
         if record_basins:
-            return pd.DataFrame({k: {} for k in SCHEMA_W_BASINS})
+            return pd.DataFrame({k: {} for k in SCHEMA_W_ROOTS})
         else:
             return pd.DataFrame({k: [] for k in RECORD_SCHEMA})
     else:
-        return pd.DataFrame.from_records(record_list)
+        df = pd.DataFrame.from_records(record_list)
+        if record_basins:
+            return df[SCHEMA_W_ROOTS]
+        else:
+            return df[RECORD_SCHEMA]
 
 
 def to_tensor(np_arr, requires_grad=True, volatile=False):

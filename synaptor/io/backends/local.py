@@ -1,8 +1,4 @@
-__doc__ = """
-Local Filesystem IO
-
-Nicholas Turner <nturner@cs.princeton.edu>, 2018
-"""
+""" Local Filesystem IO """
 
 import os
 import glob
@@ -45,10 +41,9 @@ def read_dframe(path):
     return pd.read_csv(path, index_col=0)
 
 
-def write_dframe(dframe, path, header=True, index=True,
-                 index_label="cleft_segid"):
+def write_dframe(dframe, path, header=True, index=True):
     """ Write a dataframe to local disk. """
-    dframe.to_csv(path, index_label="cleft_segid", index=index, header=header)
+    dframe.to_csv(path, index=index, header=header)
 
 
 def read_network(net_fname, chkpt_fname):

@@ -10,7 +10,7 @@ import operator
 import numpy as np
 
 from ..proc import seg
-from ..proc import candidates
+from ..proc import candidate
 from ..proc import edge
 from .. import seg_utils
 from . import score
@@ -30,7 +30,7 @@ def score_at_thresholds(net, prox, img, seg, clf, labels,
                                                 sz_thresh=term_sz_thresh)
 
     # Extracting candidates
-    find_candidates = candidates.extract_terminal_candidates
+    find_candidates = candidate.extract_terminal_candidates
     pairs, locs, cands = find_candidates(pre_terms, post_terms, seg,
                                          seg_sz_thresh=seg_sz_thresh,
                                          centroid_dist_thresh=centroid_dist_thresh,

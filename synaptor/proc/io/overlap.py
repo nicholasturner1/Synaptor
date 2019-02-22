@@ -107,7 +107,7 @@ def make_empty_df():
     """ Make an empty dataframe as a placeholder. """
     df = pd.DataFrame(data=None, dtype=int, columns=OVERLAP_COLUMNS)
 
-    return df.set_index(cn.segid)
+    return df.set_index(cn.seg_id)
 
 
 def read_max_overlaps(proc_url):

@@ -40,8 +40,8 @@ def cc_task(desc_cvname, seg_cvname, proc_url,
           continuations, chunk_bounds, proc_url)
 
     timed("Writing cleft info",
-          taskio.write_chunk_cleft_info,
-          seg_info, chunk_bounds, proc_url)
+          taskio.write_chunk_seg_info,
+          seg_info, proc_url, chunk_bounds)
 
 
 def merge_ccs_task(proc_url, size_thr, max_face_shape):
@@ -51,7 +51,7 @@ def merge_ccs_task(proc_url, size_thr, max_face_shape):
                              proc_url)
 
     cleft_info_arr, local_dir = timed("Reading cleft infos",
-                                      taskio.read_all_cleft_infos,
+                                      taskio.read_all_chunk_seg_infos,
                                       proc_url)
 
     chunk_bounds = io.extract_sorted_bboxes(local_dir)
@@ -59,12 +59,11 @@ def merge_ccs_task(proc_url, size_thr, max_face_shape):
     # Processing
     cons_cleft_info, chunk_id_maps = tasks.merge_ccs_task(cont_info_arr,
                                                           cleft_info_arr,
-                                                          chunk_bounds,
                                                           size_thr,
                                                           max_face_shape)
 
     timed("Writing merged cleft info",
-          taskio.write_merged_cleft_info,
+          taskio.write_merged_seg_info,
           cons_cleft_info, proc_url)
 
     timed("Writing chunk id maps",
@@ -107,16 +106,16 @@ def edge_task(img_cvname, cleft_cvname, seg_cvname,
     img = timed(f"Reading img chunk at {resolution}",
                 io.read_cloud_volume_chunk,
                 img_cvname, chunk_bounds,
-                MIP=resolution, parallel=parallel)
+                mip=resolution, parallel=parallel)
 
     # clefts won't be downsampled - will do that myself below
     clefts = timed(f"Reading cleft chunk at MIP 0",
                    io.read_cloud_volume_chunk,
                    cleft_cvname, base_bounds,
-                   MIP=0, parallel=parallel)
+                   mip=0, parallel=parallel)
     seg = timed(f"Reading segmentation chunk at {resolution}",
                 io.read_cloud_volume_chunk,
-                seg_cvname, chunk_bounds, MIP=resolution,
+                seg_cvname, chunk_bounds, mip=resolution,
                 parallel=parallel)
 
     assoc_net = timed("Reading association network",
@@ -157,7 +156,7 @@ def merge_edges_task(voxel_res, dist_thr, size_thr, proc_url):
                       taskio.read_all_chunk_edge_infos,
                       proc_url)
     merged_cleft_info = timed("Reading merged cleft info",
-                              taskio.read_merged_cleft_info,
+                              taskio.read_merged_seg_info,
                               proc_url)
 
     full_df, dup_id_map, merged_edge_df = tasks.merge_edges_task(

@@ -43,7 +43,7 @@ def read_chunk_id_map(proc_url, chunk_bounds):
         fname = io.pull_file(cleft_map_fname(proc_url, chunk_bounds))
         dframe = io.read_dframe(fname)
 
-    return dict(zip(dframe.index, dframe.new_id))
+    return dict(zip(dframe.index, dframe.dst_id))
 
 
 def write_chunk_id_map(id_map, proc_url, chunk_bounds):
@@ -75,11 +75,7 @@ def write_chunk_id_maps(chunk_id_maps, chunk_bounds, proc_url):
             os.makedirs(fn.idmap_dirname)
 
         for (id_map, bounds) in zip(chunk_id_maps.flat, chunk_bounds):
-
-            chunk_tag = io.fname_chunk_tag(bounds)
-            fname = os.path.join(fn.idmap_dirname,
-                                 fn.idmap_fmtstr.format(tag=chunk_tag))
-            write_chunk_id_map(id_map, fname)
+            write_chunk_id_map(id_map, "./", bounds)
 
         io.send_directory(fn.idmap_dirname, proc_url)
 

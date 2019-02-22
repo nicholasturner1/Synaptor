@@ -10,7 +10,7 @@ from scipy import sparse
 from scipy.ndimage import distance_transform_edt
 
 from ... import seg_utils
-from .. import chunk_ccs
+from .. import seg
 
 
 def extract_prox_candidates(proxim, seg, presyn_thr, postsyn_thr,
@@ -49,7 +49,7 @@ def extract_prox_candidates(proxim, seg, presyn_thr, postsyn_thr,
 
 def find_terminals(threshed_proxim, seg, sz_thresh):
 
-    ccs = chunk_ccs.connected_components3d(threshed_proxim)
+    ccs = seg.connected_components(threshed_proxim)
     ccs = split_ccs_by_overlap(ccs, seg)
 
     return seg_utils.filter_segs_by_size(ccs, sz_thresh)[0]
@@ -132,7 +132,7 @@ def filter_by_dist(candidates, sep_thr,
     return filtered, locs
 
 
-def extract_label_candidates(clefts, seg, dil_param=5, overlap_thresh=25, 
+def extract_label_candidates(clefts, seg, dil_param=5, overlap_thresh=25,
                              filter_self=False):
 
     if dil_param > 0:
@@ -143,7 +143,7 @@ def extract_label_candidates(clefts, seg, dil_param=5, overlap_thresh=25,
     candidates = overlapping_pairs(clefts, seg, overlap_thresh)
 
     if filter_self:
-        candidates = [candidate for candidate in candidates 
+        candidates = [candidate for candidate in candidates
                       if candidate[0] != candidate[1]]
 
     return candidates

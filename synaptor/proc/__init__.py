@@ -1,16 +1,13 @@
-from . import chunk_ccs
-from . import merge_ccs
-from . import chunk_edges
-from . import merge_edges
-from . import chunk_overlaps
-from . import merge_overlaps
-#from . import candidates
+from . import seg
+from . import edge
+from . import overlap
+from . import candidate
 from . import anchor
 
 from . import tasks
-from .tasks import chunk_ccs_task
+from .tasks import cc_task
 from .tasks import merge_ccs_task
-from .tasks import chunk_edges_task
+from .tasks import edge_task
 from .tasks import merge_edges_task
 from .tasks import remap_ids_task
 

@@ -1,7 +1,7 @@
-from . import cleftinfo
-from .cleftinfo import read_chunk_cleft_info, write_chunk_cleft_info
-from .cleftinfo import read_all_chunk_cleft_infos
-from .cleftinfo import read_merged_cleft_info, write_merged_cleft_info
+from . import seginfo
+from .seginfo import read_chunk_seg_info, write_chunk_seg_info
+from .seginfo import read_all_chunk_seg_infos
+from .seginfo import read_merged_seg_info, write_merged_seg_info
 
 from . import continuation
 from .continuation import read_chunk_continuations, write_chunk_continuations

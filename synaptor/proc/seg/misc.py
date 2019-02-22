@@ -11,7 +11,7 @@ import pandas as pd
 from .. import colnames as cn
 
 
-def make_seg_info_dframe(centers, sizes, bboxes, index_name=cn.cleft_id):
+def make_seg_info_dframe(centers, sizes, bboxes, index_name=cn.seg_id):
     """
     Collects the three dictionaries describing the segments of a volume
     into a DataFrame
