@@ -218,3 +218,15 @@ def false_negative_grid_incl(pos_grid):
         fn[i,j] = np.sum(pos_grid[:i,:j])
 
     return fn
+
+
+def iso_fcurve(fscore, recalls=None, beta=1):
+
+    if recalls is None:
+        recalls = np.linspace(0.01, 1, 100)
+
+    betasq = beta ** 2
+
+    precs = fscore*recalls / ((1 + betasq) * recalls - betasq * fscore)
+
+    return recalls[precs >= 0], precs[precs >= 0]

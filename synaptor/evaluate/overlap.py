@@ -22,16 +22,19 @@ def score_overlaps(pred_clf, gt_clf, mode="liberal", to_ignore=[]):
         overlaps, pred_ids, gt_ids = ignore_segments(overlaps, to_ignore,
                                                      pred_ids, gt_ids)
 
+    # Need these sometimes for averaging across datasets
+    n_pred = len(pred_ids)
+    n_gt = len(gt_ids)
+
+    if overlaps.shape == (0,0):  # no segments
+        return precision(overlaps, pred_ids), recall(overlaps, gt_ids), n_pred, n_gt
+
     if mode == "liberal":
         overlaps = ensure_many_to_one(overlaps)
     elif mode == "conservative":
         overlaps = ensure_one_to_one(overlaps)
     else: #"bare"
         pass
-
-    # Need these sometimes for averaging across datasets
-    n_pred = len(pred_ids)
-    n_gt = len(gt_ids)
 
     return precision(overlaps, pred_ids), recall(overlaps, gt_ids), n_pred, n_gt
 
@@ -97,6 +100,8 @@ def ensure_many_to_one(overlaps):
     Enforces the rule that each predicted id (row) overlaps with only one
     ground truth object (col). Picks the maximum
     """
+    if overlaps.shape[1] == 0:
+        return overlaps
 
     maxima = overlaps.max(1).toarray().ravel()
     inds = np.ravel(overlaps.argmax(1)) # argmax returns a np.matrix
@@ -114,8 +119,10 @@ def ensure_one_to_one(overlaps):
     Enforces the rule that each predicted id (row) overlaps with only one
     ground truth object (col) AND vice versa.
     """
-
     overlaps = ensure_many_to_one(overlaps)
+
+    if overlaps.shape[0] == 0:
+        return overlaps
 
     maxima = overlaps.max(0).toarray().ravel()
     inds = np.ravel(overlaps.argmax(0)) # argmax returns a np.matrix
@@ -136,7 +143,14 @@ def precision(overlaps, ids=None):
     If ids aren't dense (each row represents an object in the orig volume),
     can pass a list/np.array of ids to handle that.
     """
-    return matched_id_rate(overlaps, axis=1, ids=ids, default_rate=1.)
+    if overlaps.shape[0] == 0:
+        return 1, np.array([])
+
+    elif overlaps.shape[1] == 0:
+        return 0, np.array(ids)
+
+    else:
+        return matched_id_rate(overlaps, axis=1, ids=ids)
 
 
 def recall(overlaps, ids=None):
@@ -147,10 +161,17 @@ def recall(overlaps, ids=None):
     If ids aren't dense (each row represents an object in the orig volume),
     can pass a list/np.array of ids to handle that.
     """
-    return matched_id_rate(overlaps, axis=0, ids=ids, default_rate=0.)
+    if overlaps.shape[1] == 0:
+        return 1, np.array([])
+
+    elif overlaps.shape[0] == 0:
+        return 0, np.array(ids)
+
+    else:
+        return matched_id_rate(overlaps, axis=0, ids=ids)
 
 
-def matched_id_rate(overlaps, axis, ids=None, default_rate=None):
+def matched_id_rate(overlaps, axis, ids=None):
     """
     Computes how often a row/col id is matched with a col/row.
     This corresponds to precision or recall when mapped to the
@@ -163,8 +184,8 @@ def matched_id_rate(overlaps, axis, ids=None, default_rate=None):
     (e.g. high CC thresholds), pass in a default value to return
     """
 
-    if overlaps.shape[0] == 0: #no predicted clefts
-        return default_rate, []
+    # if overlaps.shape[0] == 0: #no predicted clefts
+    #     return default_rate, np.array([])
 
     maxima = overlaps.max(axis).toarray().ravel()
 
