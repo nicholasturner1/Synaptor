@@ -54,13 +54,15 @@ def random_tag(k=8):
 
 def bbox_from_fname(path):
     """ Extracts the bounding box from a path """
-
     match = BBOX_REGEXP.search(path)
+    assert match is not None, "bbox not found in path"
 
-    if match is None:
-        raise(Exception("bbox not found in path"))
+    return bbox_from_tag(match.group(0))
 
-    beg_str, end_str = match.group(0).split("-")
+
+def bbox_from_tag(tag):
+    """ Extracts the bounding box specified by a tag. """
+    beg_str, end_str = tag.split("-")
     beg = tuple(map(int,beg_str.split("_")))
     end = tuple(map(int,end_str.split("_")))
 

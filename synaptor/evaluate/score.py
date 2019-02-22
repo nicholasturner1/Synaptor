@@ -1,8 +1,4 @@
-__doc__ = """
-General purpose function for ROC curve functions
-
-Nicholas Turner, 2017-8
-"""
+""" General purpose ROC curve functions """
 
 import operator
 from collections import Counter

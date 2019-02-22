@@ -9,9 +9,9 @@ import operator
 
 import numpy as np
 
-from ..proc_tasks import chunk_ccs
-from ..proc_tasks import candidates
-from ..proc_tasks import chunk_edges
+from ..proc import seg
+from ..proc import candidate
+from ..proc import edge
 from .. import seg_utils
 from . import score
 
@@ -23,14 +23,14 @@ def score_at_thresholds(net, prox, img, seg, clf, labels,
                         return_aux_data=False):
     """ TODO """
     # Making terminals
-    find_prox_terminals = chunk_ccs.find_prox_terminals
+    find_prox_terminals = seg.find_prox_terminals
     pre_terms, post_terms = find_prox_terminals(prox, seg,
                                                 presyn_thresh=presyn_thresh,
                                                 postsyn_thresh=postsyn_thresh,
                                                 sz_thresh=term_sz_thresh)
 
     # Extracting candidates
-    find_candidates = candidates.extract_terminal_candidates
+    find_candidates = candidate.extract_terminal_candidates
     pairs, locs, cands = find_candidates(pre_terms, post_terms, seg,
                                          seg_sz_thresh=seg_sz_thresh,
                                          centroid_dist_thresh=centroid_dist_thresh,
@@ -43,7 +43,7 @@ def score_at_thresholds(net, prox, img, seg, clf, labels,
     locs_fmt = {cand: (loc,) for (cand, loc) in zip(cands, locs)}
 
     # Get all outputs
-    _, scores = chunk_edges.prune_candidates(net, img, seg, patchsz, cands_fmt,
+    _, scores = edge.prune_candidates(net, img, seg, patchsz, cands_fmt,
                                              output_thresh=-np.inf,
                                              cleft_locs=locs_fmt, prox=prox,
                                              loc_type="manual")
