@@ -7,13 +7,13 @@ from scipy import ndimage
 from ... import seg_utils
 
 
-def connected_components(d, thresh=0):
+def connected_components(d, thresh=0, dtype=np.uint32):
     """
     Performs basic connected components on network
     output given a threshold value. Returns the components
-    as uint32
+    as a desired datatype (default: np.uint32)
     """
-    return ndimage.label(d > thresh)[0].astype(np.uint32)
+    return ndimage.label(d > thresh)[0].astype(dtype)
 
 
 def dilated_components(output, dil_param, cc_thresh):

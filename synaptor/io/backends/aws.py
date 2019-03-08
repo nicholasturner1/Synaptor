@@ -1,23 +1,10 @@
-#!/usr/bin/env python3
-from __future__ import unicode_literals
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from builtins import zip
-from future import standard_library
-standard_library.install_aliases()
+""" AWS IO Functionality """
 
+import os
+import re
+import subprocess
 
-__doc__ = """
-AWS IO Functionality
-
-Nicholas Turner <nturner@cs.princeton.edu>, 2018
-"""
-
-
-import os, re
-
-import cloudvolume #Piggybacking on cloudvolume's secrets
+import cloudvolume  # Piggybacking on cloudvolume's secrets
 import boto3
 
 from . import utils
@@ -37,21 +24,26 @@ def pull_file(remote_path):
     client.download_file(bucket, key, local_fname)
 
 
+def pull_files(remote_paths):
+    subprocess.call(["gsutil", "-m", "cp", *remote_paths, "."])
+    return list(map(os.path.basename, remote_paths))
+
+
 def pull_directory(remote_dir):
     """ This will currently break if the remote dir has subdirectories """
     bucket, key = parse_remote_path(remote_dir)
 
     client = open_client(bucket)
 
-    remote_keys  = keys_under_prefix(client, bucket, key)
-    local_dir    = os.path.basename(utils.check_no_slash(key))
+    remote_keys = keys_under_prefix(client, bucket, key)
+    local_dir = os.path.basename(utils.check_no_slash(key))
     local_fnames = [os.path.join(local_dir, os.path.basename(k))
                     for k in remote_keys]
 
     if not os.path.isdir(local_dir):
         os.makedirs(local_dir)
 
-    for (f,k) in zip(local_fnames, remote_keys):
+    for (f, k) in zip(local_fnames, remote_keys):
         client.download_file(bucket, k, f)
 
     return local_fnames
@@ -65,10 +57,14 @@ def send_file(local_name, remote_path):
     client.upload_file(local_name, bucket, key)
 
 
+def send_files(local_names, remote_dir):
+    subprocess.call(["gsutil", "-m", "cp", *local_names, remote_dir])
+
+
 def send_directory(local_dir, remote_dir):
     bucket, key = parse_remote_path(remote_dir)
 
-    #Sending directory to a subdirectory of remote dir
+    # Sending directory to a subdirectory of remote dir
     key = os.path.join(key, os.path.basename(utils.check_no_slash(local_dir)))
 
     fnames = os.listdir(local_dir)
@@ -76,7 +72,7 @@ def send_directory(local_dir, remote_dir):
 
     client = open_client(bucket)
 
-    for (f,key) in zip(fnames, remote_keys):
+    for (f, key) in zip(fnames, remote_keys):
         client.upload_file(os.path.join(local_dir, f), bucket, key)
 
 
@@ -85,7 +81,7 @@ def keys_under_prefix(client, bucket, key):
     response = client.list_objects(Bucket=bucket,
                                    Prefix=utils.check_slash(key))
 
-    return [ obj["Key"] for obj in response["Contents"] ]
+    return [obj["Key"] for obj in response["Contents"]]
 
 
 def parse_remote_path(remote_path):

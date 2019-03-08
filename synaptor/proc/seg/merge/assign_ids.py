@@ -57,14 +57,18 @@ def apply_chunk_id_maps(continuation_arr, chunk_id_maps):
     return continuation_arr
 
 
-def apply_id_map(cont_dict, id_map):
+def apply_id_map(continuations, id_map):
     """
     Applies an id map to a set of continuations organized in
     dictionaries: face -> [continuations]
     """
-    for (face, conts) in cont_dict.items():
-        for continuation in conts:
+    if not isinstance(continuations, dict):
+        for continuation in continuations:
             continuation.segid = id_map[continuation.segid]
+    else:
+        for (face, conts) in continuations.items():
+            for continuation in conts:
+                continuation.segid = id_map[continuation.segid]
 
 
 def update_chunk_id_maps(chunk_id_maps, cont_id_map):

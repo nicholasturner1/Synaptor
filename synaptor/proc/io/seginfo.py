@@ -42,7 +42,7 @@ def write_chunk_seg_info(dframe, proc_url, chunk_bounds):
     """ Writes seg info to the processing URL """
     if io.is_db_url(proc_url):
         chunk_tag = io.fname_chunk_tag(chunk_bounds)
-        to_write = dframe[SEG_INFO_COLUMNS].copy()
+        to_write = dframe.reset_index()[SEG_INFO_COLUMNS].copy()
         to_write[cn.chunk_tag] = chunk_tag
         io.write_db_dframe(to_write, proc_url, "chunk_segs")
 
@@ -107,6 +107,44 @@ def make_empty_df():
     return df.set_index(cn.seg_id)
 
 
+def read_mapped_seginfo_by_dst_hash(proc_url, hashval):
+    assert io.is_db_url(proc_url), "Not implemented for file IO"
+
+    metadata = io.open_db_metadata(proc_url)
+    chunk_segs = metadata.tables["chunk_segs"]
+    seg_merge_map = metadata.tables["seg_merge_map"]
+
+    segs_cols = list(chunk_segs.c[name] for name in SEG_INFO_COLUMNS)
+    map_cols = [seg_merge_map.c[cn.dst_id]]
+
+    # matching columns for join
+    chunk_seg_id = chunk_segs.c["id"]
+    merge_map_id = seg_merge_map.c[cn.src_id]
+    dst_id_hash = seg_merge_map.c[cn.dst_id_hash]
+
+    statement = select(segs_cols + map_cols).select_from(
+                    chunk_segs.join(seg_merge_map,
+                                    chunk_seg_id == merge_map_id)).where(
+                                    dst_id_hash == hashval)
+
+    print(statement)
+
+    return io.read_db_dframe(proc_url, statement)
+
+
+def read_all_unique_seg_ids(proc_url):
+    assert io.is_db_url(proc_url), "Not implemented for file IO"
+
+    metadata = io.open_db_metadata(proc_url)
+    chunk_segs = metadata.tables["chunk_segs"]
+
+    columns = [chunk_segs.c["id"]]
+
+    statement = select(columns)
+
+    return io.read_db_dframe(proc_url, statement)["id"].tolist()
+
+
 def read_merged_seg_info(proc_url, hash_index=None):
     """
     Reads the merged seg info dataframe from storage. If hash_index is
@@ -138,7 +176,7 @@ def read_merged_seg_info(proc_url, hash_index=None):
 def write_merged_seg_info(dframe, proc_url):
     """Writes a merged seg info dataframe to storage. """
     if io.is_db_url(proc_url):
-        io.write_db_dframe(dframe, proc_url, "merged_segs", index=False)
+        io.write_db_dframe(dframe, proc_url, "merged_segs", index=True)
 
     else:
         io.write_dframe(dframe, proc_url, fn.merged_seginfo_fname)

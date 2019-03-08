@@ -1,52 +1,64 @@
-""" Merging Seg Info Dataframes """
+""" Merging Segment Info Dataframes. """
 
 
-import itertools
+import pandas as pd
 
-from ....types import bbox
-from ... import utils
 from ... import colnames as cn
 
 
-def merge_seg_df(seg_info_df, id_map):
-    return utils.merge_info_df(seg_info_df, id_map, merge_seg_rows)
+def merge_seginfo_df(seginfo_df, new_id_colname="new_ids"):
+
+    seginfo_df = seginfo_df.reset_index()
+    if "index" in seginfo_df.columns:
+        seginfo_df = seginfo_df.drop(["index"], axis=1)
+
+    # computing grouped stats
+    grouped = seginfo_df.groupby(new_id_colname)
+    szs = grouped[cn.size].sum()
+    bbox1 = grouped[cn.bbox_cols[:3]].min()
+    bbox2 = grouped[cn.bbox_cols[-3:]].max()
+    coms = compute_centroids(seginfo_df, szs, new_id_colname=new_id_colname)
+
+    # setting index to the original if not remapped
+    no_new_id = pd.isnull(seginfo_df[new_id_colname])
+    seginfo_df.loc[no_new_id, new_id_colname] = seginfo_df.loc[no_new_id,
+                                                              cn.seg_id]
+    # taking all other fields from largest cleft
+    new_df = seginfo_df.sort_values([cn.size]).drop_duplicates(new_id_colname)
+
+    # recreating index
+    new_df = new_df.drop([cn.seg_id], axis=1)
+    new_df = new_df.rename(columns={new_id_colname: cn.seg_id})
+    new_df = new_df.set_index(cn.seg_id)
+
+    new_df.update(coms)
+    new_df.update(bbox1)
+    new_df.update(bbox2)
+    new_df.update(szs)
+
+    return new_df
 
 
-def merge_seg_rows(row1, row2):
+def compute_centroids(df, szs, new_id_colname="new_ids"):
 
-    sz1, com1, bbox1 = unwrap_row(row1)
-    sz2, com2, bbox2 = unwrap_row(row2)
+    szs = szs.reset_index()
+    szs = szs.rename(columns={cn.size: "total_size"})
 
-    sz = sz1 + sz2
-    com = utils.weighted_avg(com1, sz1, com2, sz2)
-    bb = bbox1.merge(bbox2)
+    centroid_df = pd.merge(df[cn.centroid_cols + [cn.size, new_id_colname]],
+                           szs, how="left", on=new_id_colname)
 
-    return wrap_row(sz, com, bb)
+    # This will create NANs, but those will disappear after grouping
+    centroid_df[cn.size] /= centroid_df["total_size"]
 
+    centroid_df[cn.centroid_x] *= centroid_df[cn.size]
+    centroid_df[cn.centroid_y] *= centroid_df[cn.size]
+    centroid_df[cn.centroid_z] *= centroid_df[cn.size]
 
-def unwrap_row(df_row):
-
-    sz = df_row[cn.size]
-
-    com = tuple(df_row[col] for col in cn.centroid_cols)
-
-    bb_b = tuple(df_row[col] for col in cn.bbox_cols[:3])
-    bb_e = tuple(df_row[col] for col in cn.bbox_cols[3:])
-    bb = bbox.BBox3d(bb_b, bb_e)
-
-    return sz, com, bb
+    return centroid_df.groupby(new_id_colname)[cn.centroid_cols].sum().astype(int)
 
 
-def wrap_row(sz, com, bb):
-    return dict(zip(itertools.chain([cn.size],
-                                    cn.centroid_cols,
-                                    cn.bbox_cols),
-                    map(int, itertools.chain((sz,), com, bb.astuple()))))
-
-
-def enforce_size_threshold(seg_info_df, size_thr):
-    """Finds a mapping that removes segs under the size threshold"""
-    violations = seg_info_df[seg_info_df[cn.size] < size_thr].index
-    seg_info_df.drop(violations.tolist(), inplace=True)
+def enforce_size_threshold(seginfo_df, size_thr):
+    violations = seginfo_df.index[seginfo_df[cn.size] < size_thr]
+    seginfo_df.drop(violations.tolist(), inplace=True)
 
     return {v: 0 for v in violations}

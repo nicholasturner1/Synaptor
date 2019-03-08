@@ -12,6 +12,8 @@ from . import filenames as fn
 
 
 ID_MAP_COLUMNS = [cn.src_id, cn.dst_id]
+UNIQUE_ID_MAP_COLUMNS = ["id", cn.seg_id]
+CHUNKED_ID_MAP_COLUMNS = [cn.seg_id, cn.dst_id, cn.chunk_tag]
 
 
 def cleft_map_fname(proc_url, chunk_bounds):
@@ -28,13 +30,84 @@ def make_dframe_from_dict(id_map):
     return df
 
 
+def read_chunk_unique_ids(proc_url, chunk_bounds):
+    assert io.is_db_url(proc_url), "file unique id map not implemented yet"
+
+    tag = io.fname_chunk_tag(chunk_bounds)
+    metadata = io.open_db_metadata(proc_url)
+    chunk_segs = metadata.tables["chunk_segs"]
+
+    columns = list(chunk_segs.c[name] for name in UNIQUE_ID_MAP_COLUMNS)
+    statement = select(columns).where(chunk_segs.c[cn.chunk_tag] == tag)
+
+    dframe = io.read_db_dframe(proc_url, statement)
+
+    return dict(zip(dframe[cn.seg_id], dframe["id"]))
+
+
+def read_all_chunk_unique_ids(proc_url):
+    assert io.is_db_url(proc_url), "file unique id map not implemented yet"
+
+    metadata = io.open_db_metadata(proc_url)
+    chunk_segs = metadata.tables["chunk_segs"]
+
+    columns = list(chunk_segs.c[name] for name in UNIQUE_ID_MAP_COLUMNS)
+    columns.append(chunk_segs.c[cn.chunk_tag])
+    statement = select(columns)
+
+    dframe = io.read_db_dframe(proc_url, statement)
+
+    chunk_tag_to_df = dict(iter(dframe.groupby(cn.chunk_tag)))
+
+    map_lookup = {io.bbox_from_tag(tag).min(): unique_id_dframe_to_map(df)
+                  for (tag, df) in chunk_tag_to_df.items()}
+
+    return map_lookup
+
+
+def unique_id_dframe_to_map(dframe):
+    return dict(zip(dframe[cn.seg_id], dframe["id"]))
+
+
+def write_seg_merge_map(seg_merge_df, proc_url):
+    assert io.is_db_url(proc_url), "merge map IO not implemented for files"
+    io.write_db_dframe(seg_merge_df, proc_url, "seg_merge_map")
+
+
+def write_chunked_seg_map(proc_url):
+    assert io.is_db_url(proc_url), "not implemented for files"
+
+    chunk_seg_colnames = [cn.seg_id, cn.chunk_tag]
+    merge_map_colnames = [cn.dst_id]
+
+    metadata = io.open_db_metadata(proc_url)
+    chunk_segs = metadata.tables["chunk_segs"]
+    seg_merge_map = metadata.tables["seg_merge_map"]
+
+    cs_columns = list(chunk_segs.c[name] for name in chunk_seg_colnames)
+    smm_columns = list(seg_merge_map.c[name] for name in merge_map_colnames)
+
+    # matching columns for join
+    chunk_seg_id = chunk_segs.c["id"]
+    merge_map_id = seg_merge_map.c[cn.src_id]
+
+    statement = select(cs_columns + smm_columns).select_from(
+                    chunk_segs.join(seg_merge_map,
+                                    chunk_seg_id == merge_map_id))
+
+    results = io.read_db_dframe(proc_url, statement)[CHUNKED_ID_MAP_COLUMNS]
+    results.columns = [cn.src_id, cn.dst_id, cn.chunk_tag]
+
+    io.write_db_dframe(results, proc_url, "chunked_seg_merge_map")
+
+
 def read_chunk_id_map(proc_url, chunk_bounds):
     """Reads an id mapping for a chunk from a processing directory"""
     if io.is_db_url(proc_url):
         tag = io.fname_chunk_tag(chunk_bounds)
         metadata = io.open_db_metadata(proc_url)
 
-        cleft_maps = metadata.tables["seg_idmap"]
+        cleft_maps = metadata.tables["chunked_seg_merge_map"]
         columns = list(cleft_maps.c[name] for name in ID_MAP_COLUMNS)
         statement = select(columns).where(cleft_maps.c[cn.chunk_tag] == tag)
         dframe = io.read_db_dframe(proc_url, statement, index_col=cn.src_id)
@@ -85,7 +158,7 @@ def read_dup_id_map(proc_url):
     if io.is_db_url(proc_url):
         metadata = io.open_db_metadata(proc_url)
 
-        dup_map = metadata.tables["dup_idmap"]
+        dup_map = metadata.tables["dup_merge_map"]
         dframe = io.read_db_dframe(proc_url, dup_map.select(),
                                    index_col=cn.src_id)
 
@@ -105,7 +178,7 @@ def write_dup_id_map(id_map, proc_url):
     dframe = make_dframe_from_dict(id_map)
 
     if io.is_db_url(proc_url):
-        io.write_db_dframe(dframe, proc_url, "dup_idmap")
+        io.write_db_dframe(dframe.reset_index(), proc_url, "dup_merge_map")
 
     else:
         io.write_dframe(dframe, proc_url, fn.dup_map_fname)

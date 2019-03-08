@@ -1,20 +1,9 @@
-#!/usr/bin/env python3
-from __future__ import unicode_literals
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from builtins import filter
-from builtins import range
-from builtins import map
-from future import standard_library
-standard_library.install_aliases()
-__doc__ = """
-IO Utility Functions
+""" IO Utility Functions """
 
-Nicholas Turner <nturner@cs.princeton.edu>, 2018
-"""
-
-import os, re, random, string
+import os
+import re
+import random
+import string
 
 import numpy as np
 
@@ -24,7 +13,7 @@ from . import backends as bck
 
 AWS_REGEXP = bck.aws.REGEXP
 GCLOUD_REGEXP = bck.gcloud.REGEXP
-BBOX_REGEXP   = re.compile("[0-9]+_[0-9]+_[0-9]+-[0-9]+_[0-9]+_[0-9]+")
+BBOX_REGEXP = re.compile("[0-9]+_[0-9]+_[0-9]+-[0-9]+_[0-9]+_[0-9]+")
 
 
 def fname_chunk_tag(chunk_bounds):
@@ -48,7 +37,7 @@ def temp_path(path):
 def random_tag(k=8):
     """ Returns a random tag for disambiguating filenames """
     return "".join(random.choice(string.ascii_uppercase +
-                                  string.digits)
+                                 string.digits)
                    for _ in range(k))
 
 
@@ -63,8 +52,8 @@ def bbox_from_fname(path):
 def bbox_from_tag(tag):
     """ Extracts the bounding box specified by a tag. """
     beg_str, end_str = tag.split("-")
-    beg = tuple(map(int,beg_str.split("_")))
-    end = tuple(map(int,end_str.split("_")))
+    beg = tuple(map(int, beg_str.split("_")))
+    end = tuple(map(int, end_str.split("_")))
 
     return bbox.BBox3d(beg, end)
 
@@ -83,11 +72,11 @@ def extract_sorted_bboxes(local_dir):
 def make_info_arr(start_lookup):
 
     ordering = sorted(start_lookup.keys())
-    dims     = infer_dims(ordering)
+    dims = infer_dims(ordering)
 
     ordered = [start_lookup[k] for k in ordering]
 
-    arr = np.array([None for _ in range(len(ordered))]) #object arr
+    arr = np.array([None for _ in range(len(ordered))])  # object arr
     for i in range(len(ordered)):
         arr[i] = ordered[i]
 
@@ -96,7 +85,7 @@ def make_info_arr(start_lookup):
 
 def infer_dims(ordered_tups):
 
-    #assuming the grid is full and complete, then
+    # assuming the grid is full and complete, then
     # each dim's first index is repeated a number of times
     # equal to the product of the other dimension lengths.
     # => we can find the length in that dimension by dividing
@@ -113,8 +102,8 @@ def infer_dims(ordered_tups):
     assert num_tups % x_times_z == 0, "grid incomplete or redundant"
     assert num_tups % x_times_y == 0, "grid incomplete or redundant"
 
-    x = num_tups  // y_times_z
+    x = num_tups // y_times_z
     y = x_times_y // x
     z = x_times_z // x
 
-    return (x,y,z)
+    return (x, y, z)

@@ -12,13 +12,16 @@ from .. import seg_utils
 from . import io as taskio
 from . import tasks
 from .tasks import timed
+from . import seg
 from . import edge
+from . import colnames as cn
 
 
 def cc_task(desc_cvname, seg_cvname, proc_url,
             cc_thresh, sz_thresh, chunk_begin, chunk_end,
-            mip=0, parallel=1):
+            mip=0, parallel=1, proc_dir=None, hash_maxval=100):
 
+    proc_dir = proc_url if proc_dir is None else proc_dir
     chunk_bounds = types.BBox3d(chunk_begin, chunk_end)
 
     desc_vol = timed(f"Reading network output chunk: {chunk_bounds}",
@@ -30,6 +33,9 @@ def cc_task(desc_cvname, seg_cvname, proc_url,
                                                  cc_thresh, sz_thresh,
                                                  offset=chunk_begin)
 
+    face_hashes = seg.hash_chunk_faces(chunk_begin, chunk_end,
+                                       maxval=hash_maxval)
+
     timed(f"Writing seg chunk: {chunk_bounds}",
           io.write_cloud_volume_chunk,
           ccs, seg_cvname, chunk_bounds,
@@ -37,7 +43,11 @@ def cc_task(desc_cvname, seg_cvname, proc_url,
 
     timed("Writing chunk_continuations",
           taskio.write_chunk_continuations,
-          continuations, chunk_bounds, proc_url)
+          continuations, proc_dir, chunk_bounds)
+
+    timed("Writing chunk face hashes",
+          taskio.write_face_hashes,
+          face_hashes, proc_url, chunk_bounds, proc_dir=proc_dir)
 
     timed("Writing cleft info",
           taskio.write_chunk_seg_info,
@@ -71,13 +81,83 @@ def merge_ccs_task(proc_url, size_thr, max_face_shape):
           chunk_id_maps, chunk_bounds, proc_url)
 
 
+def match_continuations_task(proc_url, facehash, face_shape=(1024, 1024)):
+
+    contin_files = timed("Fetching continuation files by hash",
+                         taskio.continuations_by_hash,
+                         proc_url, facehash)
+
+    chunked_id_map = timed("Reading chunked unique_ids",
+                           taskio.read_all_chunk_unique_ids,
+                           proc_url)
+
+    paired_files = timed("Pairing continuation files",
+                         seg.merge.pair_continuation_files,
+                         contin_files)
+
+    for pair in paired_files:
+        if len(pair) != 2:
+            print(f"Skipping set with {len(pair)} elements")
+            continue
+
+        pair_filenames = (pair[0].filename, pair[1].filename)
+        pair_maps = (chunked_id_map[pair[0].bbox.min()],
+                     chunked_id_map[pair[1].bbox.min()])
+
+        pair_contins = timed("Reading pair continuations",
+                             taskio.read_face_filenames,
+                             pair_filenames)
+
+        graph_edges = tasks.match_continuations_task(
+                          pair_contins[0], pair_contins[1],
+                          face_shape=face_shape,
+                          id_map1=pair_maps[0], id_map2=pair_maps[1])
+
+        timed("Writing graph edges",
+              taskio.write_contin_graph_edges,
+              graph_edges, proc_url)
+
+
+def seg_graph_cc_task(proc_url, hashmax):
+    graph_edges = timed("Reading seg graph edges",
+                        taskio.read_continuation_graph,
+                        proc_url)
+
+    all_ids = timed("Reading all unique seg ids",
+                    taskio.read_all_unique_seg_ids,
+                    proc_url)
+
+    seg_merge_df = tasks.seg_graph_cc_task(graph_edges, hashmax, all_ids)
+
+    timed("Writing seg merge_map",
+          taskio.write_seg_merge_map,
+          seg_merge_df, proc_url)
+
+    timed("Writing chunked version",
+          taskio.write_chunked_seg_map,
+          proc_url)
+
+
+def merge_seginfo_task(proc_url, hashval):
+
+    seginfo_w_new_id = timed(f"Reading seginfo for dst hash {hashval}",
+                             taskio.read_mapped_seginfo_by_dst_hash,
+                             proc_url, hashval)
+
+    merged_seginfo = tasks.merge_seginfo_task(seginfo_w_new_id)
+
+    timed(f"Writing merged seginfo for dst hash {hashval}",
+          taskio.write_merged_seg_info,
+          merged_seginfo, proc_url)
+
+
 def edge_task(img_cvname, cleft_cvname, seg_cvname,
               chunk_begin, chunk_end, patchsz, proc_url,
               samples_per_cleft=2, dil_param=5,
               root_seg_cvname=None,
               resolution=(4, 4, 40), num_downsamples=0,
               base_res_begin=None, base_res_end=None,
-              parallel=1, hashmax=None):
+              parallel=1, hashmax=None, proc_dir=None):
     """
     Runs tasks.chunk_edges_task after reading the relevant
     cloud volume chunks and downsampling the cleft volume
@@ -103,6 +183,8 @@ def edge_task(img_cvname, cleft_cvname, seg_cvname,
     else:
         base_bounds = types.BBox3d(base_res_begin, base_res_end)
 
+    proc_dir = proc_url if proc_dir is None else proc_dir
+
     img = timed(f"Reading img chunk at {resolution}",
                 io.read_cloud_volume_chunk,
                 img_cvname, chunk_bounds,
@@ -120,7 +202,7 @@ def edge_task(img_cvname, cleft_cvname, seg_cvname,
 
     assoc_net = timed("Reading association network",
                       taskio.read_network_from_proc,
-                      proc_url).cuda()
+                      proc_dir).cuda()
 
     chunk_id_map = timed("Reading chunk id map",
                          taskio.read_chunk_id_map,
@@ -186,6 +268,9 @@ def pick_largest_edges_task(proc_url, clefthash=None):
                       proc_url,
                       clefthash=clefthash, merged=False)
 
+    if edges.index.name == cn.seg_id:
+        edges = edges.reset_index()
+
     largest_info = tasks.pick_largest_edges_task(edges, clefthash is not None)
 
     timed("Writing merged edge list",
@@ -199,8 +284,8 @@ def merge_duplicates_task(voxel_res, dist_thr, size_thr, proc_url, hash_index):
                     taskio.read_hashed_edge_info,
                     proc_url, hash_index)
 
-    merged_cleft_info = timed("Reading merged cleft info for ind {hash_index}",
-                              taskio.read_merged_cleft_info,
+    merged_cleft_info = timed(f"Reading merged seg info for ind {hash_index}",
+                              taskio.read_merged_seg_info,
                               proc_url, hash_index)
 
     full_df, dup_id_map = tasks.merge_duplicates_task(merged_cleft_info,

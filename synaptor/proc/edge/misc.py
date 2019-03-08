@@ -26,6 +26,10 @@ def add_cleft_locs(edges_dframe, clefts):
 
     coms = seg_utils.centers_of_mass(clefts)
 
+    if len(coms) == 0:
+        all_columns = list(edges_dframe.columns) + cn.centroid_cols
+        return pd.DataFrame(data=None, dtype=int, columns=all_columns)
+
     df = pd.DataFrame.from_dict(coms, orient="index")
     df.columns = cn.centroid_cols
     df = df.reset_index()

@@ -8,7 +8,7 @@ merged_seginfo_fname = "merged_cleft_info.df"
 
 # Segment continuations
 contin_dirname = "continuations"
-contin_fmtstr = "continuations_{tag}.h5"
+contin_fmtstr = "continuations_{chunk_tag}_{face_tag}.h5"
 
 
 # Segmentation merging id maps

@@ -3,36 +3,37 @@
 
 import time
 
-from .. import types
 from .. import seg_utils
 from . import seg
 from . import edge
 from . import overlap
 from . import anchor
 from . import hashing
+from . import utils
 from . import colnames as cn
 
 
 def timed(fn_desc, fn, *args, **kwargs):
     """ Measures the execution time of the passed function """
-    print("{fn_desc}".format(fn_desc=fn_desc))
+    print(fn_desc)
     start = time.time()
     result = fn(*args, **kwargs)
-    print("{fn_desc} complete in {t:.3f}s".format(fn_desc=fn_desc,
-                                                  t=time.time()-start))
+    print(f"{fn_desc} complete in {time.time() - start:.3f}s")
+
     return result
 
 
 def cc_task(desc_vol, cc_thresh, sz_thresh, offset=(0, 0, 0)):
     """
-    - Performs connected components over a chunk of data
-    - Extracts clefts that possibly continue to the next chunk (continuations)
+    - Performs connected components over a data description volume
+    - Extracts segments that possibly continue
+      to the next chunk (continuations)
     - Filters out any complete segments under the size threshold
     - Records the centroid, size, and bounding box for the surviving
-      clefts in a DataFrame
+      segments in a DataFrame
 
     Returns:
-    - Cleft Components (3d np array)
+    - Connected Components (3d np array)
     - Continuations for the chunk
     - DataFrame of cleft info
     """
@@ -40,10 +41,9 @@ def cc_task(desc_vol, cc_thresh, sz_thresh, offset=(0, 0, 0)):
                 seg.connected_components,
                 desc_vol, cc_thresh)
 
-    continuations = timed("Extracting continuations",
-                          types.continuation.extract_all_continuations,
-                          ccs)
-    cont_ids = set(cont.segid for cont in continuations)
+    continuations, cont_ids = timed("Extracting continuations",
+                                    seg.continuation.extract_all_continuations,
+                                    ccs)
 
     ccs, sizes = timed("Filtering complete segments by size",
                        seg_utils.filter_segs_by_size,
@@ -110,6 +110,58 @@ def merge_ccs_task(cont_info_arr, cleft_info_arr,
     return cons_cleft_info, chunk_id_maps
 
 
+def match_continuations_task(contins1, contins2, face_shape=(1024, 1024),
+                             id_map1=None, id_map2=None):
+
+    if id_map1 is not None:
+        timed("Applying id map to contins1",
+              seg.merge.apply_id_map,
+              contins1, id_map1)
+
+    if id_map2 is not None:
+        timed("Applying id map to contins2",
+              seg.merge.apply_id_map,
+              contins2, id_map2)
+
+    graph_edges = timed("Matching continuations",
+                        seg.merge.match_continuations,
+                        contins1, contins2, face_shape=face_shape)
+
+    return graph_edges
+
+
+def seg_graph_cc_task(graph_edges, hashmax, all_ids):
+    ccs = timed("Finding connected components",
+                utils.find_connected_components,
+                graph_edges)
+
+    seg_merge_map = timed("Making seg merge_map",
+                          utils.make_id_map,
+                          ccs)
+
+    seg_merge_map = timed("Expanding mapping to include all ids",
+                          seg.merge.expand_id_map,
+                          seg_merge_map, all_ids)
+
+    seg_merge_df = timed("Making map dataframe",
+                         seg.merge.misc.make_map_dframe,
+                         seg_merge_map)
+
+    seg_merge_df = timed("Hashing dst id",
+                         hashing.add_hashed_index,
+                         seg_merge_df, [cn.dst_id], hashmax,
+                         indexname=cn.dst_id_hash)
+
+    return seg_merge_df
+
+
+def merge_seginfo_task(seginfo_dframe):
+
+    return timed("Merging seginfo dataframe",
+                 seg.merge.merge_seginfo_df,
+                 seginfo_dframe, new_id_colname=cn.dst_id)
+
+
 def edge_task(img, clefts, seg, assoc_net,
               patchsz, offset=(0, 0, 0), root_seg=None,
               samples_per_cleft=2, dil_param=5,
@@ -168,7 +220,7 @@ def pick_largest_edges_task(edges, single_dframe=False):
 
 
 def merge_duplicates_task(cleft_info, edge_info,
-                          voxel_res, dist_thr, size_thr):
+                          dist_thr, voxel_res, size_thr):
     """ Parallelizable edge.merge """
     full_df = timed("Merging edge DataFrame to cleft DataFrame",
                     edge.merge.merge_to_cleft_df,

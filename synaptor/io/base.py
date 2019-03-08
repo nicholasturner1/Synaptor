@@ -29,6 +29,24 @@ def pull_file(path):
         return bck.local.pull_file(path)
 
 
+def pull_files(paths):
+    """
+    Pulls multiple files from storage. The storage can be
+    local or remote as specified by the paths, though each
+    path argument should have the same type of source
+    (i.e. gcloud, aws, or local storage)
+    """
+    if len(paths) == 0:
+        return list()
+
+    if GCLOUD_REGEXP.match(paths[0]):
+        return bck.gcloud.pull_files(paths)
+    elif AWS_REGEXP.match(paths[0]):
+        return bck.aws.pull_files(paths)
+    else:  # local
+        return bck.local.pull_files(paths)
+
+
 def pull_directory(dir_path):
     """
     Pulls a directory from storage. The storage can be
@@ -55,9 +73,27 @@ def send_file(local_path, path):
     elif AWS_REGEXP.match(path):
         bck.aws.send_file(local_path, path)
     else:
-        warnings.warn("Pathname {} doesn't match remote pattern".format(path),
+        warnings.warn(f"Pathname {path} doesn't match remote pattern",
                       Warning)
         bck.local.send_file(local_path, path)
+
+
+def send_files(local_paths, dst_dir):
+    """
+    Sends multiple local files to a storage directory. The storage can be
+    local or remote as specified by the directory path
+    """
+    if len(local_paths) == 0:
+        return
+
+    if GCLOUD_REGEXP.match(dst_dir):
+        bck.gcloud.send_files(local_paths, dst_dir)
+    elif AWS_REGEXP.match(dst_dir):
+        bck.aws.send_files(local_paths, dst_dir)
+    else:
+        warnings.warn(f"Pathname {dst_dir} doesn't make remote pattern",
+                      Warning)
+        bck.local.send_files(local_paths, dst_dir)
 
 
 def send_directory(local_dir, path):
