@@ -37,12 +37,23 @@ clefthash = "clefthash"
 # Segmentation id maps
 src_id = "src_id"
 dst_id = "dst_id"
+dst_id_hash = "dst_id_hash"
 
 
 # Overlap tables
 rows = "row_id"
 cols = "col_id"
 vals = "vals"
+
+
+# Continuation tables
+contin_filename = "filename"
+facehash = "facehash"
+
+
+# Seg continuation graph edges
+graph_id1 = "graph_id1"
+graph_id2 = "graph_id2"
 
 
 # ====================================================

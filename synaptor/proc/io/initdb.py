@@ -29,9 +29,10 @@ __all__ = ["init_db", "drop_db", "fill_chunks", "TABLES"]
 # NOTE: These need to be listed in a certain order to resolve dependencies when
 # deleting tables (See drop_db below)
 # - edges, clefts, & continuation_files depend on chunks
-TABLES = ["final", "merged_edges", "chunk_edges",
-          "merged_segs", "chunk_segs", "continuation_files",
-          "chunks", "seg_idmap", "dup_idmap", "overlaps"]
+TABLES = ["final", "contin_graph", "merged_edges", "chunk_edges",
+          "merged_segs", "chunk_segs",
+          "chunks", "seg_merge_map", "chunked_seg_merge_map", "dup_merge_map",
+          "continuations", "chunk_overlaps", "max_overlaps"]
 
 
 def init_db(url, segid_colname=cn.seg_id, metadata=None,
@@ -43,12 +44,12 @@ def init_db(url, segid_colname=cn.seg_id, metadata=None,
     init_chunks(metadata)
 
     init_seg_tables(metadata, segid_colname)
-    init_continuation_table(metadata)
-    init_idmap_table(metadata, "seg_idmap")
+    init_continuation_tables(metadata)
+    init_idmap_tables(metadata)
 
     if edges:
         init_edge_tables(metadata)
-        init_idmap_table(metadata, "dup_idmap", chunked=False)
+        init_idmap_table(metadata, "dup_merge_map")
 
     if overlaps:
         init_overlap_tables(metadata)
@@ -83,7 +84,7 @@ def init_seg_tables(metadata, segid_colname=cn.seg_id):
 
 def init_seg_table(metadata, tablename, segid_colname=cn.seg_id, chunked=True):
     """ Specifies a table for tracking info about a segment. """
-    columns = [Column("id", Integer, primary_key=True),
+    columns = [Column("id", BigInteger, primary_key=True),
                Column(cn.seg_id, Integer),
                Column(cn.size, Integer),
                # Centroid coordinates
@@ -105,19 +106,47 @@ def init_seg_table(metadata, tablename, segid_colname=cn.seg_id, chunked=True):
     return Table(tablename, metadata, *columns)
 
 
-def init_continuation_table(metadata):
+def init_continuation_tables(metadata):
+    init_continuation_file_table(metadata)
+    init_continuation_graph_table(metadata)
+
+
+def init_continuation_file_table(metadata, tablename="continuations"):
     """
     Specifies a table that associates chunk faces to a file which
     holds the continuation information for that face.
     """
-    pass
+    columns = [Column("id", Integer, primary_key=True),
+               Column("filename", Text),
+               Column("facehash", Integer)]
+
+    return Table(tablename, metadata, *columns)
 
 
-def init_idmap_table(metadata, tablename, chunked=True):
+def init_continuation_graph_table(metadata, tablename="contin_graph"):
+    """
+    Specifies a table that stores a graph of connected segment continuations
+    """
+    columns = [Column("id", BigInteger, primary_key=True),
+               Column(cn.graph_id1, BigInteger),
+               Column(cn.graph_id2, BigInteger)]
+
+    return Table(tablename, metadata, *columns)
+
+
+def init_idmap_tables(metadata):
+    init_idmap_table(metadata, "seg_merge_map", hashed=True)
+    init_idmap_table(metadata, "chunked_seg_merge_map", chunked=True)
+
+
+def init_idmap_table(metadata, tablename, hashed=False, chunked=False):
     """ Specifies a table that holds an id mapping. """
     columns = [Column("id", Integer, primary_key=True),
-               Column("prev_id", Integer),
-               Column("new_id", Integer)]
+               Column(cn.src_id, Integer, index=True),
+               Column(cn.dst_id, Integer)]
+
+    if hashed:
+        columns.append(Column(cn.dst_id_hash, Integer, default=-1))
 
     if chunked:
         columns.append(Column(cn.chunk_tag, Text))
@@ -167,7 +196,7 @@ def init_final_edge_table(metadata, tablename):
     synaptic connections, paired 1:1 with synapse segmentations
     """
     return Table(tablename, metadata,
-                 Column(cn.segid, Integer, primary_key=True),
+                 Column(cn.seg_id, Integer, primary_key=True),
                  Column(cn.presyn_id, BigInteger),
                  Column(cn.postsyn_id, BigInteger),
                  Column(cn.size, Integer),
