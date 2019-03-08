@@ -1,3 +1,5 @@
+import operator
+
 from . import describe
 from . import relabel
 
@@ -24,14 +26,13 @@ def filter_segs_by_size(seg, thresh, szs=None, to_ignore=None, copy=True):
     if szs is None:
         szs = describe.segment_sizes(seg)
 
-    to_remove = set(map(lambda x: x[0],
-                        filter(lambda pair: pair[1] < thresh, szs.items())))
+    to_remove = set(segid for (segid, sz) in szs.items() if sz < thresh)
 
     if to_ignore is not None:
         to_remove = to_remove.difference(to_ignore)
 
-    remaining_sizes = dict(filter(lambda pair: pair[0] not in to_remove,
-                                  szs.items()))
+    remaining_sizes = {segid: sz for (segid, sz) in szs.items() 
+                       if segid not in to_remove}
 
     if len(to_remove) > 0:
         return filter_segs_by_id(seg, to_remove, copy=copy), remaining_sizes
