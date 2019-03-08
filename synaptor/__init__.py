@@ -1,9 +1,8 @@
 import torch  # Doing this here avoids strange "StaticTLS" bug with PyTorch...
 
 from . import types
-from .types import bbox, continuation
+from .types import bbox
 from .types.bbox import BBox3d, chunk_bboxes
-from .types.continuation import extract_all_continuations
 
 from . import seg_utils
 from .seg_utils import filter_segs_by_size, centers_of_mass, bounding_boxes
