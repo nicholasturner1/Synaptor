@@ -31,7 +31,10 @@ def make_seg_info_dframe(centers, sizes, bboxes, index_name=cn.seg_id):
     bbox_tuples = {k: bbox.astuple() for (k, bbox) in bboxes.items()}
     bbox_df = dframe_from_tuple_dict(bbox_tuples, cn.bbox_cols)
 
-    return pd.concat((sizes_df, centers_df, bbox_df), axis=1)
+    df = pd.concat((sizes_df, centers_df, bbox_df), axis=1)
+    df.index.name = index_name
+
+    return df
 
 
 def empty_cleft_df():

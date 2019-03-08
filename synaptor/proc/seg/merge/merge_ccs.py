@@ -3,8 +3,29 @@
 
 import numpy as np
 
-from ....types import continuation
+from .. import continuation
 from ... import utils
+
+
+def pair_continuation_files(contin_files):
+
+    pairs = dict()
+
+    for contin_file in contin_files:
+        if contin_file.face.hi_index:
+            hash_input = (*contin_file.bbox.max(), contin_file.face.axis)
+
+        else:
+            bbox_min, bbox_max = contin_file.bbox.min(), contin_file.bbox.max()
+
+            chunk_id = list(bbox_max)
+            chunk_id[contin_file.face.axis] = bbox_min[contin_file.face.axis]
+
+            hash_input = (*chunk_id, contin_file.face.axis)
+
+        pairs[hash_input] = pairs.get(hash_input, []) + [contin_file]
+
+    return list(pairs.values())
 
 
 def merge_continuations(continuation_arr, max_face_shape=(1152, 1152)):

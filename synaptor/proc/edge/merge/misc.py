@@ -17,3 +17,14 @@ def update_id_map(id_map, next_map, reused_ids=False):
             id_map[k] = next_map[k]
 
     return id_map
+
+
+def expand_id_map(id_map, all_ids):
+    """ Ensures all ids within all_ids are included as keys in the mapping """
+
+    unmapped_ids = list(set(all_ids).difference(id_map.keys()))
+
+    for i in unmapped_ids:
+        id_map[i] = i
+
+    return id_map
