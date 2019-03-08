@@ -14,8 +14,13 @@ import pandas as pd
 
 def pull_file(fname):
     """ Ensure that a file exists locally. """
-    assert os.path.exists, "File {} doesn't exist".format(fname)
+    assert os.path.exists, f"File {fname} doesn't exist"
     return fname
+
+
+def pull_files(fnames):
+    assert all(os.path.exists(f) for f in fnames), "Some file doesn't exist"
+    return fnames
 
 
 def pull_directory(dirname):
@@ -26,6 +31,11 @@ def pull_directory(dirname):
 def send_file(src, dst):
     """ Copy a file. """
     shutil.copyfile(src, dst)
+
+
+def send_files(fnames, dst):
+    for f in fnames:
+        send_file(f, os.path.join(dst, f))
 
 
 def send_directory(dirname, dst):

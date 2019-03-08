@@ -1,6 +1,4 @@
-__doc__ = """
-Database functionality through SQLAlchemy
-"""
+""" Database functionality through SQLAlchemy """
 
 import re
 import shutil

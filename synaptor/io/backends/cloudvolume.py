@@ -1,8 +1,4 @@
-__doc__ = """
-CloudVolume Interface
-
-Nicholas Turner <nturner@cs.princeton.edu>, 2018
-"""
+""" CloudVolume Interface """
 
 import cloudvolume
 
@@ -14,6 +10,7 @@ def read_cloud_volume_chunk(cv_name, bbox, mip=0, parallel=1, progress=True):
                                  progress=progress)
 
     # ensuring that we always read something
+    # (i.e. that we know what we're doing)
     cv.fill_missing = True
     cv.bounded = False
 

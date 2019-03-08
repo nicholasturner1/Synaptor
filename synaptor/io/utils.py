@@ -1,18 +1,4 @@
-#!/usr/bin/env python3
-from __future__ import unicode_literals
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from builtins import filter
-from builtins import range
-from builtins import map
-from future import standard_library
-standard_library.install_aliases()
-__doc__ = """
-IO Utility Functions
-
-Nicholas Turner <nturner@cs.princeton.edu>, 2018
-"""
+""" IO Utility Functions """
 
 import os, re, random, string
 

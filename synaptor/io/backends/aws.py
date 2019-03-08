@@ -1,21 +1,7 @@
-#!/usr/bin/env python3
-from __future__ import unicode_literals
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from builtins import zip
-from future import standard_library
-standard_library.install_aliases()
+""" AWS IO Functionality """
 
-
-__doc__ = """
-AWS IO Functionality
-
-Nicholas Turner <nturner@cs.princeton.edu>, 2018
-"""
-
-
-import os, re
+import os
+import re
 
 import cloudvolume #Piggybacking on cloudvolume's secrets
 import boto3
@@ -35,6 +21,11 @@ def pull_file(remote_path):
     client = open_client(bucket)
 
     client.download_file(bucket, key, local_fname)
+
+
+def pull_files(remote_paths):
+    subprocess.call(["gsutil", "-m", "cp", *remote_paths, "."])
+    return list(map(os.path.basename, remote_paths))
 
 
 def pull_directory(remote_dir):
@@ -63,6 +54,10 @@ def send_file(local_name, remote_path):
     client = open_client(bucket)
 
     client.upload_file(local_name, bucket, key)
+
+
+def send_files(local_names, remote_dir):
+    subprocess.call(["gsutil", "-m", "cp", *local_names, remote_dir])
 
 
 def send_directory(local_dir, remote_dir):
