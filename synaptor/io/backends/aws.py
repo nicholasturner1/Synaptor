@@ -2,8 +2,9 @@
 
 import os
 import re
+import subprocess
 
-import cloudvolume #Piggybacking on cloudvolume's secrets
+import cloudvolume  # Piggybacking on cloudvolume's secrets
 import boto3
 
 from . import utils
@@ -34,15 +35,15 @@ def pull_directory(remote_dir):
 
     client = open_client(bucket)
 
-    remote_keys  = keys_under_prefix(client, bucket, key)
-    local_dir    = os.path.basename(utils.check_no_slash(key))
+    remote_keys = keys_under_prefix(client, bucket, key)
+    local_dir = os.path.basename(utils.check_no_slash(key))
     local_fnames = [os.path.join(local_dir, os.path.basename(k))
                     for k in remote_keys]
 
     if not os.path.isdir(local_dir):
         os.makedirs(local_dir)
 
-    for (f,k) in zip(local_fnames, remote_keys):
+    for (f, k) in zip(local_fnames, remote_keys):
         client.download_file(bucket, k, f)
 
     return local_fnames
@@ -63,7 +64,7 @@ def send_files(local_names, remote_dir):
 def send_directory(local_dir, remote_dir):
     bucket, key = parse_remote_path(remote_dir)
 
-    #Sending directory to a subdirectory of remote dir
+    # Sending directory to a subdirectory of remote dir
     key = os.path.join(key, os.path.basename(utils.check_no_slash(local_dir)))
 
     fnames = os.listdir(local_dir)
@@ -71,7 +72,7 @@ def send_directory(local_dir, remote_dir):
 
     client = open_client(bucket)
 
-    for (f,key) in zip(fnames, remote_keys):
+    for (f, key) in zip(fnames, remote_keys):
         client.upload_file(os.path.join(local_dir, f), bucket, key)
 
 
@@ -80,7 +81,7 @@ def keys_under_prefix(client, bucket, key):
     response = client.list_objects(Bucket=bucket,
                                    Prefix=utils.check_slash(key))
 
-    return [ obj["Key"] for obj in response["Contents"] ]
+    return [obj["Key"] for obj in response["Contents"]]
 
 
 def parse_remote_path(remote_path):

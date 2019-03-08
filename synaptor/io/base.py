@@ -46,7 +46,7 @@ def pull_files(paths):
     else:  # local
         return bck.local.pull_files(paths)
 
-    
+
 def pull_directory(dir_path):
     """
     Pulls a directory from storage. The storage can be
