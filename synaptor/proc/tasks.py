@@ -110,7 +110,7 @@ def merge_ccs_task(cont_info_arr, cleft_info_arr,
     return cons_cleft_info, chunk_id_maps
 
 
-def match_continuations_task(contins1, contins2, face_shape=(1024, 1024),
+def match_continuations_task(contins1, contins2, max_face_shape=(1024, 1024),
                              id_map1=None, id_map2=None):
 
     if id_map1 is not None:
@@ -125,7 +125,7 @@ def match_continuations_task(contins1, contins2, face_shape=(1024, 1024),
 
     graph_edges = timed("Matching continuations",
                         seg.merge.match_continuations,
-                        contins1, contins2, face_shape=face_shape)
+                        contins1, contins2, face_shape=max_face_shape)
 
     return graph_edges
 

@@ -19,7 +19,7 @@ from . import colnames as cn
 
 def cc_task(desc_cvname, seg_cvname, proc_url,
             cc_thresh, sz_thresh, chunk_begin, chunk_end,
-            mip=0, parallel=1, proc_dir=None, hash_maxval=100):
+            mip=0, parallel=1, proc_dir=None, hashmax=100):
 
     proc_dir = proc_url if proc_dir is None else proc_dir
     chunk_bounds = types.BBox3d(chunk_begin, chunk_end)
@@ -34,7 +34,7 @@ def cc_task(desc_cvname, seg_cvname, proc_url,
                                                  offset=chunk_begin)
 
     face_hashes = seg.hash_chunk_faces(chunk_begin, chunk_end,
-                                       maxval=hash_maxval)
+                                       maxval=hashmax)
 
     timed(f"Writing seg chunk: {chunk_bounds}",
           io.write_cloud_volume_chunk,
@@ -81,7 +81,7 @@ def merge_ccs_task(proc_url, size_thr, max_face_shape):
           chunk_id_maps, chunk_bounds, proc_url)
 
 
-def match_continuations_task(proc_url, facehash, face_shape=(1024, 1024)):
+def match_continuations_task(proc_url, facehash, max_face_shape=(1024, 1024)):
 
     contin_files = timed("Fetching continuation files by hash",
                          taskio.continuations_by_hash,
@@ -110,7 +110,7 @@ def match_continuations_task(proc_url, facehash, face_shape=(1024, 1024)):
 
         graph_edges = tasks.match_continuations_task(
                           pair_contins[0], pair_contins[1],
-                          face_shape=face_shape,
+                          max_face_shape=max_face_shape,
                           id_map1=pair_maps[0], id_map2=pair_maps[1])
 
         timed("Writing graph edges",
