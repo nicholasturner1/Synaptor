@@ -1,12 +1,11 @@
-#!/usr/bin/env python3
-__doc__ = """
+"""
 Chunk Edges Wrapper Script
 
--Applies an id map to a chunk (if passed)
+- Applies an id map to a chunk (if passed)
 NOTE: Modifies the clefts array if id_map exists
--Applies an assignment network to each cleft in the chunk
--Computes the sizes of each cleft to assist later thresholding
--Returns all of the computed information in a DataFrame
+- Applies an assignment network to each cleft in the chunk
+- Computes the size of each cleft to assist later thresholding
+- Stores all of the computed information in the Database
 """
 import synaptor as s
 

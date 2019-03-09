@@ -1,8 +1,8 @@
 """
 Segment Info Merging Wrapper Script
 
--Takes an id mapping across segments as input
--Merges the segment info dataframes into one for the entire dataset
+- Takes an id mapping across segments as input
+- Merges the segment info dataframes into one for the entire dataset
 """
 import synaptor as s
 

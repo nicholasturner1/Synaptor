@@ -1,8 +1,8 @@
 """
 Pick Largest Edge Wrapper Script
 
-Takes assignments from multiple chunks, and selects the one from the
-chunk containing the largest number of that cleft's voxels.
+- Takes edge assignments from multiple chunks, and selects the one from the
+  chunk containing the largest number of each cleft's voxels.
 """
 import synaptor as s
 

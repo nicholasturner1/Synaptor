@@ -1,7 +1,7 @@
 """
 Match Continuations Wrapper Script
 
--Finds which continuations match across chunks
+- Finds which continuations match across chunks
 """
 import synaptor as s
 

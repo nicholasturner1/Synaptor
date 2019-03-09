@@ -1,9 +1,9 @@
 """
 Merge Duplicates Wrapper Script
 
-Merges assigned clefts together which connect the same partners within
-some distance threshold. Also filters all resulting entries by a high-pass
-size threshold.
+- Merges assigned clefts together which connect the same partners within
+  some distance threshold. Also filters all resulting entries by a high-pass
+  size threshold.
 """
 import synaptor as s
 

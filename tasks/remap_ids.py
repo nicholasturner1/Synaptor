@@ -1,10 +1,10 @@
 """
-Remap IDs
+Remap IDs Wrapper Script
 
--Read connected components for a chunk
--Read id mapping for the same chunk
--Apply the id mapping
--Write the new chunk
+- Read connected components for a chunk
+- Read id mapping for the same chunk (including duplicate id map if it exists)
+- Apply the id mapping
+- Write the new chunk
 """
 import synaptor as s
 

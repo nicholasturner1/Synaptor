@@ -5,7 +5,7 @@ Chunkwise Connected Components Wrapper Script
 - Extracts clefts that possibly continue to the next chunk (continuations)
 - Filters out any complete segments under the size threshold
 - Records the centroid, size, and bounding box for the surviving
-  segments in a DataFrame or Database (depending on proc_url)
+  segments in the database (depending on proc_url)
 - Records the continuation information in files under proc_dir
 """
 import synaptor as s
