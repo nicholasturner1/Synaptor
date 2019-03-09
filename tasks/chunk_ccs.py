@@ -39,4 +39,4 @@ args.mip = mip_or_res(args.mip)
 print(vars(args))
 
 
-s.proc_tasks.tasks_w_io.cc_task(**vars(args))
+s.proc.tasks_w_io.cc_task(**vars(args))
