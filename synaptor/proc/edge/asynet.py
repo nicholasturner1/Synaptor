@@ -40,6 +40,7 @@ def infer_edges(net, img, cleft, seg, patchsz, root_seg=None, offset=(0, 0, 0),
     Returns a DataFrame mapping synaptic cleft segment id to a tuple of
     synaptic partners (presynaptic,postsynaptic)
     """
+
     if cleft_ids is None:
         cleft_ids = seg_utils.nonzero_unique_ids(cleft)
 
@@ -64,10 +65,12 @@ def infer_edges(net, img, cleft, seg, patchsz, root_seg=None, offset=(0, 0, 0),
 
             segids = find_close_segments(clf_p, seg_p, dil_param)
             if len(segids) == 0:
+                print(f"skipping {cid}, no close segments")
                 continue
 
             new_weights, new_szs = infer_patch_weights(net, img_p, clf_p,
                                                        seg_p, segids)
+
             wt_sums = dict_tuple_sum(new_weights, wt_sums)
             seg_szs = dict_sum(seg_szs, new_szs)
             wt_avgs = update_avgs(wt_sums, seg_szs)
@@ -77,6 +80,7 @@ def infer_edges(net, img, cleft, seg, patchsz, root_seg=None, offset=(0, 0, 0),
             seg_locs = update_locs(new_locs, seg_locs)
 
         if len(wt_sums) == 0:  # hallucinated synapse - or no segmentation
+            print(f"skipping {cid}, no segs")
             continue
 
         pre_scores, post_scores = score.compute_scores(wt_avgs, wt_sums,
@@ -243,29 +247,6 @@ def pick_cleft_bboxes(cleft, cleft_id, patchsz, cleft_boxes):
         cleft_mask[box.index()] = False
 
     return bboxes
-
-
-def pick_cleft_locs(cleft, cleft_ids, num_locs):
-
-    order = np.argsort(cleft.flat)
-
-    first = np.searchsorted(cleft.flat, cleft_ids, "left", order)
-    last = np.searchsorted(cleft.flat, cleft_ids, "right", order)
-    bounds = list(zip(first, last))
-
-    indices = {i: list() for i in cleft_ids}
-    for (i, cid) in enumerate(cleft_ids):
-        lo, hi = bounds[i]
-        for j in range(num_locs):
-            linear_index = order[random.randint(lo, hi-1)]
-            indices[cid].append(np.unravel_index(linear_index, cleft.shape))
-
-    return indices
-
-
-def containing_box(box_shape, seg, loc):
-    """ Returns a BBox3d containing loc within a segmentation """
-    return bbox.containing_box(loc, box_shape, seg.shape)
 
 
 def random_loc(seg, i, offset=(0, 0, 0)):
@@ -466,100 +447,6 @@ def update_locs(new_locs, all_locs):
 
 def pull_root(root_seg, loc, offset=(0, 0, 0)):
     return root_seg[tuple(map(operator.sub, loc, offset))]
-
-
-def make_assignment(weights):
-    """
-    Assigns a synapse to partners
-
-    The synapse is represented by a dict of
-      segid => (pre_weight, post_weight)
-    """
-
-    # lists of tuple (segid, weight)
-    pre_weights = []
-    post_weights = []
-
-    for (k, v) in weights.items():
-        pre, post = v
-        pre_weights.append((k, pre))
-        post_weights.append((k, post))
-
-    pre_seg, pre_weight = max(pre_weights, key=operator.itemgetter(1))
-    post_seg, post_weight = max(post_weights, key=operator.itemgetter(1))
-
-    return pre_seg, post_seg, pre_weight, post_weight
-
-
-def make_assignment_alpha(weights, avgs, alpha):
-    """
-    Assigns a synapse to partners
-
-    The synapse is represented by a dict of
-      segid => (pre_weight, post_weight)
-    """
-
-    assert weights.keys() == avgs.keys(), "mismatched weights & averages"
-
-    # lists of tuple (segid, weight)
-    pre_weights = []
-    post_weights = []
-
-    for k in weights.keys():
-        pre_w, post_w = weights[k]
-        pre_a, post_a = avgs[k]
-        pre_weights.append((k, alpha*pre_a + (1-alpha)*pre_w))
-        post_weights.append((k, alpha*post_a + (1-alpha)*post_w))
-
-    pre_seg, pre_weight = max(pre_weights, key=operator.itemgetter(1))
-    post_seg, post_weight = max(post_weights, key=operator.itemgetter(1))
-
-    return pre_seg, post_seg, pre_weight, post_weight
-
-
-def make_threshed_assignment(weights, thresh=0):
-    """
-    Only assigns an edge if the output for both the average output
-    for both the pre- and post-synaptic side is higher than a given threshold
-    """
-    pre_seg, post_seg, pre_w, post_w = make_assignment(weights)
-
-    if pre_w < thresh or post_w < thresh:
-        pre_seg, post_seg = -1, -1
-
-    return pre_seg, post_seg, pre_w, post_w
-
-
-def make_polyad_assignments(weights, pre_thresh=0.8, post_thresh=0.5):
-    """
-    Presynaptic - take the highest weight, and any others over pre_thresh
-    Postsynaptic - take any over post_thresh
-    Create edges between all pairs of presynaptic and postsynaptic
-    """
-
-    pre_weights = []
-    post_weights = []
-
-    for (k, v) in weights.items():
-        pre, post = v
-        pre_weights.append((k, pre))
-        post_weights.append((k, post))
-
-    max_pre_seg, max_pre_wt = max(pre_weights, key=operator.itemgetter(1))
-    if max_pre_wt > pre_thresh:
-        pre_segs = all_over_thresh(pre_weights, pre_thresh)
-    else:
-        pre_segs = [max_pre_seg]
-
-    post_segs = all_over_thresh(post_weights, post_thresh)
-
-    return list(itertools.product(pre_segs, post_segs))
-
-
-def all_over_thresh(weights, thresh):
-    return list(map(operator.itemgetter(0),
-                    filter(lambda x: x[1] > thresh,
-                           weights)))
 
 
 def make_polyad_edges_at_threshs(all_weights, pre_thresh=0.8, post_thresh=0.5):
