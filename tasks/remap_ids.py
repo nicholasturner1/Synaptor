@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-__doc__ = """
+"""
 Remap IDs
 
 -Read connected components for a chunk
@@ -14,13 +13,13 @@ import argparse
 parser = argparse.ArgumentParser()
 
 # Inputs & Outputs
-parser.add_argument("cleft_in_cvname")
-parser.add_argument("cleft_out_cvname")
-parser.add_argument("proc_dir_path")
+parser.add_argument("seg_in_cvname")
+parser.add_argument("seg_out_cvname")
+parser.add_argument("proc_url")
 
 # Processing Parameters
-parser.add_argument("--chunk_begin", nargs="+", type=int, required=True)
-parser.add_argument("--chunk_end", nargs="+", type=int, required=True)
+parser.add_argument("--chunk_begin", nargs=3, type=int, required=True)
+parser.add_argument("--chunk_end", nargs=3, type=int, required=True)
 parser.add_argument("--parallel", type=int, default=1)
 parser.add_argument("--mip", nargs="+", type=int, default=(0,))
 

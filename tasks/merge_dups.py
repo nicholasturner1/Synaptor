@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-__doc__ = """
+"""
 Merge Duplicates Wrapper Script
 
 Merges assigned clefts together which connect the same partners within
@@ -14,15 +13,16 @@ parser = argparse.ArgumentParser()
 
 # Inputs & Outputs
 parser.add_argument("proc_url")
+parser.add_argument("hash_index", type=int)
 
 # Processing Parameters
 parser.add_argument("dist_thr", type=int)
 parser.add_argument("size_thr", type=int)
 parser.add_argument("--voxel_res", nargs="+", type=int)
-parser.add_argument("--hash_index", type=int, default=None)
 
 
 args = parser.parse_args()
 print(vars(args))
+
 
 s.proc_tasks.tasks_w_io.merge_duplicates_task(**vars(args))
