@@ -88,7 +88,6 @@ def read_all_chunk_seg_infos(proc_url):
 
     else:
         seginfo_dir = os.path.join(proc_url, fn.seginfo_dirname)
-        print(seginfo_dir)
         fnames = io.pull_directory(seginfo_dir)
         assert len(fnames) > 0, "No filenames returned"
 
@@ -126,8 +125,6 @@ def read_mapped_seginfo_by_dst_hash(proc_url, hashval):
                     chunk_segs.join(seg_merge_map,
                                     chunk_seg_id == merge_map_id)).where(
                                     dst_id_hash == hashval)
-
-    print(statement)
 
     return io.read_db_dframe(proc_url, statement)
 
