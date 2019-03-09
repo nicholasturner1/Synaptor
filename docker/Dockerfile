@@ -1,4 +1,4 @@
-FROM nvidia/cuda:8.0-cudnn6-devel-ubuntu16.04 
+FROM nvidia/cuda:10.0-cudnn7-devel-ubuntu16.04 
 
 
 #Setting up ENV
@@ -16,7 +16,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/* && \
 #Install miniconda3
     echo 'export PATH=/opt/conda/bin:$PATH' > /etc/profile.d/conda.sh && \
-    wget --quiet https://repo.continuum.io/miniconda/Miniconda3-4.5.4-Linux-x86_64.sh -O ~/miniconda.sh && \
+    wget --quiet https://repo.continuum.io/miniconda/Miniconda3-4.5.12-Linux-x86_64.sh -O ~/miniconda.sh && \
     /bin/bash ~/miniconda.sh -b -p /opt/conda && \
     rm ~/miniconda.sh && \
 #Fixes a conda bug - https://github.com/conda/conda/issues/6030
@@ -25,7 +25,8 @@ RUN apt-get update && \
 #For some reason, pip works for h5py and pandas, and conda doesn't
     pip --no-cache-dir install h5py pandas cloud-volume python-igraph future && \
     pip --no-cache-dir install requests psycopg2-binary && \
-    conda install scipy pytorch==0.4.0 torchvision pybind11 sqlalchemy -c pytorch && \
+    conda install scipy pybind11 sqlalchemy && \
+    conda install pytorch==1.0.1 torchvision cudatoolkit=10.0 -c pytorch && \
     git clone https://github.com/nicholasturner1/Synaptor.git && \
     pip install -e /Synaptor && \
     conda clean -t -p && \
