@@ -7,7 +7,6 @@ import operator
 import itertools
 
 import torch
-from torch.nn import functional as F
 
 import numpy as np
 import scipy.ndimage as ndimage
@@ -338,7 +337,7 @@ def infer_patch(net, img_p, psd_p):
 
         # network has only one output
         # and batch size = 1
-        output = F.sigmoid(net(net_input)[0])[0, ...]
+        output = torch.sigmoid(net(net_input)[0])[0, ...]
 
     return output
 
