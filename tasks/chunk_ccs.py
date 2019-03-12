@@ -36,6 +36,7 @@ def mip_or_res(x): return x[0] if (x is not None and len(x) == 1) else x
 
 args = parser.parse_args()
 args.mip = mip_or_res(args.mip)
+args.proc_url = s.io.parse_proc_url(args.proc_url)
 print(vars(args))
 
 

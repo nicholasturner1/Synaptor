@@ -22,6 +22,7 @@ parser.add_argument("--voxel_res", nargs="+", type=int)
 
 
 args = parser.parse_args()
+args.proc_url = s.io.parse_proc_url(args.proc_url)
 print(vars(args))
 
 

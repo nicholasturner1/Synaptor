@@ -14,6 +14,25 @@ from . import backends as bck
 AWS_REGEXP = bck.aws.REGEXP
 GCLOUD_REGEXP = bck.gcloud.REGEXP
 BBOX_REGEXP = re.compile("[0-9]+_[0-9]+_[0-9]+-[0-9]+_[0-9]+_[0-9]+")
+PROC_URL_FILENAME = "/root/proc_url"
+READ_PROC_FROM_FILE_FLAG = "PROC_FROM_FILE"
+
+
+def parse_proc_url(proc_url):
+    """ Implements the basic logic for a task script flag """
+    if proc_url == READ_PROC_FROM_FILE_FLAG:
+        return read_proc_url_from_file()
+    else:
+        return proc_url
+
+
+def read_proc_url_from_file(filename=PROC_URL_FILENAME):
+    """
+    Reads the proc_url string contained within a file.
+    Useful for docker containers.
+    """
+    with open(filename) as f:
+        return f.read().strip()
 
 
 def fname_chunk_tag(chunk_bounds):

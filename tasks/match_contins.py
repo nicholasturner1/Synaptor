@@ -18,6 +18,7 @@ parser.add_argument("--max_face_shape", type=int,
                     nargs=2, default=(1024, 1024))
 
 args = parser.parse_args()
+args.proc_url = s.io.parse_proc_url(args.proc_url)
 print(vars(args))
 
 
