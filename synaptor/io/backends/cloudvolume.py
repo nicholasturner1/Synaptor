@@ -3,7 +3,7 @@
 import cloudvolume
 
 
-def read_cloud_volume_chunk(cv_name, bbox, mip=0, parallel=1, progress=True):
+def read_cloud_volume_chunk(cv_name, bbox, mip=0, parallel=1, progress=False):
     """ Read a chunk of data specified by a bounding box. """
 
     cv = cloudvolume.CloudVolume(cv_name, mip=mip, parallel=parallel,
@@ -18,7 +18,7 @@ def read_cloud_volume_chunk(cv_name, bbox, mip=0, parallel=1, progress=True):
 
 
 def write_cloud_volume_chunk(data, cv_name, bbox, mip=0,
-                             parallel=1, non_aligned=False, progress=True):
+                             parallel=1, non_aligned=False, progress=False):
     """ Write a chunk of data specified by a bounding box. """
 
     cv = cloudvolume.CloudVolume(cv_name, mip=mip, parallel=parallel,
