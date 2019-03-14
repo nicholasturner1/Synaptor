@@ -365,7 +365,8 @@ def merge_duplicates_task(voxel_res, dist_thr, size_thr,
           dup_id_map, src_proc_url)
     timed("Writing final DataFrame for hash index",
           taskio.write_full_info,
-          full_df, fulldf_proc_url)
+          full_df, fulldf_proc_url,
+          tag=hash_index)
 
     if timing_tag is not None:
         timed("Writing total task time",
