@@ -6,11 +6,20 @@ from ... import colnames as cn
 
 
 def make_map_dframe(id_map):
+
+    if len(id_map) == 0:
+        return empty_map_df()
+
     mapping_dict = dict(enumerate(id_map.items()))
     df = pd.DataFrame.from_dict(mapping_dict, orient="index")
     df.columns = [cn.src_id, cn.dst_id]
 
     return df
+
+
+def empty_map_df():
+    columns = [cn.src_id, cn.dst_id]
+    return pd.DataFrame({k: [] for k in columns})
 
 
 def expand_id_map(id_map, all_ids):
