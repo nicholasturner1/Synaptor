@@ -31,7 +31,7 @@ __all__ = ["init_db", "drop_db", "fill_chunks", "TABLES"]
 # - edges, clefts, & continuation_files depend on chunks
 TABLES = ["final", "contin_graph", "merged_edges", "chunk_edges",
           "merged_segs", "chunk_segs",
-          "chunks", "seg_merge_map", "chunked_seg_merge_map", "dup_merge_map",
+          "seg_merge_map", "chunked_seg_merge_map", "dup_merge_map",
           "continuations", "chunk_overlaps", "max_overlaps", "timing_log"]
 
 
