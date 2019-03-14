@@ -19,7 +19,7 @@ def make_seg_info_dframe(centers, sizes, bboxes, index_name=cn.seg_id):
     assert len(centers) == len(sizes) == len(bboxes), "mismatched inputs"
 
     if len(centers) == 0:
-        return empty_cleft_df()
+        return empty_cleft_df(index_name)
 
     # Segment Size
     sizes_df = pd.Series(sizes, name=cn.size)
@@ -37,11 +37,14 @@ def make_seg_info_dframe(centers, sizes, bboxes, index_name=cn.seg_id):
     return df
 
 
-def empty_cleft_df():
+def empty_cleft_df(index_name=cn.seg_id):
     """Creates an empty DataFrame with the proper columns"""
     columns = itertools.chain([cn.size], cn.centroid_cols, cn.bbox_cols)
 
-    return pd.DataFrame({k: [] for k in columns})
+    df = pd.DataFrame({k: [] for k in columns})
+    df.index.name = index_name
+
+    return df
 
 
 def dframe_from_tuple_dict(tuple_dict, colnames):

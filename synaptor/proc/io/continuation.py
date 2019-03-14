@@ -114,7 +114,7 @@ def read_face_filenames(filenames):
 
 def write_face_continuations(continuations, proc_url, chunk_bounds, face):
     assert not io.is_db_url(proc_url), "Continuation IO not impl for dbs"
-    local_fname = face_filename("./", chunk_bounds, face, local=True)
+    local_fname = face_filename("", chunk_bounds, face, local=True)
     dst_fname = face_filename(proc_url, chunk_bounds, face, local=False)
 
     _write_face_file(continuations, local_fname, face)
