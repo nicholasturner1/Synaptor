@@ -59,7 +59,7 @@ def cc_task(desc_cvname, seg_cvname, proc_url,
 
     if timing_tag is not None:
         timed("Writing total task time",
-              taskio.write_task_time,
+              taskio.write_task_timing,
               time.time() - start_time, "ccs", timing_tag, proc_url)
 
 
@@ -93,7 +93,7 @@ def merge_ccs_task(proc_url, size_thr, max_face_shape, timing_tag=None):
 
     if timing_tag is not None:
         timed("Writing total task time",
-              taskio.write_task_time,
+              taskio.write_task_timing,
               time.time() - start_time, "merge_ccs", timing_tag, proc_url)
 
 
@@ -138,7 +138,7 @@ def match_continuations_task(proc_url, facehash, max_face_shape=(1024, 1024),
 
     if timing_tag is not None:
         timed("Writing total task time",
-              taskio.write_task_time,
+              taskio.write_task_timing,
               time.time() - start_time, "match_contins", timing_tag, proc_url)
 
 
@@ -166,7 +166,7 @@ def seg_graph_cc_task(proc_url, hashmax, timing_tag=None):
 
     if timing_tag is not None:
         timed("Writing total task time",
-              taskio.write_task_time,
+              taskio.write_task_timing,
               time.time() - start_time, "seg_graph_ccs", timing_tag, proc_url)
 
 
@@ -186,7 +186,7 @@ def merge_seginfo_task(proc_url, hashval, timing_tag=None):
 
     if timing_tag is not None:
         timed("Writing total task time",
-              taskio.write_task_time,
+              taskio.write_task_timing,
               time.time() - start_time, "merge_seginfo", timing_tag, proc_url)
 
 
@@ -275,7 +275,7 @@ def edge_task(img_cvname, cleft_cvname, seg_cvname,
 
     if timing_tag is not None:
         timed("Writing total task time",
-              taskio.write_task_time,
+              taskio.write_task_timing,
               time.time() - start_time, "edge", timing_tag, proc_url)
 
 
@@ -306,7 +306,7 @@ def merge_edges_task(voxel_res, dist_thr, size_thr, proc_url, timing_tag=None):
 
     if timing_tag is not None:
         timed("Writing total task time",
-              taskio.write_task_time,
+              taskio.write_task_timing,
               time.time() - start_time, "merge_edges", timing_tag, proc_url)
 
 
@@ -335,7 +335,7 @@ def pick_largest_edges_task(proc_url, clefthash=None, timing_tag=None):
 
     if timing_tag is not None:
         timed("Writing total task time",
-              taskio.write_task_time,
+              taskio.write_task_timing,
               time.time() - start_time, "pick_edge", timing_tag, proc_url)
 
 
@@ -370,7 +370,7 @@ def merge_duplicates_task(voxel_res, dist_thr, size_thr,
 
     if timing_tag is not None:
         timed("Writing total task time",
-              taskio.write_task_time,
+              taskio.write_task_timing,
               time.time() - start_time, "merge_dups", timing_tag, src_proc_url)
 
 
@@ -403,7 +403,7 @@ def chunk_overlaps_task(seg_cvname, base_seg_cvname,
 
     if timing_tag is not None:
         timed("Writing total task time",
-              taskio.write_task_time,
+              taskio.write_task_timing,
               time.time() - start_time, "chunk_overlap", timing_tag, proc_url)
 
 
@@ -423,7 +423,7 @@ def merge_overlaps_task(proc_url, timing_tag=None):
 
     if timing_tag is not None:
         timed("Writing total task time",
-              taskio.write_task_time,
+              taskio.write_task_timing,
               time.time() - start_time, "merge_overlap", timing_tag, proc_url)
 
 
@@ -457,7 +457,7 @@ def remap_ids_task(seg_in_cvname, seg_out_cvname,
 
     if timing_tag is not None:
         timed("Writing total task time",
-              taskio.write_task_time,
+              taskio.write_task_timing,
               time.time() - start_time, "remap", timing_tag, proc_url)
 
 
@@ -505,5 +505,5 @@ def anchor_task(cleft_cvname, seg_cvname, proc_url,
 
     if timing_tag is not None:
         timed("Writing total task time",
-              taskio.write_task_time,
+              taskio.write_task_timing,
               time.time() - start_time, "chunk_anchor", timing_tag, proc_url)
