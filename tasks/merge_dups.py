@@ -19,6 +19,7 @@ parser.add_argument("hash_index", type=int)
 parser.add_argument("dist_thr", type=int)
 parser.add_argument("size_thr", type=int)
 parser.add_argument("--voxel_res", nargs="+", type=int)
+parser.add_argument("--timing_tag", default=None)
 
 
 args = parser.parse_args()

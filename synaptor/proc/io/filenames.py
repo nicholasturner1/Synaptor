@@ -24,8 +24,8 @@ dup_map_fname = "dup_id_map.df"
 edgeinfo_dirname = "chunk_edges"
 edgeinfo_fmtstr = "chunk_edges_{tag}.df"
 merged_edgeinfo_fname = "merged_edges.df"
-final_edgeinfo_fname = "final_edges.df"
-final_edgeinfo_fname = "final.df"
+final_edgeinfo_fname = "final_edgelist.df"
+tagged_final_edgeinfo_fname = "final_edgelist_{}.df"
 
 
 # Overlap matrices
@@ -38,3 +38,7 @@ max_overlaps_fname = "max_overlaps.df"
 network_dirname = "network"
 network_fname = "net.py"
 network_chkpt = "net.chkpt"
+
+# Task time durations
+timing_dirname = "task_durations"
+timing_fmtstr = "{tag}"

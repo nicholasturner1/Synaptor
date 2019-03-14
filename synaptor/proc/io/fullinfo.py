@@ -32,7 +32,7 @@ def read_full_info(proc_url):
         return io.read_dframe(proc_url, fn.final_edgeinfo_fname)
 
 
-def write_full_info(dframe, proc_url):
+def write_full_info(dframe, proc_url, tag=None):
     """
     Writes the info dataframe with clefts and edges combined
     to a processing directory
@@ -42,4 +42,8 @@ def write_full_info(dframe, proc_url):
         io.write_db_dframe(dframe, proc_url, "final", index=False)
 
     else:
-        io.write_dframe(dframe, proc_url, fn.final_edgeinfo_fname)
+        if tag is None:
+            io.write_dframe(dframe, proc_url, fn.final_edgeinfo_fname)
+        else:
+            io.write_dframe(dframe, proc_url,
+                            fn.tagged_final_edgeinfo_fname.format(tag))

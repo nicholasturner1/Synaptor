@@ -32,7 +32,7 @@ __all__ = ["init_db", "drop_db", "fill_chunks", "TABLES"]
 TABLES = ["final", "contin_graph", "merged_edges", "chunk_edges",
           "merged_segs", "chunk_segs",
           "chunks", "seg_merge_map", "chunked_seg_merge_map", "dup_merge_map",
-          "continuations", "chunk_overlaps", "max_overlaps"]
+          "continuations", "chunk_overlaps", "max_overlaps", "timing_log"]
 
 
 def init_db(url, segid_colname=cn.seg_id, metadata=None,
@@ -41,7 +41,8 @@ def init_db(url, segid_colname=cn.seg_id, metadata=None,
     if metadata is None:
         metadata = io.open_db_metadata(url)
 
-    init_chunks(metadata)
+    # init_chunks(metadata)
+    init_timing_log(metadata)
 
     init_seg_tables(metadata, segid_colname)
     init_continuation_tables(metadata)
@@ -57,6 +58,15 @@ def init_db(url, segid_colname=cn.seg_id, metadata=None,
     io.create_db_tables(url, metadata)
 
     return metadata
+
+
+def init_timing_log(metadata):
+    """ Specified a table to record task durations """
+    return Table("timing_log", metadata,
+                 Column("id", Integer, primary_key=True),
+                 Column(cn.task_name, Text),
+                 Column(cn.timing_tag, Text),
+                 Column(cn.task_time, Float))
 
 
 def init_chunks(metadata):

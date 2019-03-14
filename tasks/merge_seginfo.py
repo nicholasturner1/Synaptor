@@ -14,6 +14,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument("proc_url")
 parser.add_argument("hashval", type=int)
 
+parser.add_argument("--timing_tag", default=None)
+
 
 args = parser.parse_args()
 args.proc_url = s.io.parse_proc_url(args.proc_url)

@@ -33,6 +33,7 @@ parser.add_argument("--num_downsamples", type=int, default=0)
 parser.add_argument("--base_res_begin", nargs=3, type=int, default=None)
 parser.add_argument("--base_res_end", nargs=3, type=int, default=None)
 parser.add_argument("--parallel", type=int, default=1)
+parser.add_argument("--timing_tag", default=None)
 
 
 args = parser.parse_args()

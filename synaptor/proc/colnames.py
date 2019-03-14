@@ -55,6 +55,11 @@ facehash = "facehash"
 graph_id1 = "graph_id1"
 graph_id2 = "graph_id2"
 
+# Task time durations
+timing_tag = "timing_tag"
+task_name = "task_name"
+task_time = "duration"
+
 
 # ====================================================
 # Synapse assignment descriptors

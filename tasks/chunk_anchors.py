@@ -23,6 +23,7 @@ parser.add_argument("--wshed_cvname", default=None)
 parser.add_argument("--min_box_width", nargs="+",
                     type=int, default=(100, 100, 5))
 parser.add_argument("--voxel_res", nargs="+", type=int, default=(4, 4, 40))
+parser.add_argument("--timing_tag", default=None)
 
 
 # MIP arguments can specify voxel resolutions or mip index
