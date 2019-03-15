@@ -54,14 +54,14 @@ def _read_face_file(fname):
     continuations = list()
 
     with h5py.File(fname) as f:
-        face_index = f["face_axis"].value
-        face_hi = f["hi_face"].value
+        face_index = f["face_axis"][()]
+        face_hi = f["hi_face"][()]
 
         face = Face(face_index, face_hi)
         continuation_ids = f["face_coords"].keys()
 
         for segid in continuation_ids:
-            coords = f[f"face_coords/{segid}"].value
+            coords = f[f"face_coords/{segid}"][()]
             new_continuation = Continuation(int(segid), face, coords)
             continuations.append(new_continuation)
 
