@@ -120,12 +120,17 @@ def match_continuations_task(proc_url, facehash, max_face_shape=(1024, 1024),
             continue
 
         pair_filenames = (pair[0].filename, pair[1].filename)
-        pair_maps = (chunked_id_map[pair[0].bbox.min()],
-                     chunked_id_map[pair[1].bbox.min()])
-
         pair_contins = timed("Reading pair continuations",
                              taskio.read_face_filenames,
                              pair_filenames)
+
+        if len(pair_contins[0]) == 0 or len(pair_contins[1]) == 0:
+            print("Skipping empty face")
+            continue
+
+        pair_maps = (chunked_id_map[pair[0].bbox.min()],
+                     chunked_id_map[pair[1].bbox.min()])
+
 
         graph_edges = tasks.match_continuations_task(
                           pair_contins[0], pair_contins[1],
