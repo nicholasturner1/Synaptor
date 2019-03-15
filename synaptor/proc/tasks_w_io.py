@@ -137,6 +137,10 @@ def match_continuations_task(proc_url, facehash, max_face_shape=(1024, 1024),
                           max_face_shape=max_face_shape,
                           id_map1=pair_maps[0], id_map2=pair_maps[1])
 
+        if len(graph_edges) == 0:
+            print("Skipping face with no edges")
+            continue
+
         timed("Writing graph edges",
               taskio.write_contin_graph_edges,
               graph_edges, proc_url)
