@@ -24,7 +24,8 @@ parser.add_argument("--timing_tag", default=None)
 
 
 args = parser.parse_args()
-args.proc_url = s.io.parse_proc_url(args.proc_url)
+args.src_proc_url = s.io.parse_proc_url(args.src_proc_url)
+args.fulldf_proc_url = s.io.parse_proc_url(args.fulldf_proc_url)
 print(vars(args))
 
 
