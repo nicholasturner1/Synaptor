@@ -12,13 +12,14 @@ import argparse
 parser = argparse.ArgumentParser()
 
 # Inputs & Outputs
-parser.add_argument("proc_url")
+parser.add_argument("src_proc_url")
 parser.add_argument("hash_index", type=int)
 
 # Processing Parameters
 parser.add_argument("dist_thr", type=int)
 parser.add_argument("size_thr", type=int)
-parser.add_argument("--voxel_res", nargs="+", type=int)
+parser.add_argument("--voxel_res", nargs="3", type=int, required=True)
+parser.add_argument("--fulldf_proc_url")
 parser.add_argument("--timing_tag", default=None)
 
 
