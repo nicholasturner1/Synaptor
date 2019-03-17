@@ -2,7 +2,7 @@
 Segmentation Continuation Graph Components Wrapper Script
 
 - Takes a graph of continuation edges as input
-- Makes an id mapping that merges the matching continuations for each chunk
+- Makes an id mapping that merges the connected continuations using global ids
 """
 import synaptor as s
 

@@ -217,6 +217,10 @@ def read_continuation_graph(proc_url):
 def write_contin_graph_edges(graph_edges, proc_url):
     assert io.is_db_url(proc_url), "graph IO not implemented for files"
 
+    if len(graph_edges) == 0:
+        print("WARNING: no graph edges to write")
+        return
+
     ids1, ids2 = zip(*graph_edges)
     dframe = pd.DataFrame({cn.graph_id1: ids1, cn.graph_id2: ids2})
 

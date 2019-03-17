@@ -174,10 +174,6 @@ def seg_graph_cc_task(proc_url, hashmax, timing_tag=None):
           taskio.write_seg_merge_map,
           seg_merge_df, proc_url)
 
-    timed("Creating chunked version of the map",
-          taskio.write_chunked_seg_map,
-          proc_url)
-
     if timing_tag is not None:
         timed("Writing total task time",
               taskio.write_task_timing,
