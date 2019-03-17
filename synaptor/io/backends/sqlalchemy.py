@@ -133,7 +133,7 @@ def copy_from_fname(fname, table, columns=None, conn=None, url=None):
         conn.close()
 
 
-def write_dframes_copy_from(dframes, url, tables, index=True):
+def write_dframes_copy_from(dframes, url, tables, index=False):
     """ Write multiple tables as a single transaction. """
     assert len(dframes) == len(tables)
     engine = init_engine(url)

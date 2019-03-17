@@ -16,6 +16,7 @@ from . import filenames as fn
 FACE_REGEXP = re.compile("f[0-2]_(hi|lo)")
 CONTINUATION_FILE_COLUMNS = [cn.contin_filename, cn.facehash]
 CONTIN_GRAPH_COLUMNS = [cn.graph_id1, cn.graph_id2]
+TABLENAME = "continuations"
 
 
 def fname_face_tag(face):
@@ -170,17 +171,25 @@ def write_chunk_continuations(continuations, proc_url, chunk_bounds):
 def write_face_hashes(face_hashes, proc_url, chunk_bounds, proc_dir=None):
     proc_dir = proc_url if proc_dir is None else proc_dir
 
-    items = list(face_hashes.items())
-    faces, hashes = zip(*items)
-    filenames = [face_filename(proc_dir, chunk_bounds, face) for face in faces]
-
-    df = pd.DataFrame({cn.contin_filename: filenames, cn.facehash: hashes})
+    df = prep_face_hashes(face_hashes, chunk_bounds, proc_dir)
 
     if io.is_db_url(proc_url):
         io.write_db_dframe(df, proc_url, "continuations")
 
     else:
         raise(Exception("file IO for face hashes not implemented yet"))
+
+
+def prep_face_hashes(face_hashes, chunk_bounds, proc_dir):
+    """ Packaging face hashes to send as a dataframe"""
+    items = list(face_hashes.items())
+    faces, hashes = zip(*items)
+    filenames = [face_filename(proc_dir, chunk_bounds, face) for face in faces]
+
+    to_write = pd.DataFrame({cn.contin_filename: filenames,
+                             cn.facehash: hashes})
+
+    return to_write, TABLENAME
 
 
 def read_all_continuations(proc_url):

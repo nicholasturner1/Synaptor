@@ -91,7 +91,7 @@ def send_files(local_paths, dst_dir):
     elif AWS_REGEXP.match(dst_dir):
         bck.aws.send_files(local_paths, dst_dir)
     else:
-        warnings.warn(f"Pathname {dst_dir} doesn't make remote pattern",
+        warnings.warn(f"Pathname {dst_dir} doesn't match remote pattern",
                       Warning)
         bck.local.send_files(local_paths, dst_dir)
 

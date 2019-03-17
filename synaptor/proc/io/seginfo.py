@@ -13,6 +13,8 @@ from . import filenames as fn
 
 SEG_INFO_COLUMNS = [cn.seg_id, cn.size, *cn.centroid_cols, *cn.bbox_cols]
 CHUNK_START_COLUMNS = [cn.chunk_tag, cn.chunk_bx, cn.chunk_by, cn.chunk_bz]
+CHUNKED_TABLENAME = "chunk_segs"
+MERGED_TABLENAME = "merged_segs"
 
 
 def chunk_info_fname(proc_url, chunk_bounds):
@@ -28,7 +30,7 @@ def read_chunk_seg_info(proc_url, chunk_bounds):
         tag = io.fname_chunk_tag(chunk_bounds)
         metadata = io.open_db_metadata(proc_url)
 
-        segs = metadata.tables["chunk_segs"]
+        segs = metadata.tables[CHUNKED_TABLENAME]
         columns = list(segs.c[name] for name in SEG_INFO_COLUMNS)
         statement = select(columns).where(segs.c[cn.chunk_tag] == tag)
 
@@ -41,13 +43,19 @@ def read_chunk_seg_info(proc_url, chunk_bounds):
 def write_chunk_seg_info(dframe, proc_url, chunk_bounds):
     """ Writes seg info to the processing URL """
     if io.is_db_url(proc_url):
-        chunk_tag = io.fname_chunk_tag(chunk_bounds)
-        to_write = dframe.reset_index()[SEG_INFO_COLUMNS].copy()
-        to_write[cn.chunk_tag] = chunk_tag
-        io.write_db_dframe(to_write, proc_url, "chunk_segs")
+        to_write, tablename = prep_chunk_seg_info(dframe, chunk_bounds)
+        io.write_db_dframe(to_write, proc_url, tablename)
 
     else:
         io.write_dframe(dframe, chunk_info_fname(proc_url, chunk_bounds))
+
+
+def prep_chunk_seg_info(dframe, chunk_bounds):
+    chunk_tag = io.fname_chunk_tag(chunk_bounds)
+    to_write = dframe.reset_index()[SEG_INFO_COLUMNS].copy()
+    to_write[cn.chunk_tag] = chunk_tag
+
+    return to_write, CHUNKED_TABLENAME
 
 
 def read_all_chunk_seg_infos(proc_url):
@@ -58,7 +66,7 @@ def read_all_chunk_seg_infos(proc_url):
     """
     if io.is_db_url(proc_url):
         metadata = io.open_db_metadata(proc_url)
-        segs = metadata.tables["chunk_segs"]
+        segs = metadata.tables[CHUNKED_TABLENAME]
         chunks = metadata.tables["chunks"]
 
         segcols = list(segs.c[name] for name in SEG_INFO_COLUMNS)
@@ -110,7 +118,7 @@ def read_mapped_seginfo_by_dst_hash(proc_url, hashval):
     assert io.is_db_url(proc_url), "Not implemented for file IO"
 
     metadata = io.open_db_metadata(proc_url)
-    chunk_segs = metadata.tables["chunk_segs"]
+    chunk_segs = metadata.tables[CHUNKED_TABLENAME]
     seg_merge_map = metadata.tables["seg_merge_map"]
 
     segs_cols = list(chunk_segs.c[name] for name in SEG_INFO_COLUMNS)
@@ -133,7 +141,7 @@ def read_all_unique_seg_ids(proc_url):
     assert io.is_db_url(proc_url), "Not implemented for file IO"
 
     metadata = io.open_db_metadata(proc_url)
-    chunk_segs = metadata.tables["chunk_segs"]
+    chunk_segs = metadata.tables[CHUNKED_TABLENAME]
 
     columns = [chunk_segs.c["id"]]
 
@@ -151,7 +159,7 @@ def read_merged_seg_info(proc_url, hash_index=None):
     if io.is_db_url(proc_url):
         metadata = io.open_db_metadata(proc_url)
 
-        segs = metadata.tables["merged_segs"]
+        segs = metadata.tables[MERGED_TABLENAME]
         columns = list(segs.c[name] for name in SEG_INFO_COLUMNS)
 
         if hash_index is None:
@@ -173,7 +181,7 @@ def read_merged_seg_info(proc_url, hash_index=None):
 def write_merged_seg_info(dframe, proc_url):
     """Writes a merged seg info dataframe to storage. """
     if io.is_db_url(proc_url):
-        io.write_db_dframe(dframe, proc_url, "merged_segs", index=True)
+        io.write_db_dframe(dframe, proc_url, MERGED_TABLENAME, index=True)
 
     else:
         io.write_dframe(dframe, proc_url, fn.merged_seginfo_fname)

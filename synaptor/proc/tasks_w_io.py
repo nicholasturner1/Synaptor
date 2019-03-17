@@ -49,13 +49,18 @@ def cc_task(desc_cvname, seg_cvname, proc_url,
           taskio.write_chunk_continuations,
           continuations, proc_dir, chunk_bounds)
 
-    timed("Writing chunk face hashes",
-          taskio.write_face_hashes,
-          face_hashes, proc_url, chunk_bounds, proc_dir=proc_dir)
+    fhash_df, fhash_tablename = timed("Formatting chunk face hashes",
+                                      taskio.prep_face_hashes,
+                                      face_hashes, chunk_bounds, proc_dir)
 
-    timed("Writing cleft info",
-          taskio.write_chunk_seg_info,
-          seg_info, proc_url, chunk_bounds)
+    seginfo_df, seginfo_tablename = timed("Formatting segment info",
+                                          taskio.prep_chunk_seg_info,
+                                          seg_info, chunk_bounds)
+
+    timed("Writing results to database",
+          io.write_db_dframes,
+          [fhash_df, seginfo_df], proc_url,
+          [fhash_tablename, seginfo_tablename])
 
     if timing_tag is not None:
         timed("Writing total task time",
@@ -114,6 +119,8 @@ def match_continuations_task(proc_url, facehash, max_face_shape=(1024, 1024),
                          seg.merge.pair_continuation_files,
                          contin_files)
 
+    graph_edges = list()
+
     for pair in paired_files:
         if len(pair) != 2:
             print(f"Skipping set with {len(pair)} elements")
@@ -132,18 +139,16 @@ def match_continuations_task(proc_url, facehash, max_face_shape=(1024, 1024),
                      chunked_id_map[pair[1].bbox.min()])
 
 
-        graph_edges = tasks.match_continuations_task(
+        new_graph_edges = tasks.match_continuations_task(
                           pair_contins[0], pair_contins[1],
                           max_face_shape=max_face_shape,
                           id_map1=pair_maps[0], id_map2=pair_maps[1])
 
-        if len(graph_edges) == 0:
-            print("Skipping face with no edges")
-            continue
+        graph_edges.extend(new_graph_edges)
 
-        timed("Writing graph edges",
-              taskio.write_contin_graph_edges,
-              graph_edges, proc_url)
+    timed("Writing graph edges",
+          taskio.write_contin_graph_edges,
+          graph_edges, proc_url)
 
     if timing_tag is not None:
         timed("Writing total task time",
@@ -169,7 +174,7 @@ def seg_graph_cc_task(proc_url, hashmax, timing_tag=None):
           taskio.write_seg_merge_map,
           seg_merge_df, proc_url)
 
-    timed("Writing chunked version",
+    timed("Creating chunked version of the map",
           taskio.write_chunked_seg_map,
           proc_url)
 
@@ -177,6 +182,24 @@ def seg_graph_cc_task(proc_url, hashmax, timing_tag=None):
         timed("Writing total task time",
               taskio.write_task_timing,
               time.time() - start_time, "seg_graph_ccs", timing_tag, proc_url)
+
+
+def chunk_seg_merge_map(proc_url, timing_tag=None):
+
+    start_time = time.time()
+
+    if io.is_db_url(proc_url):
+        timed("Creating chunked seg merge map",
+              taskio.write_chunked_seg_map,
+              proc_url)
+
+    else:
+        raise(Exception("not implemented for file IO"))
+
+    if timing_tag is not None:
+        timed("Writing total task time",
+              taskio.write_task_timing,
+              time.time() - start_time, "chunked_seg_map", timing_tag, proc_url)
 
 
 def merge_seginfo_task(proc_url, hashval, timing_tag=None):
@@ -369,6 +392,10 @@ def merge_duplicates_task(voxel_res, dist_thr, size_thr,
                                                       edge_df, dist_thr,
                                                       voxel_res, size_thr)
 
+    # Considered using a transaction here, but that breaks generality
+    # when src_proc_url != fulldf_proc_url and writing the dup_id_map
+    # twice shouldn't cause any bad effects. Testing should evaluate this
+    # call.
     timed("Writing duplicate id mapping for hash index",
           taskio.write_dup_id_map,
           dup_id_map, src_proc_url)
