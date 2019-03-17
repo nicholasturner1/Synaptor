@@ -165,7 +165,7 @@ def read_merged_seg_info(proc_url, hash_index=None):
         if hash_index is None:
             statement = select(columns)
         else:
-            edges = metadata.tables["chunk_edges"]
+            edges = metadata.tables["merged_edges"]
             statement = select(columns).select_from(
                             segs.join(edges,
                                       segs.c[cn.seg_id] == edges.c[cn.seg_id])

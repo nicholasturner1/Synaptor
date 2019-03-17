@@ -224,7 +224,7 @@ def merge_duplicates_task(cleft_info, edge_info,
     """ Parallelizable edge.merge """
     full_df = timed("Merging edge DataFrame to cleft DataFrame",
                     edge.merge.merge_to_cleft_df,
-                    cleft_info, edge_info)
+                    edge_info, cleft_info)
 
     dup_id_map = timed("Merging duplicate clefts",
                        edge.merge.merge_duplicate_clefts,
