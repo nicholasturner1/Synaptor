@@ -77,12 +77,17 @@ def write_seg_merge_map(seg_merge_df, proc_url):
 def write_chunked_seg_map(proc_url):
     assert io.is_db_url(proc_url), "not implemented for files"
 
+    metadata = io.open_db_metadata(proc_url)
+
+    # order matters for these - sum of the first two
+    # needs to match the third (see query below)
     chunk_seg_colnames = [cn.seg_id, cn.chunk_tag]
     merge_map_colnames = [cn.dst_id]
+    chunked_map_colnames = [cn.src_id, cn.chunk_tag, cn.dst_id]
 
-    metadata = io.open_db_metadata(proc_url)
     chunk_segs = metadata.tables["chunk_segs"]
     seg_merge_map = metadata.tables["seg_merge_map"]
+    chunked_map = metadata.tables["chunked_seg_merge_map"]
 
     cs_columns = list(chunk_segs.c[name] for name in chunk_seg_colnames)
     smm_columns = list(seg_merge_map.c[name] for name in merge_map_colnames)
@@ -91,14 +96,14 @@ def write_chunked_seg_map(proc_url):
     chunk_seg_id = chunk_segs.c["id"]
     merge_map_id = seg_merge_map.c[cn.src_id]
 
-    statement = select(cs_columns + smm_columns).select_from(
-                    chunk_segs.join(seg_merge_map,
-                                    chunk_seg_id == merge_map_id))
+    select_stmt = select(cs_columns + smm_columns).select_from(
+                      chunk_segs.join(seg_merge_map,
+                                      chunk_seg_id == merge_map_id))
+    full_stmt = chunked_map.insert().from_select(
+                    names=chunked_map_colnames,
+                    select=select_stmt)
 
-    results = io.read_db_dframe(proc_url, statement)[CHUNKED_ID_MAP_COLUMNS]
-    results.columns = [cn.src_id, cn.dst_id, cn.chunk_tag]
-
-    io.write_db_dframe(results, proc_url, "chunked_seg_merge_map")
+    io.execute_db_statement(proc_url, full_stmt)
 
 
 def read_chunk_id_map(proc_url, chunk_bounds):
