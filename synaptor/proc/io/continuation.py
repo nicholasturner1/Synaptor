@@ -69,6 +69,28 @@ def _read_face_file(fname):
     return continuations
 
 
+def _read_legacy_file(fname):
+
+    continuations = dict()
+
+    with h5py.File(fname) as f:
+        for face in Face.all_faces():
+            axis = face.axis
+            hi_index = "high" if face.hi_index else "low"
+
+            face_continuations = list()
+            face_str = f"{axis}/{hi_index}"
+            if face_str in f:
+                for i in f[f"{axis}/{hi_index}"].keys():
+                    coords = f[f"{axis}/{hi_index}/{i}"][()]
+                    face_continuations.append(
+                        Continuation(int(i), face, coords))
+
+            continuations[face] = face_continuations
+
+    return continuations
+
+
 def _write_face_file(face_continuations, fname, face=None):
     """
     Given a concrete local path, writes an hdf5 file describing each
@@ -150,11 +172,13 @@ def continuations_by_hash(proc_url, hashval):
     dframe = io.read_db_dframe(proc_url, statement)
 
     filenames = list(dframe[cn.contin_filename])
+
+    local_filenames = io.pull_files(filenames)
     bboxes = [io.bbox_from_fname(fname) for fname in filenames]
     faces = [face_from_filename(fname) for fname in filenames]
 
     return list(ContinFile(fname, bbox, face)
-                for (fname, bbox, face) in zip(filenames, bboxes, faces))
+                for (fname, bbox, face) in zip(local_filenames, bboxes, faces))
 
 
 def write_chunk_continuations(continuations, proc_url, chunk_bounds):
@@ -171,10 +195,10 @@ def write_chunk_continuations(continuations, proc_url, chunk_bounds):
 def write_face_hashes(face_hashes, proc_url, chunk_bounds, proc_dir=None):
     proc_dir = proc_url if proc_dir is None else proc_dir
 
-    df = prep_face_hashes(face_hashes, chunk_bounds, proc_dir)
+    df, tablename = prep_face_hashes(face_hashes, chunk_bounds, proc_dir)
 
     if io.is_db_url(proc_url):
-        io.write_db_dframe(df, proc_url, "continuations")
+        io.write_db_dframe(df, proc_url, tablename)
 
     else:
         raise(Exception("file IO for face hashes not implemented yet"))
