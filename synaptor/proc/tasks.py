@@ -114,14 +114,10 @@ def match_continuations_task(contins1, contins2, max_face_shape=(1024, 1024),
                              id_map1=None, id_map2=None):
 
     if id_map1 is not None:
-        timed("Applying id map to contins1",
-              seg.merge.apply_id_map,
-              contins1, id_map1)
+        seg.merge.apply_id_map(contins1, id_map1)
 
     if id_map2 is not None:
-        timed("Applying id map to contins2",
-              seg.merge.apply_id_map,
-              contins2, id_map2)
+        seg.merge.apply_id_map(contins2, id_map2)
 
     graph_edges = timed("Matching continuations",
                         seg.merge.match_continuations,

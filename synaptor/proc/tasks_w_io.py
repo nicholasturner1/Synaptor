@@ -122,6 +122,8 @@ def match_continuations_task(proc_url, facehash, max_face_shape=(1024, 1024),
     graph_edges = list()
 
     for pair in paired_files:
+        # Skipping an unmatched face (e.g. at the edge of volume)
+        # or some other poorly formed case
         if len(pair) != 2:
             print(f"Skipping set with {len(pair)} elements")
             continue
@@ -131,8 +133,8 @@ def match_continuations_task(proc_url, facehash, max_face_shape=(1024, 1024),
                              taskio.read_face_filenames,
                              pair_filenames)
 
+        # Skipping empty face
         if len(pair_contins[0]) == 0 or len(pair_contins[1]) == 0:
-            print("Skipping empty face")
             continue
 
         pair_maps = (chunked_id_map[pair[0].bbox.min()],
