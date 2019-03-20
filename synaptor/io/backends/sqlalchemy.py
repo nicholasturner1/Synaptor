@@ -4,6 +4,7 @@ import re
 import shutil
 import tempfile
 import sqlalchemy as sa
+import psycopg2
 import pandas as pd
 
 from . import local
@@ -103,8 +104,9 @@ def write_dframe_direct(dframe, url, table, if_exists="append", index=True):
     dframe.to_sql(table, engine, if_exists=if_exists, index=index)
 
 
-def write_dframe_copy_from(dframe, url, table, index=False):
+def write_dframe_copy_from(dframe, url, table, index=False, num_retries=2):
     """ COPY FROM a csv is often MUCH faster than dframe.to_sql """
+
     if index:
         dframe = dframe.reset_index()
 
@@ -113,7 +115,13 @@ def write_dframe_copy_from(dframe, url, table, index=False):
     clean_file_floats(temp_file.name)
     columns = list(str(c) for c in dframe.columns)
 
-    copy_from_fname(temp_file.name, table, columns=columns, url=url)
+    for i in range(num_retries):
+        try:
+            copy_from_fname(temp_file.name, table, columns=columns, url=url)
+            break
+        except psycopg2.InterfaceError:
+            # connection likely stale, retrying...
+            pass
 
 
 def copy_from_fname(fname, table, columns=None, conn=None, url=None):
