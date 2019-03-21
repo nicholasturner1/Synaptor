@@ -111,10 +111,6 @@ def match_continuations_task(proc_url, facehash, max_face_shape=(1024, 1024),
                          taskio.continuations_by_hash,
                          proc_url, facehash)
 
-    chunked_id_map = timed("Reading chunked unique_ids",
-                           taskio.read_all_chunk_unique_ids,
-                           proc_url)
-
     paired_files = timed("Pairing continuation files",
                          seg.merge.pair_continuation_files,
                          contin_files)
@@ -137,9 +133,13 @@ def match_continuations_task(proc_url, facehash, max_face_shape=(1024, 1024),
         if len(pair_contins[0]) == 0 or len(pair_contins[1]) == 0:
             continue
 
-        pair_maps = (chunked_id_map[pair[0].bbox.min()],
-                     chunked_id_map[pair[1].bbox.min()])
-
+        map1 = timed("Reading id map 1",
+                     taskio.read_chunk_unique_ids,
+                     proc_url, pair[0].bbox)
+        map2 = timed("Reading id map 2",
+                     taskio.read_chunk_unique_ids,
+                     proc_url, pair[1].bbox)
+        pair_maps = (map1, map2)
 
         new_graph_edges = tasks.match_continuations_task(
                           pair_contins[0], pair_contins[1],
