@@ -119,6 +119,8 @@ def write_dframe_copy_from(dframe, url, table, index=False, num_retries=3):
         try:
             copy_from_fname(temp_file.name, table, columns=columns, url=url)
             break
+        except sqlalchemy.exc.DatabaseError:
+            pass
         except psycopg2.InterfaceError:
             # connection likely stale, retrying...
             pass
