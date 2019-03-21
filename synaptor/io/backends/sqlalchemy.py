@@ -104,7 +104,7 @@ def write_dframe_direct(dframe, url, table, if_exists="append", index=True):
     dframe.to_sql(table, engine, if_exists=if_exists, index=index)
 
 
-def write_dframe_copy_from(dframe, url, table, index=False, num_retries=2):
+def write_dframe_copy_from(dframe, url, table, index=False, num_retries=3):
     """ COPY FROM a csv is often MUCH faster than dframe.to_sql """
 
     if index:
@@ -121,6 +121,10 @@ def write_dframe_copy_from(dframe, url, table, index=False, num_retries=2):
             break
         except psycopg2.InterfaceError:
             # connection likely stale, retrying...
+            pass
+        except psycopg2.DatabaseError:
+            pass
+        except psycopg2.OperationalError:
             pass
 
 
