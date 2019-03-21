@@ -95,7 +95,7 @@ def init_seg_tables(metadata, segid_colname=cn.seg_id):
 def init_seg_table(metadata, tablename, segid_colname=cn.seg_id, chunked=True):
     """ Specifies a table for tracking info about a segment. """
     columns = [Column("id", BigInteger, primary_key=True),
-               Column(cn.seg_id, Integer),
+               Column(cn.seg_id, Integer, index=True),
                Column(cn.size, Integer),
                # Centroid coordinates
                Column(cn.centroid_x, Float),
@@ -111,7 +111,7 @@ def init_seg_table(metadata, tablename, segid_colname=cn.seg_id, chunked=True):
 
     if chunked:
         # Chunk id - None if merged across chunks
-        columns.append(Column(cn.chunk_tag, Text))
+        columns.append(Column(cn.chunk_tag, Text, index=True))
 
     return Table(tablename, metadata, *columns)
 
@@ -128,7 +128,7 @@ def init_continuation_file_table(metadata, tablename="continuations"):
     """
     columns = [Column("id", Integer, primary_key=True),
                Column("filename", Text),
-               Column("facehash", Integer)]
+               Column("facehash", Integer, index=True)]
 
     return Table(tablename, metadata, *columns)
 
@@ -159,7 +159,7 @@ def init_idmap_table(metadata, tablename, hashed=False, chunked=False):
         columns.append(Column(cn.dst_id_hash, Integer, default=-1))
 
     if chunked:
-        columns.append(Column(cn.chunk_tag, Text))
+        columns.append(Column(cn.chunk_tag, Text, index=True))
 
     return Table(tablename, metadata, *columns)
 
@@ -191,8 +191,8 @@ def init_edge_table(metadata, tablename, chunked=True):
                Column(cn.postsyn_y, Integer),
                Column(cn.postsyn_z, Integer),
                # Hash values
-               Column(cn.clefthash, Integer, default=-1),
-               Column(cn.partnerhash, Integer, default=-1)]
+               Column(cn.clefthash, Integer, default=-1, index=True),
+               Column(cn.partnerhash, Integer, default=-1, index=True)]
 
     if chunked:
         columns.append(Column(cn.chunk_tag, Text))
