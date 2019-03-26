@@ -209,12 +209,13 @@ def clean_file_floats(fname):
     shutil.copy(temp_file.name, fname)
 
 
-def create_index(url, tablename, colname):
+def create_index(url, tablename, *colnames):
     engine = init_engine(url)
 
     metadata = open_db_metadata(url)
-    column = metadata.tables[tablename].c[colname]
+    columns = [metadata.tables[tablename].c[colname] for colname in colnames]
+    colstring = "_".join(colnames)
 
-    index = sa.Index(f"manual_idx_{tablename}_{colname}", column)
+    index = sa.Index(f"manual_idx_{tablename}_{colstring}", *columns)
 
     index.create(engine)
