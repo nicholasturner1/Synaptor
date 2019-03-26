@@ -59,9 +59,30 @@ def drop_db_tables(url, metadata, tables=None):
     return open_db_metadata(url)
 
 
-def execute_db_statement(url, statement):
+def execute_db_statement(url, statement, num_retries=3):
     engine = init_engine(url)
-    return engine.execute(statement)
+
+    for i in range(num_retries):
+        try:
+            engine.execute(statement)
+            break
+        except sa.exc.DatabaseError as e:
+            # connection likely stale, retrying...
+            print(e)
+            print("Retrying...")
+            pass
+        except psycopg2.InterfaceError as e:
+            print(e)
+            print("Retrying...")
+            pass
+        except psycopg2.DatabaseError as e:
+            print(e)
+            print("Retrying...")
+            pass
+        except psycopg2.OperationalError as e:
+            print(e)
+            print("Retrying...")
+            pass
 
 
 def execute_db_statements(url, statements):
@@ -119,14 +140,22 @@ def write_dframe_copy_from(dframe, url, table, index=False, num_retries=3):
         try:
             copy_from_fname(temp_file.name, table, columns=columns, url=url)
             break
-        except sa.exc.DatabaseError:
-            pass
-        except psycopg2.InterfaceError:
+        except sa.exc.DatabaseError as e:
             # connection likely stale, retrying...
+            print(e)
+            print("Retrying...")
             pass
-        except psycopg2.DatabaseError:
+        except psycopg2.InterfaceError as e:
+            print(e)
+            print("Retrying...")
             pass
-        except psycopg2.OperationalError:
+        except psycopg2.DatabaseError as e:
+            print(e)
+            print("Retrying...")
+            pass
+        except psycopg2.OperationalError as e:
+            print(e)
+            print("Retrying...")
             pass
 
 
@@ -178,3 +207,14 @@ def clean_file_floats(fname):
                 f2.write(line.replace(".0", ""))
 
     shutil.copy(temp_file.name, fname)
+
+
+def create_index(url, tablename, colname):
+    engine = init_engine(url)
+
+    metadata = open_db_metadata(url)
+    column = metadata.tables[tablename].c[colname]
+
+    index = sa.Index(f"manual_idx_{tablename}_{colname}", column)
+
+    index.create(engine)

@@ -296,6 +296,7 @@ read_db_dframe = bck.sqlalchemy.read_dframe
 write_db_dframe = bck.sqlalchemy.write_dframe_copy_from
 read_db_dframes = bck.sqlalchemy.read_dframes
 write_db_dframes = bck.sqlalchemy.write_dframes_copy_from
+create_index = bck.sqlalchemy.create_index
 
 
 def is_remote_path(uri):
