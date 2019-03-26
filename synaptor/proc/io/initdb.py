@@ -156,10 +156,10 @@ def init_idmap_table(metadata, tablename, hashed=False, chunked=False):
                Column(cn.dst_id, Integer)]
 
     if hashed:
-        columns.append(Column(cn.dst_id_hash, Integer, default=-1, index=True))
+        columns.append(Column(cn.dst_id_hash, Integer, default=-1))
 
     if chunked:
-        columns.append(Column(cn.chunk_tag, Text, index=True))
+        columns.append(Column(cn.chunk_tag, Text))
 
     return Table(tablename, metadata, *columns)
 
