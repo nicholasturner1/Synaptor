@@ -158,7 +158,7 @@ def gridsearch(img, seg, net_output, cleft_lbls, edge_lbls,
         print("PARAMS: CC @ {cc}, SZ @ {sz}".format(cc=cc_thr, sz=sz_thr))
 
         print("Thresholding and filtering...")
-        ccs = proc.seg.connected_components3d(net_output, cc_thr)
+        ccs = proc.seg.connected_components(net_output, cc_thr)
         ccs, _ = seg_utils.filter_segs_by_size(ccs, sz_thr)
 
         edge_df = proc.edge.infer_edges(asynet, img, ccs, seg,
