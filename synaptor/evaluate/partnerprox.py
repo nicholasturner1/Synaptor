@@ -9,6 +9,7 @@ import operator
 
 import numpy as np
 
+from .. import proc
 from ..proc import seg
 from ..proc import candidate
 from ..proc import edge
@@ -23,7 +24,7 @@ def score_at_thresholds(net, prox, img, seg, clf, labels,
                         return_aux_data=False):
     """ TODO """
     # Making terminals
-    find_prox_terminals = seg.find_prox_terminals
+    find_prox_terminals = proc.seg.find_prox_terminals
     pre_terms, post_terms = find_prox_terminals(prox, seg,
                                                 presyn_thresh=presyn_thresh,
                                                 postsyn_thresh=postsyn_thresh,
@@ -58,7 +59,7 @@ def score_at_thresholds(net, prox, img, seg, clf, labels,
 
     if return_aux_data:
         aux_returns = (pre_terms, post_terms, cands_fmt,
-                       preds_fmt, locs_fmt, scores)
+                       preds_fmt, locs_fmt, scores, assoc_clefts)
         return returns, aux_returns
     else:
         return returns
