@@ -4,7 +4,7 @@
 seginfo_dirname = "seg_infos"
 seginfo_fmtstr = "seg_info_{tag}.df"
 merged_seginfo_fname = "merged_cleft_info.df"
-
+merged_seginfo_fmtstr = "merged_cleft_info_{tag}.df"
 
 # Segment continuations
 contin_dirname = "continuations"

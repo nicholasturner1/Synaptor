@@ -178,10 +178,15 @@ def read_merged_seg_info(proc_url, hash_index=None):
         return io.read_dframe(proc_url, fn.merged_seginfo_fname)
 
 
-def write_merged_seg_info(dframe, proc_url):
+def write_merged_seg_info(dframe, proc_url, hash_tag=None):
     """Writes a merged seg info dataframe to storage. """
     if io.is_db_url(proc_url):
         io.write_db_dframe(dframe, proc_url, MERGED_TABLENAME, index=True)
 
     else:
-        io.write_dframe(dframe, proc_url, fn.merged_seginfo_fname)
+        if hash_tag is not None:
+            filename = fn.merged_seginfo_fmtstr.format(tag=hash_tag)
+        else:
+            filename = fn.merged_seginfo_fname
+
+        io.write_dframe(dframe, proc_url, filename)
