@@ -197,10 +197,11 @@ def chunk_seg_merge_map(proc_url, timing_tag=None):
     if timing_tag is not None:
         timed("Writing total task time",
               taskio.write_task_timing,
-              time.time() - start_time, "chunked_seg_map", timing_tag, proc_url)
+              time.time() - start_time, "chunked_seg_map",
+              timing_tag, proc_url)
 
 
-def merge_seginfo_task(proc_url, hashval, timing_tag=None):
+def merge_seginfo_task(proc_url, hashval, aux_proc_url=None, timing_tag=None):
 
     start_time = time.time()
 
@@ -213,6 +214,11 @@ def merge_seginfo_task(proc_url, hashval, timing_tag=None):
     timed(f"Writing merged seginfo for dst hash {hashval}",
           taskio.write_merged_seg_info,
           merged_seginfo, proc_url)
+
+    if aux_proc_url is not None:
+        timed(f"Writing merged seginfo for dst hash {hashval} to aux",
+              taskio.write_merged_seg_info,
+              merged_seginfo, aux_proc_url)
 
     if timing_tag is not None:
         timed("Writing total task time",
