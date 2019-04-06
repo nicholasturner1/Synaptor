@@ -25,7 +25,10 @@ def pair_continuation_files(contin_files):
 
         pairs[hash_input] = pairs.get(hash_input, []) + [contin_file]
 
-    return list(pairs.values())
+    # Remove duplicates
+    unique_files = list(list(set(value)) for value in pairs.values())
+
+    return unique_files
 
 
 def merge_continuations(continuation_arr, max_face_shape=(1152, 1152)):
