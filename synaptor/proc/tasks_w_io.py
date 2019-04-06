@@ -211,14 +211,14 @@ def merge_seginfo_task(proc_url, hashval, aux_proc_url=None, timing_tag=None):
 
     merged_seginfo = tasks.merge_seginfo_task(seginfo_w_new_id)
 
-    timed(f"Writing merged seginfo for dst hash {hashval}",
-          taskio.write_merged_seg_info,
-          merged_seginfo, proc_url, hash_tag=hashval)
-
     if aux_proc_url is not None:
         timed(f"Writing merged seginfo for dst hash {hashval} to aux",
               taskio.write_merged_seg_info,
               merged_seginfo, aux_proc_url, hash_tag=hashval)
+
+    timed(f"Writing merged seginfo for dst hash {hashval}",
+          taskio.write_merged_seg_info,
+          merged_seginfo, proc_url, hash_tag=hashval)
 
     if timing_tag is not None:
         timed("Writing total task time",
