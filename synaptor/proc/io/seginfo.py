@@ -3,7 +3,7 @@
 
 import os
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 import pandas as pd
 
 from ... import io
@@ -190,3 +190,14 @@ def write_merged_seg_info(dframe, proc_url, hash_tag=None):
             filename = fn.merged_seginfo_fname
 
         io.write_dframe(dframe, proc_url, filename)
+
+
+def dedup_chunk_segs(proc_url):
+    assert io.is_db_url(proc_url), "not implemented for file IO"
+
+    statement = text("""DELETE FROM chunk_segs a USING chunk_segs b
+                        WHERE a.id > b.id
+                        AND a.cleft_segid = b.cleft_segid
+                        AND a.chunk_tag = b.chunk_tag""")
+
+    io.execute_db_statement(proc_url, statement)

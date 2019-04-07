@@ -14,5 +14,6 @@ case $1 in
     merge_overlaps)   python3 merge_overlaps.py ${@:2} ;;
     chunk_anchors)    python3 chunk_anchors.py ${@:2} ;;
     create_index)     python3 create_index.py ${@:2} ;;
+    dedup_chunk_segs) python3 dedup_chunk_segs.py ${@:2} ;;
     *)  echo "invalid task name $1"
 esac
