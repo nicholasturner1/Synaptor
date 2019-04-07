@@ -61,7 +61,10 @@ def read_hashed_edge_info(proc_url, partnerhash=None,
     elif clefthash is not None:
         statement = select(columns).where(edges.c.clefthash == clefthash)
 
-    return io.read_db_dframe(proc_url, statement, index_col=cn.seg_id)
+    # Removing duplicates in case...
+    raw_df = io.read_db_dframe(proc_url, statement)
+    df = raw_df.loc[~raw_df[cn.seg_id].duplicated()]
+    return df.set_index(cn.seg_id)
 
 
 def write_chunk_edge_info(dframe, proc_url, chunk_bounds):
@@ -155,8 +158,10 @@ def read_merged_edge_info(proc_url):
         columns = list(edges.c[name] for name in EDGE_INFO_COLUMNS)
         statement = select(columns)
 
-        return io.read_db_dframe(proc_url, statement, index_col=cn.seg_id)
-
+        # Removing duplicates in case...
+        raw_df = io.read_db_dframe(proc_url, statement)
+        df = raw_df.loc[~raw_df[cn.seg_id].duplicated()]
+        return df.set_index(cn.seg_id)
     else:
         return io.read_dframe(proc_url, fn.merged_edgeinfo_fname)
 

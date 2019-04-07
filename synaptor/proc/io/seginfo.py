@@ -171,7 +171,9 @@ def read_merged_seg_info(proc_url, hash_index=None):
                                       segs.c[cn.seg_id] == edges.c[cn.seg_id])
                             ).where(edges.c[cn.partnerhash] == hash_index)
 
-        return io.read_db_dframe(proc_url, statement, index_col=cn.seg_id)
+        raw_df = io.read_db_dframe(proc_url, statement)
+        df = raw_df.loc[~raw_df[cn.seg_id].duplicated()]
+        return df.set_index(cn.seg_id)
 
     else:
         assert hash_index is None, "hash_index not implemented for file IO"
