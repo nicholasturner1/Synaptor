@@ -386,7 +386,7 @@ def merge_duplicates_task(voxel_res, dist_thr, size_thr,
 
     edge_df = timed(f"Reading edges for hash index {hash_index}",
                     taskio.read_hashed_edge_info,
-                    src_proc_url, hash_index)
+                    src_proc_url, hash_index, dedup=True)
 
     merged_cleft_info = timed(f"Reading merged seg info for ind {hash_index}",
                               taskio.read_merged_seg_info,

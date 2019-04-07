@@ -41,7 +41,7 @@ def read_chunk_edge_info(proc_url, chunk_bounds):
 
 
 def read_hashed_edge_info(proc_url, partnerhash=None,
-                          clefthash=None, merged=True):
+                          clefthash=None, merged=True, dedup=False):
     """ Reads the edge information with a particular hash value. """
     assert partnerhash is not None or clefthash is not None, "Need hash value"
     assert partnerhash is None or clefthash is None, "Specify only one hash"
@@ -61,10 +61,12 @@ def read_hashed_edge_info(proc_url, partnerhash=None,
     elif clefthash is not None:
         statement = select(columns).where(edges.c.clefthash == clefthash)
 
-    # Removing duplicates in case...
-    raw_df = io.read_db_dframe(proc_url, statement)
-    df = raw_df.loc[~raw_df[cn.seg_id].duplicated()]
-    return df.set_index(cn.seg_id)
+    if dedup:
+        raw_df = io.read_db_dframe(proc_url, statement)
+        df = raw_df.loc[~raw_df[cn.seg_id].duplicated()]
+        return df.set_index(cn.seg_id)
+    else:
+        return io.read_db_dframe(proc_url, statement, index_col=cn.seg_id)
 
 
 def write_chunk_edge_info(dframe, proc_url, chunk_bounds):
