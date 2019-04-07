@@ -4,6 +4,7 @@ from .seginfo import read_all_chunk_seg_infos, read_all_unique_seg_ids
 from .seginfo import read_merged_seg_info, write_merged_seg_info
 from .seginfo import read_mapped_seginfo_by_dst_hash
 from .seginfo import prep_chunk_seg_info
+from .seginfo import dedup_chunk_segs
 
 from . import continuation
 from .continuation import read_chunk_continuations, write_chunk_continuations
