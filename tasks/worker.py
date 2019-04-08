@@ -1,4 +1,5 @@
 import argparse
+from taskqueue import TaskQueue
 
 import synaptor.tasks  # triggers registration of SynaptorTask
 
