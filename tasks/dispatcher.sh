@@ -16,5 +16,6 @@ case $1 in
     create_index)     python3 create_index.py ${@:2} ;;
     dedup_chunk_segs) python3 dedup_chunk_segs.py ${@:2} ;;
     init_db)          python3 init_db.py ${@:2} ;;
+    hello_world)      python3 hello_world.py ${@:2} ;;
     *)  echo "invalid task name $1"
 esac
