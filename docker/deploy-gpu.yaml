@@ -1,0 +1,52 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    run: synaptor-gpu
+  name: synaptor-gpu
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: synaptor-gpu
+  strategy:
+    rollingUpdate:
+      maxSurge: 100%
+      maxUnavailable: 100%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        run: synaptor-gpu
+    spec:
+      containers:
+      - image: seunglab/synaptor:latest
+        name: synaptor-gpu
+        imagePullPolicy: Always
+        command: ["/bin/sh"]
+        args: ["-c", "python worker.py https://sqs.us-east-1.amazonaws.com/DIGITS/QUEUE_NAME 20"]
+        resources: 
+          limits:
+            nvidia.com/gpu: 1
+        volumeMounts:
+        - name: secrets
+          mountPath: /root/.cloudvolume/secrets
+          readOnly: true
+        - name: storagestr
+          mountPath: /root/proc_url
+          readOnly: true
+        - name: boto
+          mountPath: /root/.boto
+          readOnly: true
+      dnsPolicy: Default
+      volumes:
+      - name: secrets
+        secret:
+          secretName: secrets
+      - name: storagestr
+        secret:
+          secretName: proc_url
+      - name: boto
+        secret:
+          secretName: boto
