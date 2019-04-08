@@ -1,6 +1,6 @@
 import argparse
 
-import synaptor.tasks # triggers registration of SynaptorTask
+import synaptor.tasks  # triggers registration of SynaptorTask
 
 parser = argparse.ArgumentParser()
 

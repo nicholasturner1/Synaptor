@@ -15,3 +15,5 @@ from .proc.edge.merge import merge_duplicate_clefts
 from . import evaluate
 
 from . import io
+
+from . import tasks
