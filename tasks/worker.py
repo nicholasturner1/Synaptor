@@ -8,7 +8,7 @@ from taskqueue import RegisteredTask, TaskQueue
 class SynaptorTask(RegisteredTask):
     def __init__(self, command_line=""):
         super().__init__(command_line)
-        self.cmd = shlex.split(command_line)
+        self.cmd = [shlex.quote(x) for x in shlex.split(command_line)]
 
     def execute(self):
         # Interim solution: Forward the command to the dispatcher.sh, which

@@ -23,7 +23,7 @@ RUN apt-get update && \
     rm ~/miniconda.sh && \
 #Python Dependencies
 #For some reason, pip works for h5py and pandas, and conda doesn't
-    pip --no-cache-dir install h5py pandas cloud-volume python-igraph future && \
+    pip --no-cache-dir install h5py pandas cloud-volume task-queue python-igraph future && \
     pip --no-cache-dir install requests psycopg2-binary && \
     conda install scipy pybind11 sqlalchemy && \
     conda install pytorch==1.0.1 torchvision cudatoolkit=10.0 -c pytorch && \
@@ -35,4 +35,3 @@ RUN apt-get update && \
 
 
 WORKDIR /Synaptor/tasks
-ENTRYPOINT ["bash","dispatcher.sh"]
