@@ -25,7 +25,7 @@ spec:
         name: synaptor-cpu
         imagePullPolicy: Always
         command: ["/bin/sh"]
-        args: ["-c", "python worker.py --qurl https://sqs.us-east-1.amazonaws.com/DIGITS/QUEUE_NAME --lease_seconds 20"]
+        args: ["-c", "python worker.py https://sqs.us-east-1.amazonaws.com/DIGITS/QUEUE_NAME 20"]
         resources: 
           requests:
             cpu: 3
@@ -33,7 +33,7 @@ spec:
         - name: secrets
           mountPath: /root/.cloudvolume/secrets
           readOnly: true
-        - name: proc_url
+        - name: storagestr
           mountPath: /root/proc_url
           readOnly: true
         - name: boto
@@ -44,7 +44,7 @@ spec:
       - name: secrets
         secret:
           secretName: secrets
-      - name: proc_url
+      - name: storagestr
         secret:
           secretName: proc_url
       - name: boto
