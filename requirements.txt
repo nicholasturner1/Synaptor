@@ -4,6 +4,7 @@ python-igraph
 pandas
 h5py
 cloud-volume
+task-queue
 pytorch==0.4.0
 torchvision
 future
