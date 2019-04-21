@@ -469,7 +469,11 @@ def merge_overlaps_task(proc_url, timing_tag=None):
 
 def remap_ids_task(seg_in_cvname, seg_out_cvname,
                    chunk_begin, chunk_end, proc_url,
+                   dup_map_proc_url=None,
                    mip=0, parallel=1, timing_tag=None):
+
+    dup_map_proc_url = (proc_url
+                        if dup_map_proc_url is None else dup_map_proc_url)
 
     start_time = time.time()
 
@@ -481,7 +485,7 @@ def remap_ids_task(seg_in_cvname, seg_out_cvname,
 
     dup_id_map = timed("Reading duplicate id map",
                        taskio.read_dup_id_map,
-                       proc_url)
+                       dup_map_proc_url)
 
     seg = timed("Reading cleft chunk",
                 io.read_cloud_volume_chunk,
