@@ -28,6 +28,10 @@ def tup2str(t):
   return " ".join(map(str, t))
 
 
+def create_init_db_task(storagestr, hashmax):
+    return [SynaptorTask(f"init_db {storagestr}")]
+
+
 def create_connected_component_tasks(
     outpath, cleftpath, proc_url, proc_dir,
     cc_thresh, sz_thresh, bounds, shape,
