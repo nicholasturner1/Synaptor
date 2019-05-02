@@ -10,7 +10,7 @@ import scipy.sparse as sp
 from .. import seg_utils
 
 
-def score_overlaps(pred_clf, gt_clf, mode="liberal", to_ignore=[]):
+def score_overlaps(pred_clf, gt_clf, mode="conservative", to_ignore=[]):
     """ Compute object-wise precision and recall scores """
 
     overlaps, pred_ids, gt_ids = seg_utils.count_overlaps(pred_clf, gt_clf)
