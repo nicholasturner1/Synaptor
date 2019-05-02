@@ -1,7 +1,7 @@
 import argparse
 from taskqueue import TaskQueue
 
-import synaptor.tasks  # triggers registration of SynaptorTask
+import synaptor.proc.taskqueue  # triggers registration of SynaptorTask
 
 parser = argparse.ArgumentParser()
 

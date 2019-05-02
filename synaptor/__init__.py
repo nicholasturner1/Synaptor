@@ -16,4 +16,4 @@ from . import evaluate
 
 from . import io
 
-from . import tasks
+from . import diagnostics
