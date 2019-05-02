@@ -2,13 +2,13 @@ apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
   labels:
-    run: synaptor-cpu
-  name: synaptor-cpu
+    run: synaptor-gpu
+  name: synaptor-gpu
 spec:
   replicas: 1
   selector:
     matchLabels:
-      run: synaptor-cpu
+      run: synaptor-gpu
   strategy:
     rollingUpdate:
       maxSurge: 100%
@@ -18,27 +18,34 @@ spec:
     metadata:
       creationTimestamp: null
       labels:
-        run: synaptor-cpu
+        run: synaptor-gpu
     spec:
       containers:
-      - image: seunglab/synaptor:latest
-        name: synaptor-cpu
+      - image: seunglab/synaptor:kube
+        name: synaptor-gpu
         imagePullPolicy: Always
         command: ["/bin/sh"]
-        args: ["-c", "python worker.py https://sqs.us-east-1.amazonaws.com/DIGITS/QUEUE_NAME 20"]
+        args: ["-c", "python -u worker.py https://sqs.us-east-1.amazonaws.com/587723909184/synaptor 1200"]
         resources: 
-          requests:
-            cpu: 3
+          limits:
+            nvidia.com/gpu: 1
         volumeMounts:
         - name: secrets
-          mountPath: /root/.cloudvolume/secrets
+          mountPath: /root/.cloudvolume/secrets/google-secret.json
           readOnly: true
+          subPath: microns-seunglab-google-secret.json
+        - name: secrets
+          mountPath: /root/.cloudvolume/secrets/aws-secret.json
+          readOnly: true
+          subPath: aws-secret.json
         - name: storagestr
           mountPath: /root/proc_url
           readOnly: true
+          subPath: proc_url
         - name: boto
           mountPath: /root/.boto
           readOnly: true
+          subPath: minimal_boto_microns
       dnsPolicy: Default
       volumes:
       - name: secrets
@@ -46,7 +53,7 @@ spec:
           secretName: secrets
       - name: storagestr
         secret:
-          secretName: proc_url
+          secretName: storagestr
       - name: boto
         secret:
           secretName: boto
