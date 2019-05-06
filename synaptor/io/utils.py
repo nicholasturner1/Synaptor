@@ -13,7 +13,8 @@ from . import backends as bck
 
 AWS_REGEXP = bck.aws.REGEXP
 GCLOUD_REGEXP = bck.gcloud.REGEXP
-BBOX_REGEXP = re.compile("[0-9]+_[0-9]+_[0-9]+-[0-9]+_[0-9]+_[0-9]+")
+BBOX_REGEXP = re.compile("-?[0-9]+_-?[0-9]+_-?[0-9]+--?[0-9]+_-?[0-9]+_-?[0-9]+")
+SPLIT_REGEXP = re.compile("[0-9]--?[0-9]")
 PROC_URL_FILENAME = "/root/proc_url"
 READ_PROC_FROM_FILE_FLAG = "PROC_FROM_FILE"
 
@@ -70,13 +71,21 @@ def bbox_from_fname(path):
 
 def bbox_from_tag(tag):
     """ Extracts the bounding box specified by a tag. """
-    beg_str, end_str = tag.split("-")
+    beg_str, end_str = split_tag(tag)
+    # beg_str, end_str = tag.split("-")
     beg = tuple(map(int, beg_str.split("_")))
     end = tuple(map(int, end_str.split("_")))
 
     return bbox.BBox3d(beg, end)
 
 
+def split_tag(tag):
+    match = SPLIT_REGEXP.search(tag)
+    assert match is not None, "split delimiter not found in tag"
+    dash_index = match.start() + 1
+    return tag[:dash_index], tag[dash_index+1:]
+
+    
 def extract_sorted_bboxes(local_dir):
     """
     Takes every file within a local directory, and returns a list
