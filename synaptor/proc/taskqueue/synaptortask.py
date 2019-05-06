@@ -7,7 +7,7 @@ from taskqueue import RegisteredTask, TaskQueue
 class SynaptorTask(RegisteredTask):
     def __init__(self, command_line=""):
         super().__init__(command_line)
-        self.cmd = command_line
+        self.cmd = command_line.split(" ")
         #self.cmd = [shlex.quote(x) for x in shlex.split(command_line)]
 
     def execute(self):
@@ -27,8 +27,7 @@ class SynaptorTask(RegisteredTask):
                 raise subprocess.CalledProcessError(return_code, cmd)
 
         if self.cmd:
-            #for stdout in run_cmd(["./dispatcher.sh", *self.cmd]):
-            for stdout in run_cmd(["./dispatcher.sh", self.cmd]):
+            for stdout in run_cmd(["./dispatcher.sh", *self.cmd]):
                 print(stdout, end="")
                 if "invalid task name" in stdout:
                     raise TypeError(stdout)
