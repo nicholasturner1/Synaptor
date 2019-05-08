@@ -12,10 +12,12 @@ __version__ = "0.0.1"
 # See: https://github.com/pybind/python_example
 
 class get_pybind_include(object):
-    """Helper class to determine the pybind11 include path
+    """
+    Helper class to determine the pybind11 include path
     The purpose of this class is to postpone importing pybind11
     until it is actually installed, so that the ``get_include()``
-    method can be invoked. """
+    method can be invoked.
+    """
 
     def __init__(self, user=False):
         self.user = user
@@ -26,7 +28,8 @@ class get_pybind_include(object):
 
 
 def has_flag(compiler, flagname):
-    """Return a boolean indicating whether a flag name is supported on
+    """
+    Return a boolean indicating whether a flag name is supported on
     the specified compiler.
     """
     import tempfile
@@ -40,7 +43,8 @@ def has_flag(compiler, flagname):
 
 
 def cpp_flag(compiler):
-    """Return the -std=c++[11/14] compiler flag.
+    """
+    Return the -std=c++[11/14] compiler flag.
     The c++14 is prefered over c++11 (when it is available).
     """
     if has_flag(compiler, '-std=c++14'):
@@ -53,7 +57,7 @@ def cpp_flag(compiler):
 
 
 class BuildExt(build_ext):
-    """A custom build extension for adding compiler-specific options."""
+    """ A custom build extension for adding compiler-specific options. """
     c_opts = {
         'msvc': ['/EHsc'],
         'unix': [],
