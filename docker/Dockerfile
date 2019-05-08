@@ -34,4 +34,4 @@ RUN apt-get update && \
     conda clean -t -p
 
 
-WORKDIR /Synaptor/tasks
+WORKDIR /Synaptor/task_scripts
