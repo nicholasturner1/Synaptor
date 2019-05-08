@@ -2,6 +2,5 @@
 *.h5
 *.pyc
 build/
-tests/
 *.so
 projects
