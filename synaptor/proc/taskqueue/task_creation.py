@@ -12,18 +12,6 @@ from taskqueue import GreenTaskQueue
 from .synaptortask import SynaptorTask
 
 
-try:
-  OPERATOR_CONTACT = subprocess.check_output("git config user.email", shell=True)
-  OPERATOR_CONTACT = str(OPERATOR_CONTACT.rstrip())
-except:
-  try:
-    print(yellow('Unable to determine provenance contact email. Set "git config user.email". Using unix $USER instead.'))
-    OPERATOR_CONTACT = os.environ['USER']
-  except:
-    print(yellow('$USER was not set. The "owner" field of the provenance file will be blank.'))
-    OPERATOR_CONTACT = ''
-
-
 def tup2str(t):
   return " ".join(map(str, t))
 
@@ -79,33 +67,6 @@ def create_connected_component_tasks(
             """.strip()
 
           yield SynaptorTask(cmd)
-
-        job_details = {
-          'method': {
-            'task': 'ConnectedComponentsTask',
-            'outpath': outpath,
-            'cleftpath': cleftpath,
-            'proc_url': proc_url,
-            'proc_dir': proc_dir,
-            'cc_thresh': cc_thresh,
-            'sz_thresh': sz_thresh,
-            'parallel': parallel,
-            'hashmax': hashmax,
-            'shape': list(map(int, shape)),
-            'bounds': [
-              bounds.minpt.tolist(),
-              bounds.maxpt.tolist()
-            ],
-            'mip': mip,
-          },
-          'by': OPERATOR_CONTACT,
-          'date': strftime('%Y-%m-%d %H:%M %Z'),
-        }
-
-        dvol = CloudVolume(outpath)
-        dvol.provenance.sources = [ cleftpath ]
-        dvol.provenance.processing.append(job_details)
-        dvol.commit_provenance()
 
     level_end = int(math.ceil(bounds.size3().z / shape.z))
     return ConnectedComponentsTaskIterator(0, level_end)
