@@ -4,13 +4,15 @@
 A package for processing voxelwise descriptors for connectomics, with a special focus on predictions of synaptic connectivity.
 
 # Installation
-```pip install synaptor
+```
+pip install synaptor
 ```
 
 #### Troubleshooting Installation
 
 If python-igraph fails to install, you may need to install some required libraries. Try
-``` apt install libigraph0-dev libxml2-dev zlib1g-dev
+```
+apt install libigraph0-dev libxml2-dev zlib1g-dev
 ```
 
 Contact
