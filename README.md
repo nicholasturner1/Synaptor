@@ -1,12 +1,17 @@
-# Synaptor v3
-A package for processing voxelwise convolutional network output for connectomics.
+[![Build Status](https://travis-ci.com/nicholasturner1/Synaptor.svg?branch=master)](https://travis-ci.com/nicholasturner1/Synaptor) [![PyPI version](https://badge.fury.io/py/synaptor.svg)](https://badge.fury.io/py/synaptor) 
 
-See scripts and tasks directories for example use cases
+# Synaptor v3
+A package for processing voxelwise descriptors for connectomics, with a special focus on predictions of synaptic connectivity.
 
 # Installation
-- install python-igraph. `apt install libigraph0-dev`. 
-- pip install -r requirements.txt 
-- python3 setup.py build_ext --inplace 
+```pip install synaptor
+```
+
+#### Troubleshooting Installation
+
+If python-igraph fails to install, you may need to install some required libraries. Try
+``` apt install libigraph0-dev libxml2-dev zlib1g-dev
+```
 
 Contact
 -------

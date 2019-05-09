@@ -4,7 +4,7 @@ from setuptools import setup, find_packages, Extension
 from setuptools.command.build_ext import build_ext
 
 
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 
 
 #==========================================================
@@ -105,7 +105,7 @@ ext_modules = [
 setup(
     name='synaptor',
     version=__version__,
-    description='Prediction of synaptic clefts synaptic connectivity inference for connectomics',
+    description='Processing voxelwise descriptors for Connectomics.',
     author='Nicholas Turner',
     author_email='nturner@cs.princeton.edu',
     url='https://github.com/nicholasturner1/Synaptor',
