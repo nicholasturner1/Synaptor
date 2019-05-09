@@ -5,7 +5,8 @@ python:
 
 
 install:
-  - pip install -e . --ignore-installed  # pre-installed numpy breaks build
+  - pip uninstall numpy  # pre-installed numpy breaks build
+  - pip install -e . --ignore-installed
 
 
 script:
