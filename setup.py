@@ -111,7 +111,10 @@ setup(
     url='https://github.com/nicholasturner1/Synaptor',
     packages=setuptools.find_packages(),
     ext_modules=ext_modules,
-    install_requires=['pybind11>=2.2'],
+    install_requires=['numpy', 'scipy', 'python-igraph', 'pandas', 'h5py',
+                      'cloud-volume', 'task-queue', 'torch==1.0.1',
+                      'torchvision', 'future', 'pybind11>=2.2',
+                      'psycopg2-binary', 'sqlalchemy', 'pytest'],
     cmdclass={'build_ext': BuildExt},
     zip_safe=False
 )
