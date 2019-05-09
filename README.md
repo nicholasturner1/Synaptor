@@ -7,8 +7,11 @@ A package for processing voxelwise descriptors for connectomics, with a special 
 ```
 pip install synaptor
 ```
+```
+pip install git+https://github.com/nicholasturner1/Synaptor
+```
 
-#### Troubleshooting Installation
+#### Troubleshooting
 
 If python-igraph fails to install, you may need to install some required libraries. Try
 ```
