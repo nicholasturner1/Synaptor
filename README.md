@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/nicholasturner1/Synaptor.svg?branch=master)](https://travis-ci.com/nicholasturner1/Synaptor) [![PyPI version](https://badge.fury.io/py/synaptor.svg)](https://badge.fury.io/py/synaptor) 
+[![Build Status](https://travis-ci.com/nicholasturner1/Synaptor.svg?branch=master)](https://travis-ci.com/nicholasturner1/Synaptor) [![PyPI version](https://badge.fury.io/py/synaptor.svg)](https://badge.fury.io/py/synaptor) [![](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/download/releases/3.6.0/)
 
 # Synaptor
 A package for processing voxelwise descriptors for connectomics, with a special focus on predictions of synaptic connectivity.
