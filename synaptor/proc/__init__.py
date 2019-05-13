@@ -15,4 +15,3 @@ from . import io
 from . import utils
 
 from . import tasks_w_io
-from . import taskqueue

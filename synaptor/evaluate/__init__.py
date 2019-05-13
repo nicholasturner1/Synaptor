@@ -4,3 +4,4 @@ from . import edge
 from . import gridsearch
 from . import auto
 from . import partnerprox
+from . import diagnostics

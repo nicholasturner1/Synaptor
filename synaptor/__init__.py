@@ -16,4 +16,4 @@ from . import evaluate
 
 from . import io
 
-#from . import diagnostics
+from . import cloud
