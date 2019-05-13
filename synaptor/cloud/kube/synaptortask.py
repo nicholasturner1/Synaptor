@@ -1,14 +1,12 @@
-import shlex
 import subprocess
 
-from taskqueue import RegisteredTask, TaskQueue
+from taskqueue import RegisteredTask
 
 
 class SynaptorTask(RegisteredTask):
     def __init__(self, command_line=""):
         super().__init__(command_line)
         self.cmd = command_line.split(" ")
-        #self.cmd = [shlex.quote(x) for x in shlex.split(command_line)]
 
     def execute(self):
         # Interim solution: Forward the command to the dispatcher.sh, which

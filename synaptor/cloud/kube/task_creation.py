@@ -17,7 +17,7 @@ def tup2str(t):
 
 
 def create_init_db_task(storagestr, hashmax):
-    return [SynaptorTask(f"init_db {storagestr}")]
+    return SynaptorTask(f"init_db {storagestr}")
 
 
 def create_connected_component_tasks(
@@ -101,11 +101,11 @@ def create_match_contins_tasks(
 
 
 def create_seg_graph_cc_task(storagestr, hashmax):
-    return [SynaptorTask(f"seg_graph_ccs {storagestr} {hashmax}")]
+    return SynaptorTask(f"seg_graph_ccs {storagestr} {hashmax}")
 
 
 def create_chunk_seg_map_task(storagestr):
-    return [SynaptorTask(f"chunk_seg_map {storagestr}")]
+    return SynaptorTask(f"chunk_seg_map {storagestr}")
 
 
 def create_merge_seginfo_tasks(
