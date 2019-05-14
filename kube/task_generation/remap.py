@@ -1,6 +1,7 @@
 import argparse
 
 from cloudvolume.lib import Bbox, Vec
+from taskqueue import TaskQueue
 
 import synaptor.cloud.kube.parser as parser
 import synaptor.cloud.kube.task_creation as tc
@@ -10,8 +11,8 @@ def main(configfilename):
 
     config = parser.parse(configfilename)
 
-    startcoord = Vec(config["startcoord"])
-    volshape = Vec(config["vol_shape"])
+    startcoord = Vec(*config["startcoord"])
+    volshape = Vec(*config["vol_shape"])
 
     bounds = Bbox(startcoord, startcoord + volshape)
 
@@ -22,7 +23,7 @@ def main(configfilename):
                    resolution=config["voxelres"])
 
     tq = TaskQueue(config["queueurl"])
-    tq.insert_all(tasks)
+    tq.insert_all(iterator)
 
 
 if __name__ == "__main__":

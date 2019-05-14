@@ -1,5 +1,7 @@
 import argparse
 
+from taskqueue import TaskQueue
+
 import synaptor.cloud.kube.parser as parser
 import synaptor.cloud.kube.task_creation as tc
 
@@ -9,11 +11,11 @@ def main(configfilename):
     config = parser.parse(configfilename)
 
     iterator = tc.create_match_contins_tasks(
-                   config["storagestrs"][0], config["num_merge_jobs"],
+                   config["storagestrs"][0], config["num_merge_tasks"],
                    max_faceshape=config["max_face_shape"])
 
     tq = TaskQueue(config["queueurl"])
-    tq.insert_all(tasks)
+    tq.insert_all(iterator)
 
 
 if __name__ == "__main__":

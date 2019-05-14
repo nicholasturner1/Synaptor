@@ -1,5 +1,7 @@
 import argparse
 
+from taskqueue import TaskQueue
+
 import synaptor.cloud.kube.parser as parser
 import synaptor.cloud.kube.task_creation as tc
 
@@ -10,8 +12,10 @@ def main(configfilename):
 
     task = tc.create_chunk_seg_map_task(config["storagestrs"][0])
 
+    print(task)
+    print(config["storagestrs"][0])
     tq = TaskQueue(config["queueurl"])
-    tq.insert(task)
+    tq.insert_all([task])
 
 
 if __name__ == "__main__":

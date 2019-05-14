@@ -16,7 +16,7 @@ def tup2str(t):
   return " ".join(map(str, t))
 
 
-def create_init_db_task(storagestr, hashmax):
+def create_init_db_task(storagestr):
     return SynaptorTask(f"init_db {storagestr}")
 
 
