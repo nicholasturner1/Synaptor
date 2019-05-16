@@ -15,7 +15,7 @@ Each volume is a path to a volumetric dataset in Neuroglancer Precomputed / Clou
 
 ### Dimensions
 
-* `voxelres` - size of each voxel in arbitrary units (often nanometers)
+* `voxelres` - size of each voxel in arbitrary units (often nanometers) matching each volume specified above
 * `startcoord` - starting voxel coordinate (inclusive) of the bounding box within the descriptor volume that you wish to process
 * `vol_shape` - the size of the processing volume in voxels, the full bounding box can be represented by (`startcoord + vol_shape`)
 * `chunk_shape` - the shape of chunk each chunkwise process should use in voxels
