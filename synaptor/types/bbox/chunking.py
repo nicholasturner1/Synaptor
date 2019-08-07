@@ -1,19 +1,9 @@
-#!/usr/bin/env python3
-from __future__ import unicode_literals
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from builtins import map
-from future import standard_library
-standard_library.install_aliases()
-
 __doc__ = """
 
 Coordinate Chunking Functions
 
-Nicholas Turner <nturner@cs.princeton.edu>, 2018
+Nicholas Turner <nturner@cs.princeton.edu>, 2018-9
 """
-
 
 import itertools
 
@@ -46,11 +36,11 @@ def chunk_bboxes(vol_size, chunk_size, offset=None, mip=0):
     y_bnds = bounds1D(vol_size[1], chunk_size[1])
     z_bnds = bounds1D(vol_size[2], chunk_size[2])
 
-    bboxes = [ bbox.BBox3d(x,y,z)
-               for (x,y,z) in itertools.product(x_bnds, y_bnds, z_bnds) ]
+    bboxes = [bbox.BBox3d(x,y,z)
+              for (x,y,z) in itertools.product(x_bnds, y_bnds, z_bnds) ]
 
     if offset is not None:
-        bboxes = [ bb.translate(offset) for bb in bboxes ]
+        bboxes = [bb.translate(offset) for bb in bboxes]
 
     return bboxes
 
