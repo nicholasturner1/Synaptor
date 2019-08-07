@@ -8,7 +8,7 @@ from .merge_ccs import find_connected_continuations, merge_continuations
 from .merge_ccs import pair_continuation_files, match_continuations
 
 from . import merge_df
-from .merge_df import merge_seginfo_df, enforce_size_threshold
+from .merge_df import merge_seginfo_df, enforce_size_threshold, add_new_ids
 
 from . import misc
 from .misc import expand_id_map

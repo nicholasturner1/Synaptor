@@ -81,7 +81,6 @@ def merge_ccs_task(cont_info_arr, cleft_info_arr,
     cons_cleft_info, chunk_id_maps = timed("Assigning new cleft ids",
                                            seg.merge.assign_unique_ids_serial,
                                            cleft_info_arr)
-    print(cons_cleft_info.columns)
 
     cont_info_arr = timed("Applying chunk_id_maps to continuations",
                           seg.merge.apply_chunk_id_maps,
@@ -95,9 +94,12 @@ def merge_ccs_task(cont_info_arr, cleft_info_arr,
                           seg.merge.update_chunk_id_maps,
                           chunk_id_maps, cont_id_map)
 
+    seg.merge.add_new_ids(cons_cleft_info, cont_id_map,
+                          new_id_colname=cn.dst_id)
+
     cons_cleft_info = timed("Merging cleft dataframes",
-                            seg.merge.merge_seg_df,
-                            cons_cleft_info, cont_id_map)
+                            seg.merge.merge_seginfo_df,
+                            cons_cleft_info, new_id_colname=cn.dst_id)
 
     size_thr_map = timed("Enforcing size threshold over merged ccs",
                          seg.merge.enforce_size_threshold,

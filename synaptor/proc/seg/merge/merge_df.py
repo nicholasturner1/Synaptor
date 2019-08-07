@@ -6,6 +6,10 @@ import pandas as pd
 from ... import colnames as cn
 
 
+def add_new_ids(seginfo_df, mapping, new_id_colname="new_ids"):
+    seginfo_df[new_id_colname] = seginfo_df.index.map(mapping)
+
+
 def merge_seginfo_df(seginfo_df, new_id_colname="new_ids"):
 
     seginfo_df = seginfo_df.reset_index()
