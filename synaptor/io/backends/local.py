@@ -79,7 +79,7 @@ def read_h5(fname, dset_name="/main"):
     """ Read a specific dataset from an hdf5. """
     assert os.path.isfile(fname), "File {} doesn't exist".format(fname)
     with h5py.File(fname) as f:
-        return f[dset_name].value
+        return f[dset_name][()]
 
 
 def write_h5(data, fname, dset_name="/main", chunk_size=None):
