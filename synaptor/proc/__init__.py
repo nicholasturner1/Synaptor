@@ -10,6 +10,7 @@ from .tasks import merge_ccs_task
 from .tasks import edge_task
 from .tasks import merge_edges_task
 from .tasks import remap_ids_task
+from .tasks import overlap_task
 
 from . import io
 from . import utils

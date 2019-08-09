@@ -7,7 +7,7 @@ from . import describe
 from . import _relabel
 
 
-def count_overlaps(seg1, seg2):
+def count_overlaps(seg1, seg2, orig_ids=False):
     """
     Computing an overlap matrix,
 
@@ -32,8 +32,8 @@ def count_overlaps(seg1, seg2):
 
     overlap_mask = np.logical_and(seg1 != 0, seg2 != 0)
 
-    n_rows = seg1_ids.size
-    n_cols = seg2_ids.size
+    n_rows = seg1_ids.max() + 1 if orig_ids else seg1_ids.size
+    n_cols = seg2_ids.max() + 1 if orig_ids else seg2_ids.size
 
     seg1_vals = seg1[overlap_mask]
     seg2_vals = seg2[overlap_mask]
@@ -42,9 +42,13 @@ def count_overlaps(seg1, seg2):
 
     rs, cs, vs = [], [], []
     for ((r, c), v) in counts.items():
-        # subtracting one from indices so val 1 -> index 0
-        rs.append(seg1_index[r])
-        cs.append(seg2_index[c])
+        if orig_ids:
+            rs.append(r)
+            cs.append(c)
+        else:
+            # subtracting one from indices so val 1 -> index 0
+            rs.append(seg1_index[r])
+            cs.append(seg2_index[c])
         vs.append(v)
 
     overlap_mat = sparse.coo_matrix((vs, (rs, cs)), shape=(n_rows, n_cols))
@@ -77,5 +81,5 @@ def split_by_overlap(seg_to_split, overlap_seg, copy=True):
     if copy:
         seg_to_split = np.copy(seg_to_split)
 
-    return _relabel.relabel_paired_data(seg_to_split,
-                                          overlap_seg, dict_of_dicts)
+    return _relabel.relabel_paired_data(
+               seg_to_split, overlap_seg, dict_of_dicts)

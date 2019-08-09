@@ -41,6 +41,7 @@ dst_id_hash = "dst_id_hash"
 
 
 # Overlap tables
+ovl_segid = "max_overlap"
 rows = "row_id"
 cols = "col_id"
 vals = "vals"

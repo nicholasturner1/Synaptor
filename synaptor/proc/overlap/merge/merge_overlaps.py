@@ -4,6 +4,22 @@
 import numpy as np
 import scipy.sparse as sp
 
+from .. import overlap
+
+
+def apply_chunk_id_maps(overlap_arr, chunk_id_maps):
+    """
+    Applies id maps to each overlap matrix, returns a combined overlap mat
+    """
+    rs, cs, vs = list(), list(), list()
+    for (overlap, id_map) in zip(overlap_arr.flat, chunk_id_maps.flat):
+        for (r, c, v) in zip(overlap.row, overlap.col, overlap.data):
+            rs.append(id_map[r])
+            cs.append(c)
+            vs.append(v)
+
+    return sp.coo_matrix((vs, (rs, cs)))
+
 
 def consolidate_overlaps(overlap_mat_arr, dtype=np.uint32):
 
@@ -42,15 +58,3 @@ def expand_mat(full_mat, new_mat, first_row):
     r1[first_row:last_row] = r2
     c1[first_row:last_row] = c2
     v1[first_row:last_row] = v2
-
-
-def find_max_overlaps(overlap_mat):
-
-    maxima = {}
-    max_overlaps = {}
-    for (i, j, v) in zip(overlap_mat.row, overlap_mat.col, overlap_mat.data):
-        if (i not in maxima) or (v > maxima[i]):
-            maxima[i] = v
-            max_overlaps[i] = j
-
-    return max_overlaps

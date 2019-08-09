@@ -5,6 +5,7 @@ import numpy as np
 
 from .. import continuation
 from ... import utils
+from ... import colnames as cn
 
 
 def pair_continuation_files(contin_files):
@@ -31,15 +32,38 @@ def pair_continuation_files(contin_files):
     return unique_files
 
 
-def merge_continuations(continuation_arr, max_face_shape=(1152, 1152)):
+def merge_continuations(continuation_arr, overlap_df=None,
+                        max_face_shape=(1152, 1152), overlap_col=cn.ovl_segid):
     """
     Finds an id mapping to merge the continuations which match across faces
     """
     matches = find_connected_continuations(continuation_arr,
                                            max_face_shape=max_face_shape)
+
+    if overlap_df is not None:
+        matches = filter_matches_by_overlap(
+                      matches, overlap_df, overlap_col=overlap_col)
+
     ccs = utils.find_connected_components(matches)
 
     return utils.make_id_map(ccs)
+
+
+def filter_matches_by_overlap(matches, overlap_df,
+                              segid_col=cn.seg_id, overlap_col=cn.ovl_segid):
+    """
+    Filters component matches by their overlapping base seg id. Assumes that
+    each row has only one overlap entry.
+    """
+    if overlap_df.index.name == segid_col:
+        overlap_dict = dict(zip(overlap_df.index,
+                                overlap_df[overlap_col]))
+    else:
+        assert segid_col in overlap_df.columns, "column {segid_col} not found"
+        overlap_dict = dict(zip(overlap_df[segid_col],
+                                overlap_df[overlap_col]))
+
+    return [m for m in matches if overlap_dict[m[0]] == overlap_dict[m[1]]]
 
 
 def find_connected_continuations(continuation_arr,

@@ -3,17 +3,30 @@
 
 import numpy as np
 from scipy import ndimage
+import cc3d
 
 from ... import seg_utils
 
 
-def connected_components(d, thresh=0, dtype=np.uint32):
+def connected_components(d, thresh=0, overlap_seg=None, dtype=np.uint32):
     """
     Performs basic connected components on network
     output given a threshold value. Returns the components
     as a desired datatype (default: np.uint32)
     """
-    return ndimage.label(d > thresh)[0].astype(dtype)
+    mask = d > thresh
+
+    if overlap_seg is None:
+        # C-order speeds up continuation extraction by a LOT
+        mask = np.ascontiguousarray(mask)
+        return cc3d.connected_components(mask, connectivity=6).astype(dtype)
+
+    else:
+        temp = np.zeros(d.shape, dtype=overlap_seg.dtype, order='C')
+        temp[mask] = overlap_seg[mask]
+
+        return cc3d.connected_components(temp, connectivity=6).astype(dtype)
+
 
 
 def dilated_components(output, dil_param, cc_thresh):

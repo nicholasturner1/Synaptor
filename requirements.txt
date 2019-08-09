@@ -12,3 +12,4 @@ pybind11>=2.2
 psycopg2-binary
 sqlalchemy
 pytest
+connected-components-3d

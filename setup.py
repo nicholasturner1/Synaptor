@@ -114,7 +114,8 @@ setup(
     install_requires=['numpy', 'scipy', 'python-igraph', 'pandas', 'h5py',
                       'cloud-volume', 'task-queue', 'torch==1.0.1',
                       'torchvision', 'future', 'pybind11>=2.2',
-                      'psycopg2-binary', 'sqlalchemy', 'pytest'],
+                      'psycopg2-binary', 'sqlalchemy', 'pytest',
+                      'connected-components-3d'],
     cmdclass={'build_ext': BuildExt},
     zip_safe=False
 )

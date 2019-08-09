@@ -23,7 +23,8 @@ def timed(fn_desc, fn, *args, **kwargs):
     return result
 
 
-def cc_task(desc_vol, cc_thresh, sz_thresh, offset=(0, 0, 0)):
+def cc_task(desc_vol, cc_thresh, sz_thresh,
+            offset=(0, 0, 0), overlap_seg=None):
     """
     - Performs connected components over a data description volume
     - Extracts segments that possibly continue
@@ -39,7 +40,7 @@ def cc_task(desc_vol, cc_thresh, sz_thresh, offset=(0, 0, 0)):
     """
     ccs = timed("Running connected components",
                 seg.connected_components,
-                desc_vol, cc_thresh)
+                desc_vol, cc_thresh, overlap_seg=overlap_seg)
 
     continuations, cont_ids = timed("Extracting continuations",
                                     seg.continuation.extract_all_continuations,
@@ -56,15 +57,20 @@ def cc_task(desc_vol, cc_thresh, sz_thresh, offset=(0, 0, 0)):
                    seg_utils.bounding_boxes,
                    ccs, offset=offset)
 
-    cleft_info = timed("Making seg info DataFrame",
-                       seg.make_seg_info_dframe,
-                       centers, sizes, bboxes)
+    seg_info = timed("Making seg info DataFrame",
+                     seg.make_seg_info_dframe,
+                     centers, sizes, bboxes)
 
-    return ccs, continuations, cleft_info
+    if overlap_seg is not None:
+        seg_info = timed("Adding overlapping seg to DataFrame",
+                         overlap.add_overlapping_seg,
+                         seg_info, ccs, overlap_seg)
+
+    return ccs, continuations, seg_info
 
 
 def merge_ccs_task(cont_info_arr, cleft_info_arr,
-                   size_thr, max_face_shape):
+                   size_thr, max_face_shape, enforce_overlaps=False):
     """
     -Assigns a global set of cleft segment ids
     -Finds which continuations match across chunks
@@ -88,12 +94,16 @@ def merge_ccs_task(cont_info_arr, cleft_info_arr,
 
     cont_id_map = timed("Merging connected continuations",
                         seg.merge.merge_continuations,
-                        cont_info_arr, max_face_shape)
+                        cont_info_arr, max_face_shape=max_face_shape,
+                        overlap_df=(cons_cleft_info
+                                    if enforce_overlaps
+                                    else None))
 
     chunk_id_maps = timed("Updating chunk id maps",
                           seg.merge.update_chunk_id_maps,
                           chunk_id_maps, cont_id_map)
 
+    # Adding the mapped ids to the dataframe
     seg.merge.add_new_ids(cons_cleft_info, cont_id_map,
                           new_id_colname=cn.dst_id)
 
@@ -267,14 +277,14 @@ def merge_edges_task(edge_info, cleft_info, voxel_res,
     return full_df, merged_id_map, merged_edge_info
 
 
-def chunk_overlaps_task(segs, base_segs):
+def overlap_task(segs, base_segs, orig_ids=True):
     """
     Determines the overlap matrix between segments of interest overlap with
     a base segmentation
     """
     return timed("Counting overlaps",
                  overlap.count_overlaps,
-                 segs, base_segs)
+                 segs, base_segs, orig_ids=True)
 
 
 def merge_overlaps_task(overlaps_arr):
@@ -287,7 +297,7 @@ def merge_overlaps_task(overlaps_arr):
                          overlaps_arr)
 
     return timed("Finding segments with maximal overlap",
-                 overlap.merge.find_max_overlaps,
+                 overlap.find_max_overlaps,
                  full_overlap)
 
 
