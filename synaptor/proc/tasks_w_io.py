@@ -18,14 +18,14 @@ from . import edge
 from . import colnames as cn
 
 
-def cc_task(desc_cvname, seg_cvname, proc_url,
+def cc_task(desc_cvname, seg_cvname, storagestr,
             cc_thresh, sz_thresh, chunk_begin, chunk_end,
-            mip=0, parallel=1, proc_dir=None, hashmax=100,
+            mip=0, parallel=1, storagedir=None, hashmax=100,
             timing_tag=None):
 
     start_time = time.time()
 
-    proc_dir = proc_url if proc_dir is None else proc_dir
+    storagedir = storagestr if storagedir is None else storagedir
     chunk_bounds = types.BBox3d(chunk_begin, chunk_end)
 
     desc_vol = timed(f"Reading network output chunk: {chunk_bounds}",
@@ -37,9 +37,6 @@ def cc_task(desc_cvname, seg_cvname, proc_url,
                                                  cc_thresh, sz_thresh,
                                                  offset=chunk_begin)
 
-    face_hashes = seg.hash_chunk_faces(chunk_begin, chunk_end,
-                                       maxval=hashmax)
-
     timed(f"Writing seg chunk: {chunk_bounds}",
           io.write_cloud_volume_chunk,
           ccs, seg_cvname, chunk_bounds,
@@ -47,25 +44,40 @@ def cc_task(desc_cvname, seg_cvname, proc_url,
 
     timed("Writing chunk_continuations",
           taskio.write_chunk_continuations,
-          continuations, proc_dir, chunk_bounds)
+          continuations, storagedir, chunk_bounds)
 
-    fhash_df, fhash_tablename = timed("Formatting chunk face hashes",
-                                      taskio.prep_face_hashes,
-                                      face_hashes, chunk_bounds, proc_dir)
+    # Adding this ugly branch bc the outputs need to be handled
+    #  a bit diffeently here (see note below)
+    if io.is_db_url(storagestr):
+        face_hashes = seg.hash_chunk_faces(chunk_begin, chunk_end,
+                                           maxval=hashmax)
 
-    seginfo_df, seginfo_tablename = timed("Formatting segment info",
-                                          taskio.prep_chunk_seg_info,
-                                          seg_info, chunk_bounds)
+        fhash_df, fhash_tablename = timed("Formatting chunk face hashes",
+                                          taskio.prep_face_hashes,
+                                          face_hashes, chunk_bounds,
+                                          storagedir)
 
-    timed("Writing results to database",
-          io.write_db_dframes,
-          [fhash_df, seginfo_df], proc_url,
-          [fhash_tablename, seginfo_tablename])
+        seginfo_df, seginfo_tablename = timed("Formatting segment info",
+                                              taskio.prep_chunk_seg_info,
+                                              seg_info, chunk_bounds)
+
+        # NOTE: need to send these as a transaction. Otherwise,
+        #  you can create "phantom" segments in the database that don't
+        #  really exist. This creates further problems later.
+        timed("Writing results to the database",
+              taskio.write_db_dframes,
+              [fhash_df, seginfo_df], storagestr,
+              [fhash_tablename, seginfo_tablename])
+
+    else:  # file storage backend
+        timed("Writing seg info to storage",
+              taskio.write_chunk_seg_info,
+              seg_info, storagestr, chunk_bounds)
 
     if timing_tag is not None:
         timed("Writing total task time",
               taskio.write_task_timing,
-              time.time() - start_time, "ccs", timing_tag, proc_url)
+              time.time() - start_time, "ccs", timing_tag, storagestr)
 
 
 def merge_ccs_task(proc_url, size_thr, max_face_shape, timing_tag=None):

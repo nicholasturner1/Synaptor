@@ -216,12 +216,49 @@ def prep_face_hashes(face_hashes, chunk_bounds, proc_dir):
     return to_write, TABLENAME
 
 
-def read_all_continuations(proc_url):
+def read_all_continuations(storagestr):
     """
     Reads all of the continuation files from a processing directory
-    NOT IMPLEMENTED
     """
-    pass
+    assert not io.is_db_url(storagestr), "not implemented for database backend"
+
+    contin_dir = os.path.join(storagestr, fn.contin_dirname)
+    filenames = io.pull_directory(contin_dir)
+    assert len(filenames) > 0, "No filenames returned"
+
+    chunk_to_files = collect_faces(filenames)
+    chunk_to_continuations = read_files_per_chunk(chunk_to_files)
+
+    info_arr = io.utils.make_info_arr(chunk_to_continuations)
+    return info_arr, os.path.dirname(filenames[0])
+
+
+def collect_faces(filenames):
+    """Groups a set of filenames by the chunks that they describe"""
+    chunk_to_files = dict()
+    for f in filenames:
+        start = io.bbox_from_fname(f).min()
+        chunk_to_files[start] = chunk_to_files.get(start, []) + [f]
+
+    return chunk_to_files
+
+
+def read_files_per_chunk(chunk_to_files):
+    """
+    Takes a map from keys to filenames as input. Returns the
+    same set of keys mapping to the contents of each file
+    """
+    chunk_to_conts = dict()
+
+    for (start, fs) in chunk_to_files.items():
+        conts = dict()
+        for f in fs:
+            face = face_from_filename(f)
+            conts[face] = _read_face_file(f)
+
+        chunk_to_conts[start] = conts
+
+    return chunk_to_conts
 
 
 def read_continuation_graph(proc_url):
