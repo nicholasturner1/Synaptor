@@ -21,13 +21,13 @@ def create_init_db_task(storagestr):
 
 
 def create_connected_component_tasks(
-    outpath, cleftpath, proc_url, proc_dir,
+    descpath, segpath, storagestr, storagedir,
     cc_thresh, sz_thresh, bounds, shape,
     mip=(8, 8, 40), parallel=1, hashmax=1):
 
     shape = Vec(*shape)
 
-    vol = CloudVolume(cleftpath, mip=mip)
+    vol = CloudVolume(segpath, mip=mip)
     # bounds = vol.bbox_to_mip(bounds, mip=0, to_mip=mip)
     bounds = Bbox.clamp(bounds, vol.bounds)
 
@@ -58,13 +58,11 @@ def create_connected_component_tasks(
           chunk_end = tup2str(task_bounds.maxpt)
           mip_str = tup2str(mip)
 
-          cmd = f"""
-            chunk_ccs {outpath} {cleftpath} {proc_url} \
-              {cc_thresh} {sz_thresh} \
-              --chunk_begin {chunk_begin} --chunk_end {chunk_end} \
-              --proc_dir {proc_dir} --hashmax {hashmax} \
-              --parallel {parallel} --mip {mip_str}
-            """.strip()
+          cmd = (f"chunk_ccs {descpath} {segpath} {proc_url}"
+                 f" {cc_thresh} {sz_thresh} --chunk_begin {chunk_begin}"
+                 f" --chunk_end {chunk_end} --hashmax {hashmax}"
+                 f" --parallel {parallel} --mip {mip_str}"
+                 f" --storagedir {storagedir}")
 
           yield SynaptorTask(cmd)
 
@@ -294,7 +292,7 @@ def create_remap_tasks(
 
                 cmd = (f"remap_ids {cleftpath} {cleftoutpath} {storagestr}"
                        f" --chunk_begin {chunk_begin} --chunk_end {chunk_end}"
-                       f" --dup_map_proc_url {dupstoragestr} --mip {res_str}")
+                       f" --dup_map_storagestr {dupstoragestr} --mip {res_str}")
 
                 yield SynaptorTask(cmd)
 
@@ -308,7 +306,7 @@ def create_overlap_tasks(
 
     shape = Vec(*shape)
 
-    vol = CloudVolume(cleftpath, mip=mip)
+    vol = CloudVolume(segpath, mip=mip)
     # bounds = vol.bbox_to_mip(bounds, mip=0, to_mip=mip)
     bounds = Bbox.clamp(bounds, vol.bounds)
 
@@ -339,11 +337,9 @@ def create_overlap_tasks(
           chunk_end = tup2str(task_bounds.maxpt)
           mip_str = tup2str(mip)
 
-          cmd = f"""
-            chunk_overlaps {segpath} {base_segpath} {storagestr} \
-              --chunk_begin {chunk_begin} --chunk_end {chunk_end} \
-              --parallel {parallel} --mip {mip_str}
-            """.strip()
+          cmd = (f"chunk_overlaps {segpath} {base_segpath} {storagestr}"
+                 f" --chunk_begin {chunk_begin} --chunk_end {chunk_end}"
+                 f" --parallel {parallel} --mip {mip_str}")
 
           yield SynaptorTask(cmd)
 

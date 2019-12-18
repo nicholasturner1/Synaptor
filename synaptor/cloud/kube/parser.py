@@ -42,7 +42,7 @@ def parse_tuple(field):
 
 
 def infer_max_face_shape(chunk_shape):
-    return tuple(sorted(chunk_shape)[:2])
+    return tuple(sorted(chunk_shape)[1:])
 
 
 def get_storagestrs(parser):

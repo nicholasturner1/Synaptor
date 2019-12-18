@@ -13,7 +13,7 @@ def main(configfilename):
     iterator = tc.create_merge_overlaps_task(config["storagestrs"][0])
 
     tq = TaskQueue(config["queueurl"])
-    tq.insert_all(iterator)
+    tq.insert_all([iterator])
 
 
 if __name__ == "__main__":
