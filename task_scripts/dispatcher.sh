@@ -2,6 +2,7 @@
 
 case $1 in
     chunk_ccs)        python3 -u chunk_ccs.py ${@:2} ;;
+    merge_ccs)        python3 -u merge_ccs.py ${@:2} ;;
     match_contins)    python3 -u match_contins.py ${@:2} ;;
     seg_graph_ccs)    python3 -u seg_graph_ccs.py ${@:2} ;;
     chunk_seg_map)    python3 -u chunk_seg_map.py ${@:2} ;;
