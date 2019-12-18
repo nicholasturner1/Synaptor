@@ -26,4 +26,4 @@ args = parser.parse_args()
 print(vars(args))
 
 
-s.proc_tasks.tasks_w_io.merge_ccs_task(**vars(args))
+s.proc.tasks_w_io.merge_ccs_task(**vars(args))

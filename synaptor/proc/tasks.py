@@ -284,7 +284,7 @@ def overlap_task(segs, base_segs, orig_ids=True):
     """
     return timed("Counting overlaps",
                  overlap.count_overlaps,
-                 segs, base_segs, orig_ids=True)
+                 segs, base_segs, orig_ids=True)[0]
 
 
 def merge_overlaps_task(overlaps_arr):

@@ -35,4 +35,4 @@ args.seg_mip = mip_or_res(args.seg_mip)
 print(vars(args))
 
 
-s.proc_tasks.tasks_w_io.anchor_task(**vars(args))
+s.proc.tasks_w_io.anchor_task(**vars(args))

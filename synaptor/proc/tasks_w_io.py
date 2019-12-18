@@ -80,17 +80,17 @@ def cc_task(desc_cvname, seg_cvname, storagestr,
               time.time() - start_time, "ccs", timing_tag, storagestr)
 
 
-def merge_ccs_task(storagedir, size_thr, max_face_shape, timing_tag=None):
+def merge_ccs_task(storagestr, size_thr, max_face_shape, timing_tag=None):
 
     start_time = time.time()
 
     cont_info_arr, _ = timed("Reading continuations",
                              taskio.read_all_continuations,
-                             storagedir)
+                             storagestr)
 
     cleft_info_arr, local_dir = timed("Reading cleft infos",
                                       taskio.read_all_chunk_seg_infos,
-                                      storagedir)
+                                      storagestr)
 
     chunk_bounds = io.extract_sorted_bboxes(local_dir)
 
@@ -102,16 +102,16 @@ def merge_ccs_task(storagedir, size_thr, max_face_shape, timing_tag=None):
 
     timed("Writing merged cleft info",
           taskio.write_merged_seg_info,
-          cons_cleft_info, storagedir)
+          cons_cleft_info, storagestr)
 
     timed("Writing chunk id maps",
           taskio.write_chunk_id_maps,
-          chunk_id_maps, chunk_bounds, storagedir)
+          chunk_id_maps, chunk_bounds, storagestr)
 
     if timing_tag is not None:
         timed("Writing total task time",
               taskio.write_task_timing,
-              time.time() - start_time, "merge_ccs", timing_tag, storagedir)
+              time.time() - start_time, "merge_ccs", timing_tag, storagestr)
 
 
 def match_continuations_task(storagestr, facehash, max_face_shape=(1024, 1024),
@@ -430,10 +430,10 @@ def merge_duplicates_task(voxel_res, dist_thr, size_thr,
               time.time() - start_time, "merge_dups", timing_tag, src_proc_url)
 
 
-def chunk_overlaps_task(seg_cvname, base_seg_cvname,
-                        chunk_begin, chunk_end,
-                        storagedir, mip=0, seg_mip=None,
-                        parallel=1, timing_tag=None):
+def overlap_task(seg_cvname, base_seg_cvname,
+                 chunk_begin, chunk_end,
+                 storagedir, mip=0, seg_mip=None,
+                 parallel=1, timing_tag=None):
 
     start_time = time.time()
 
@@ -451,7 +451,7 @@ def chunk_overlaps_task(seg_cvname, base_seg_cvname,
                            base_seg_cvname, chunk_bounds,
                            mip=seg_mip, parallel=parallel)
 
-    overlap_matrix = tasks.chunk_overlaps_task(seg_chunk, base_seg_chunk)
+    overlap_matrix = tasks.overlap_task(seg_chunk, base_seg_chunk)
 
     timed("Writing overlap matrix",
           taskio.write_chunk_overlap_mat,

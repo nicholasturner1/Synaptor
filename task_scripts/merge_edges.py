@@ -20,6 +20,6 @@ args = parser.parse_args()
 print(vars(args))
 
 if s.io.is_db_url(args.storagestr):
-    s.proc_tasks.tasks_w_io.consolidate_edges_db_task(**vars(args))
+    s.proc.tasks_w_io.consolidate_edges_db_task(**vars(args))
 else:
-    s.proc_tasks.tasks_w_io.consolidate_edges_task(**vars(args))
+    s.proc.tasks_w_io.consolidate_edges_task(**vars(args))

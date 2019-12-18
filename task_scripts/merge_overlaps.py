@@ -11,7 +11,7 @@ import argparse
 parser = argparse.ArgumentParser()
 
 # Inputs & Outputs
-parser.add_argument("storagedir")
+parser.add_argument("storagestr")
 
 parser.add_argument("--timing_tag", default=None)
 
@@ -20,4 +20,4 @@ args = parser.parse_args()
 print(vars(args))
 
 
-s.proc_tasks.tasks_w_io.merge_overlaps_task(**vars(args))
+s.proc.tasks_w_io.merge_overlaps_task(**vars(args))

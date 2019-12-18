@@ -39,7 +39,9 @@ def write_chunk_overlap_mat(overlap_mat, chunk_bounds, proc_url):
     chunk_tag = io.fname_chunk_tag(chunk_bounds)
 
     rs, cs, vs = sp.find(overlap_mat)
-    df = pd.DataFrame(dict(rows=rs, cols=cs, vals=vs))
+    df = pd.DataFrame({cn.rows:rs,
+                       cn.cols:cs,
+                       cn.vals:vs})
 
     if io.is_db_url(proc_url):
         df[cn.chunk_tag] = chunk_tag
@@ -136,7 +138,10 @@ def write_max_overlaps(max_overlaps, proc_url):
     UNFINISHED - will revisit after testing other tasks
     """
     rs, cs, vs = sp.find(max_overlaps)
-    df = pd.DataFrame(pd.Series(max_overlaps), columns=["max_overlap"])
+    df = pd.DataFrame({cn.rows:rs,
+                       cn.cols:cs,
+                       cn.vals:vs})
+
     if io.is_db_url(proc_url):
         io.write_db_dframe(df, proc_url, "max_overlaps")
 

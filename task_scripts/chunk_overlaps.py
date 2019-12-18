@@ -1,5 +1,5 @@
 """
-Chunk Overlaps Wrapper Script
+Overlap Wrapper Script
 
 Determines which segments of interest overlap with
 base segs
@@ -36,4 +36,4 @@ args.seg_mip = mip_or_res(args.seg_mip)
 print(vars(args))
 
 
-s.proc_tasks.tasks_w_io.chunk_overlaps_task(**vars(args))
+s.proc.tasks_w_io.overlap_task(**vars(args))
