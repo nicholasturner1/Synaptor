@@ -14,6 +14,7 @@ def parse(filename):
     conf["descriptor"] = parser.get("Volumes", "descriptor")
     conf["temp_output"] = parser.get("Volumes", "temp_output")
     conf["output"] = parser.get("Volumes", "output")
+    conf["base_seg"] = parser.get("Volumes", "base_seg")
 
     conf["voxelres"] = parse_tuple(parser.get("Dimensions", "voxelres"))
     conf["startcoord"] = parse_tuple(parser.get("Dimensions", "startcoord"))

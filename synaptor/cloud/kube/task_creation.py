@@ -72,6 +72,13 @@ def create_connected_component_tasks(
     return ConnectedComponentsTaskIterator(0, level_end)
 
 
+def create_merge_ccs_task(
+    storagestr, size_thr, max_face_shape, timingtag=None):
+    return SynaptorTask(f"merge_ccs {storagestr} {size_thr} "
+                        f"--max_face_shape "
+                        f"{max_face_shape[0]} {max_face_shape[1]}")
+
+
 def create_match_contins_tasks(
     storagestr, hashmax, max_faceshape, timingtag=None):
 
@@ -293,3 +300,56 @@ def create_remap_tasks(
 
     level_end = int(math.ceil(bounds.size3().z / shape.z))
     return RemapTaskIterator(0, level_end)
+
+
+def create_overlap_tasks(
+    segpath, base_segpath, storagestr,
+    bounds, shape, mip=(8, 8, 40), parallel=1):
+
+    shape = Vec(*shape)
+
+    vol = CloudVolume(cleftpath, mip=mip)
+    # bounds = vol.bbox_to_mip(bounds, mip=0, to_mip=mip)
+    bounds = Bbox.clamp(bounds, vol.bounds)
+
+    class OverlapTaskIterator(object):
+      def __init__(self, level_start, level_end):
+        self.level_start = level_start
+        self.level_end = level_end
+      def __len__(self):
+        return self.level_end - self.level_start
+      def __getitem__(self, slc):
+        itr = copy.deepcopy(self)
+        itr.level_start = self.level_start + slc.start
+        itr.level_end = self.level_start + slc.stop
+        return itr
+      def __iter__(self):
+        self.bounds = bounds.clone()
+        self.bounds.minpt.z = bounds.minpt.z + self.level_start * shape.z
+        self.bounds.maxpt.z = bounds.minpt.z + self.level_end * shape.z
+
+        for startpt in xyzrange( self.bounds.minpt, self.bounds.maxpt, shape ):
+          task_shape = min2(shape.clone(), self.bounds.maxpt - startpt)
+
+          task_bounds = Bbox( startpt, startpt + task_shape )
+          if task_bounds.volume() < 1:
+            continue
+
+          chunk_begin = tup2str(task_bounds.minpt)
+          chunk_end = tup2str(task_bounds.maxpt)
+          mip_str = tup2str(mip)
+
+          cmd = f"""
+            chunk_overlaps {segpath} {base_segpath} {storagestr} \
+              --chunk_begin {chunk_begin} --chunk_end {chunk_end} \
+              --parallel {parallel} --mip {mip_str}
+            """.strip()
+
+          yield SynaptorTask(cmd)
+
+    level_end = int(math.ceil(bounds.size3().z / shape.z))
+    return OverlapTaskIterator(0, level_end)
+
+
+def create_merge_overlaps_task(storagestr):
+    return SynaptorTask(f"merge_overlaps {storagestr}")
