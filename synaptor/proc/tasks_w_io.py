@@ -80,17 +80,17 @@ def cc_task(desc_cvname, seg_cvname, storagestr,
               time.time() - start_time, "ccs", timing_tag, storagestr)
 
 
-def merge_ccs_task(proc_url, size_thr, max_face_shape, timing_tag=None):
+def merge_ccs_task(storagedir, size_thr, max_face_shape, timing_tag=None):
 
     start_time = time.time()
 
     cont_info_arr, _ = timed("Reading continuations",
                              taskio.read_all_continuations,
-                             proc_url)
+                             storagedir)
 
     cleft_info_arr, local_dir = timed("Reading cleft infos",
                                       taskio.read_all_chunk_seg_infos,
-                                      proc_url)
+                                      storagedir)
 
     chunk_bounds = io.extract_sorted_bboxes(local_dir)
 
@@ -102,16 +102,16 @@ def merge_ccs_task(proc_url, size_thr, max_face_shape, timing_tag=None):
 
     timed("Writing merged cleft info",
           taskio.write_merged_seg_info,
-          cons_cleft_info, proc_url)
+          cons_cleft_info, storagedir)
 
     timed("Writing chunk id maps",
           taskio.write_chunk_id_maps,
-          chunk_id_maps, chunk_bounds, proc_url)
+          chunk_id_maps, chunk_bounds, storagedir)
 
     if timing_tag is not None:
         timed("Writing total task time",
               taskio.write_task_timing,
-              time.time() - start_time, "merge_ccs", timing_tag, proc_url)
+              time.time() - start_time, "merge_ccs", timing_tag, storagedir)
 
 
 def match_continuations_task(proc_url, facehash, max_face_shape=(1024, 1024),
@@ -428,7 +428,7 @@ def merge_duplicates_task(voxel_res, dist_thr, size_thr,
 
 def chunk_overlaps_task(seg_cvname, base_seg_cvname,
                         chunk_begin, chunk_end,
-                        proc_url, mip=0, seg_mip=None,
+                        storagedir, mip=0, seg_mip=None,
                         parallel=1, timing_tag=None):
 
     start_time = time.time()
@@ -451,41 +451,44 @@ def chunk_overlaps_task(seg_cvname, base_seg_cvname,
 
     timed("Writing overlap matrix",
           taskio.write_chunk_overlap_mat,
-          overlap_matrix, chunk_bounds, proc_url)
+          overlap_matrix, chunk_bounds, storagedir)
 
     if timing_tag is not None:
         timed("Writing total task time",
               taskio.write_task_timing,
-              time.time() - start_time, "chunk_overlap", timing_tag, proc_url)
+              time.time() - start_time, "chunk_overlap",
+              timing_tag, storagedir)
 
 
-def merge_overlaps_task(proc_url, timing_tag=None):
+def merge_overlaps_task(storagedir, timing_tag=None):
 
     start_time = time.time()
 
     overlap_arr = timed("Reading overlap matrices",
                         taskio.read_all_overlap_mats,
-                        proc_url)
+                        storagedir)
 
     max_overlaps = tasks.merge_overlaps_task(overlap_arr)
 
     timed("Writing max overlaps",
           taskio.write_max_overlaps,
-          max_overlaps, proc_url)
+          max_overlaps, storagedir)
 
     if timing_tag is not None:
         timed("Writing total task time",
               taskio.write_task_timing,
-              time.time() - start_time, "merge_overlap", timing_tag, proc_url)
+              time.time() - start_time, "merge_overlap",
+              timing_tag, storagedir)
 
 
 def remap_ids_task(seg_in_cvname, seg_out_cvname,
-                   chunk_begin, chunk_end, proc_url,
-                   dup_map_proc_url=None,
+                   chunk_begin, chunk_end, storagestr,
+                   dup_map_storagestr=None,
                    mip=0, parallel=1, timing_tag=None):
 
-    dup_map_proc_url = (proc_url
-                        if dup_map_proc_url is None else dup_map_proc_url)
+    dup_map_storagestr = (storagestr
+                          if dup_map_proc_url is None
+                          else dup_map_storagestr)
 
     start_time = time.time()
 
@@ -493,11 +496,11 @@ def remap_ids_task(seg_in_cvname, seg_out_cvname,
 
     chunk_id_map = timed("Reading chunk id map",
                          taskio.read_chunk_id_map,
-                         proc_url, chunk_bounds)
+                         storagestr, chunk_bounds)
 
     dup_id_map = timed("Reading duplicate id map",
                        taskio.read_dup_id_map,
-                       dup_map_proc_url)
+                       dup_map_storagestr)
 
     seg = timed("Reading cleft chunk",
                 io.read_cloud_volume_chunk,
@@ -514,7 +517,7 @@ def remap_ids_task(seg_in_cvname, seg_out_cvname,
     if timing_tag is not None:
         timed("Writing total task time",
               taskio.write_task_timing,
-              time.time() - start_time, "remap", timing_tag, proc_url)
+              time.time() - start_time, "remap", timing_tag, storagestr)
 
 
 def anchor_task(cleft_cvname, seg_cvname, proc_url,

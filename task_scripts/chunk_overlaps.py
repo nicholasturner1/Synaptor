@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-__doc__ = """
+"""
 Chunk Overlaps Wrapper Script
 
 Determines which segments of interest overlap with
@@ -16,7 +15,7 @@ parser = argparse.ArgumentParser()
 # Inputs & Outputs
 parser.add_argument("seg_cvname")
 parser.add_argument("base_seg_cvname")
-parser.add_argument("proc_dir_path")
+parser.add_argument("storagedir")
 
 # Processing Parameters
 parser.add_argument("--chunk_begin", nargs="+", type=int, required=True)

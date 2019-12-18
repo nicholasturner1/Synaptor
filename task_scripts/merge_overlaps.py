@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-__doc__ = """
+"""
 Merge Edges Wrapper Script
 
 Merges overlap matrices together
@@ -12,7 +11,7 @@ import argparse
 parser = argparse.ArgumentParser()
 
 # Inputs & Outputs
-parser.add_argument("proc_dir_path")
+parser.add_argument("storagedir")
 
 parser.add_argument("--timing_tag", default=None)
 

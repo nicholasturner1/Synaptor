@@ -17,8 +17,8 @@ parser = argparse.ArgumentParser()
 # Input & Outputs
 parser.add_argument("desc_cvname")
 parser.add_argument("seg_cvname")
-parser.add_argument("proc_url")
-parser.add_argument("--proc_dir", default=None, help="file storage dir")
+parser.add_argument("storagestr")
+parser.add_argument("--storagedir", default=None, help="file storage dir")
 
 # Processing Parameters
 parser.add_argument("cc_thresh", type=float)

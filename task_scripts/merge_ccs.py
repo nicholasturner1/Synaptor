@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-__doc__ = """
+"""
 Connected Component Consolidation Wrapper Script
 
 -Assigns a global set of cleft segment ids
@@ -11,12 +10,11 @@ Connected Component Consolidation Wrapper Script
 """
 import synaptor as s
 
-
 import argparse
 parser = argparse.ArgumentParser()
 
 # Inputs & Outputs
-parser.add_argument("proc_dir_path")
+parser.add_argument("storagedir")
 
 # Processing Parameters
 parser.add_argument("size_thr", type=int)
