@@ -14,7 +14,7 @@ import argparse
 parser = argparse.ArgumentParser()
 
 # Inputs & Outputs
-parser.add_argument("storagedir")
+parser.add_argument("storagestr")
 
 # Processing Parameters
 parser.add_argument("size_thr", type=int)
