@@ -12,14 +12,14 @@ import argparse
 parser = argparse.ArgumentParser()
 
 # Inputs & Outputs
-parser.add_argument("proc_url")
+parser.add_argument("storagestr")
 
 parser.add_argument("--timing_tag", default=None)
 
 args = parser.parse_args()
 print(vars(args))
 
-if s.io.is_db_url(args.proc_url):
+if s.io.is_db_url(args.storagestr):
     s.proc_tasks.tasks_w_io.consolidate_edges_db_task(**vars(args))
 else:
     s.proc_tasks.tasks_w_io.consolidate_edges_task(**vars(args))

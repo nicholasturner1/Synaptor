@@ -5,8 +5,8 @@ Chunkwise Connected Components Wrapper Script
 - Extracts clefts that possibly continue to the next chunk (continuations)
 - Filters out any complete segments under the size threshold
 - Records the centroid, size, and bounding box for the surviving
-  segments in the database (depending on proc_url)
-- Records the continuation information in files under proc_dir
+  segments in the database (depending on storagestr)
+- Records the continuation information in files under storagedir
 """
 import synaptor as s
 
@@ -37,7 +37,7 @@ def mip_or_res(x): return x[0] if (x is not None and len(x) == 1) else x
 
 args = parser.parse_args()
 args.mip = mip_or_res(args.mip)
-args.proc_url = s.io.parse_proc_url(args.proc_url)
+args.storagestr = s.io.parse_storagestr(args.storagestr)
 print(vars(args))
 
 

@@ -12,20 +12,20 @@ import argparse
 parser = argparse.ArgumentParser()
 
 # Inputs & Outputs
-parser.add_argument("src_proc_url")
+parser.add_argument("src_storagestr")
 parser.add_argument("hash_index", type=int)
 
 # Processing Parameters
 parser.add_argument("dist_thr", type=int)
 parser.add_argument("size_thr", type=int)
 parser.add_argument("--voxel_res", nargs=3, type=int, required=True)
-parser.add_argument("--fulldf_proc_url")
+parser.add_argument("--fulldf_storagestr")
 parser.add_argument("--timing_tag", default=None)
 
 
 args = parser.parse_args()
-args.src_proc_url = s.io.parse_proc_url(args.src_proc_url)
-args.fulldf_proc_url = s.io.parse_proc_url(args.fulldf_proc_url)
+args.src_storagestr = s.io.parse_storagestr(args.src_storagestr)
+args.fulldf_storagestr = s.io.parse_storagestr(args.fulldf_storagestr)
 print(vars(args))
 
 

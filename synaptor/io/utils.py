@@ -15,19 +15,19 @@ AWS_REGEXP = bck.aws.REGEXP
 GCLOUD_REGEXP = bck.gcloud.REGEXP
 BBOX_REGEXP = re.compile("-?[0-9]+_-?[0-9]+_-?[0-9]+--?[0-9]+_-?[0-9]+_-?[0-9]+")
 SPLIT_REGEXP = re.compile("[0-9]--?[0-9]")
-PROC_URL_FILENAME = "/root/proc_url"
-READ_PROC_FROM_FILE_FLAG = "PROC_FROM_FILE"
+STORAGESTR_FILENAME = "/root/storagestr"
+STORAGESTR_FROM_FILE_FLAG = "STORAGE_FROM_FILE"
 
 
-def parse_proc_url(proc_url):
+def parse_storagestr(storagestr):
     """ Implements the basic logic for a task script flag """
-    if proc_url == READ_PROC_FROM_FILE_FLAG:
-        return read_proc_url_from_file()
+    if storagestr == STORAGESTR_FROM_FILE_FLAG:
+        return read_storagestr_from_file()
     else:
-        return proc_url
+        return storagestr
 
 
-def read_proc_url_from_file(filename=PROC_URL_FILENAME):
+def read_storagestr_from_file(filename=STORAGESTR_FILENAME):
     """
     Reads the proc_url string contained within a file.
     Useful for docker containers.

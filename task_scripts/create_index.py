@@ -11,14 +11,14 @@ import argparse
 parser = argparse.ArgumentParser()
 
 # Inputs & Outputs
-parser.add_argument("proc_url")
+parser.add_argument("storagestr")
 parser.add_argument("tablename")
 parser.add_argument("colname")
 
 
 args = parser.parse_args()
-args.proc_url = s.io.parse_proc_url(args.proc_url)
+args.storagestr = s.io.parse_storagestr(args.storagestr)
 print(vars(args))
 
 
-s.io.create_index(args.proc_url, args.tablename, args.colname)
+s.io.create_index(args.storagestr, args.tablename, args.colname)

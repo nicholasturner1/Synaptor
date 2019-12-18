@@ -114,14 +114,14 @@ def merge_ccs_task(storagedir, size_thr, max_face_shape, timing_tag=None):
               time.time() - start_time, "merge_ccs", timing_tag, storagedir)
 
 
-def match_continuations_task(proc_url, facehash, max_face_shape=(1024, 1024),
+def match_continuations_task(storagestr, facehash, max_face_shape=(1024, 1024),
                              timing_tag=None):
 
     start_time = time.time()
 
     contin_files = timed("Fetching continuation files by hash",
                          taskio.continuations_by_hash,
-                         proc_url, facehash)
+                         storagestr, facehash)
 
     paired_files = timed("Pairing continuation files",
                          seg.merge.pair_continuation_files,
@@ -147,10 +147,10 @@ def match_continuations_task(proc_url, facehash, max_face_shape=(1024, 1024),
 
         map1 = timed("Reading id map 1",
                      taskio.read_chunk_unique_ids,
-                     proc_url, pair[0].bbox)
+                     storagestr, pair[0].bbox)
         map2 = timed("Reading id map 2",
                      taskio.read_chunk_unique_ids,
-                     proc_url, pair[1].bbox)
+                     storagestr, pair[1].bbox)
         pair_maps = (map1, map2)
 
         new_graph_edges = tasks.match_continuations_task(
@@ -162,46 +162,48 @@ def match_continuations_task(proc_url, facehash, max_face_shape=(1024, 1024),
 
     timed("Writing graph edges",
           taskio.write_contin_graph_edges,
-          graph_edges, proc_url)
+          graph_edges, storagestr)
 
     if timing_tag is not None:
         timed("Writing total task time",
               taskio.write_task_timing,
-              time.time() - start_time, "match_contins", timing_tag, proc_url)
+              time.time() - start_time, "match_contins",
+              timing_tag, storagestr)
 
 
-def seg_graph_cc_task(proc_url, hashmax, timing_tag=None):
+def seg_graph_cc_task(storagestr, hashmax, timing_tag=None):
 
     start_time = time.time()
 
     graph_edges = timed("Reading seg graph edges",
                         taskio.read_continuation_graph,
-                        proc_url)
+                        storagestr)
 
     all_ids = timed("Reading all unique seg ids",
                     taskio.read_all_unique_seg_ids,
-                    proc_url)
+                    storagestr)
 
     seg_merge_df = tasks.seg_graph_cc_task(graph_edges, hashmax, all_ids)
 
     timed("Writing seg merge_map",
           taskio.write_seg_merge_map,
-          seg_merge_df, proc_url)
+          seg_merge_df, storagestr)
 
     if timing_tag is not None:
         timed("Writing total task time",
               taskio.write_task_timing,
-              time.time() - start_time, "seg_graph_ccs", timing_tag, proc_url)
+              time.time() - start_time, "seg_graph_ccs",
+              timing_tag, storagestr)
 
 
-def chunk_seg_merge_map(proc_url, timing_tag=None):
+def chunk_seg_merge_map(storagestr, timing_tag=None):
 
     start_time = time.time()
 
-    if io.is_db_url(proc_url):
+    if io.is_db_url(storagestr):
         timed("Creating chunked seg merge map",
               taskio.write_chunked_seg_map,
-              proc_url)
+              storagestr)
 
     else:
         raise(Exception("not implemented for file IO"))
@@ -210,41 +212,43 @@ def chunk_seg_merge_map(proc_url, timing_tag=None):
         timed("Writing total task time",
               taskio.write_task_timing,
               time.time() - start_time, "chunked_seg_map",
-              timing_tag, proc_url)
+              timing_tag, storagestr)
 
 
-def merge_seginfo_task(proc_url, hashval, aux_proc_url=None, timing_tag=None):
+def merge_seginfo_task(storagestr, hashval,
+                       aux_storagestr=None, timing_tag=None):
 
     start_time = time.time()
 
     seginfo_w_new_id = timed(f"Reading seginfo for dst hash {hashval}",
                              taskio.read_mapped_seginfo_by_dst_hash,
-                             proc_url, hashval)
+                             storagestr, hashval)
 
     merged_seginfo = tasks.merge_seginfo_task(seginfo_w_new_id)
 
-    if aux_proc_url is not None:
+    if aux_storagestr is not None:
         timed(f"Writing merged seginfo for dst hash {hashval} to aux",
               taskio.write_merged_seg_info,
-              merged_seginfo, aux_proc_url, hash_tag=hashval)
+              merged_seginfo, aux_storagestr, hash_tag=hashval)
 
     timed(f"Writing merged seginfo for dst hash {hashval}",
           taskio.write_merged_seg_info,
-          merged_seginfo, proc_url, hash_tag=hashval)
+          merged_seginfo, storagestr, hash_tag=hashval)
 
     if timing_tag is not None:
         timed("Writing total task time",
               taskio.write_task_timing,
-              time.time() - start_time, "merge_seginfo", timing_tag, proc_url)
+              time.time() - start_time, "merge_seginfo",
+              timing_tag, storagestr)
 
 
 def edge_task(img_cvname, cleft_cvname, seg_cvname,
-              chunk_begin, chunk_end, patchsz, proc_url,
+              chunk_begin, chunk_end, patchsz, storagestr,
               samples_per_cleft=2, dil_param=5,
               root_seg_cvname=None,
               resolution=(4, 4, 40), num_downsamples=0,
               base_res_begin=None, base_res_end=None,
-              parallel=1, hashmax=None, proc_dir=None,
+              parallel=1, hashmax=None, storagedir=None,
               timing_tag=None):
     """
     Runs tasks.chunk_edges_task after reading the relevant
@@ -252,7 +256,7 @@ def edge_task(img_cvname, cleft_cvname, seg_cvname,
     to match the others.
 
     Writes the results as edge information dataframes within
-    {proc_url}/chunk_edges
+    {storagestr}/chunk_edges
 
     img_mip refers to the mip level which corresponds to the mip arg
     seg_mip refers to the mip level which corresponds to the mip arg
@@ -273,7 +277,7 @@ def edge_task(img_cvname, cleft_cvname, seg_cvname,
     else:
         base_bounds = types.BBox3d(base_res_begin, base_res_end)
 
-    proc_dir = proc_url if proc_dir is None else proc_dir
+    storagedir = storagestr if storagedir is None else storagedir
 
     img = timed(f"Reading img chunk at {resolution}",
                 io.read_cloud_volume_chunk,
@@ -292,7 +296,7 @@ def edge_task(img_cvname, cleft_cvname, seg_cvname,
 
     assoc_net = timed("Reading association network",
                       taskio.read_network_from_proc,
-                      proc_dir).cuda()
+                      storagedir).cuda()
 
     chunk_id_map = timed("Reading chunk id map",
                          taskio.read_chunk_id_map,
@@ -460,25 +464,25 @@ def chunk_overlaps_task(seg_cvname, base_seg_cvname,
               timing_tag, storagedir)
 
 
-def merge_overlaps_task(storagedir, timing_tag=None):
+def merge_overlaps_task(storagestr, timing_tag=None):
 
     start_time = time.time()
 
     overlap_arr = timed("Reading overlap matrices",
                         taskio.read_all_overlap_mats,
-                        storagedir)
+                        storagestr)
 
     max_overlaps = tasks.merge_overlaps_task(overlap_arr)
 
     timed("Writing max overlaps",
           taskio.write_max_overlaps,
-          max_overlaps, storagedir)
+          max_overlaps, storagestr)
 
     if timing_tag is not None:
         timed("Writing total task time",
               taskio.write_task_timing,
               time.time() - start_time, "merge_overlap",
-              timing_tag, storagedir)
+              timing_tag, storagestr)
 
 
 def remap_ids_task(seg_in_cvname, seg_out_cvname,
@@ -487,7 +491,7 @@ def remap_ids_task(seg_in_cvname, seg_out_cvname,
                    mip=0, parallel=1, timing_tag=None):
 
     dup_map_storagestr = (storagestr
-                          if dup_map_proc_url is None
+                          if dup_map_storagestr is None
                           else dup_map_storagestr)
 
     start_time = time.time()
@@ -520,7 +524,7 @@ def remap_ids_task(seg_in_cvname, seg_out_cvname,
               time.time() - start_time, "remap", timing_tag, storagestr)
 
 
-def anchor_task(cleft_cvname, seg_cvname, proc_url,
+def anchor_task(cleft_cvname, seg_cvname, storagestr,
                 chunk_begin, chunk_end, root_seg_cvname=None,
                 voxel_res=[4, 4, 40], min_box_width=[100, 100, 5],
                 mip=0, seg_mip=None, parallel=1, timing_tag=None):
@@ -552,7 +556,7 @@ def anchor_task(cleft_cvname, seg_cvname, proc_url,
 
     edge_df = timed("Reading full edge info",
                     taskio.read_full_info,
-                    proc_url)
+                    storagestr)
 
     anchor_df = tasks.anchor_task(edge_df, seg, clefts, chunk_begin,
                                   voxel_res=voxel_res, root_seg=roots,
@@ -560,9 +564,9 @@ def anchor_task(cleft_cvname, seg_cvname, proc_url,
 
     timed("Writing chunk anchor info",
           taskio.write_chunk_anchor,
-          anchor_df, chunk_bounds, proc_url)
+          anchor_df, chunk_bounds, storagestr)
 
     if timing_tag is not None:
         timed("Writing total task time",
               taskio.write_task_timing,
-              time.time() - start_time, "chunk_anchor", timing_tag, proc_url)
+              time.time() - start_time, "chunk_anchor", timing_tag, storagestr)

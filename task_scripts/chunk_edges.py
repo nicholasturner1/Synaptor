@@ -17,10 +17,10 @@ parser = argparse.ArgumentParser()
 parser.add_argument("img_cvname")
 parser.add_argument("cleft_cvname")
 parser.add_argument("seg_cvname")
-parser.add_argument("proc_url")
+parser.add_argument("storagestr")
 parser.add_argument("hashmax", type=int, default=1)
 parser.add_argument("--root_seg_cvname", default=None)
-parser.add_argument("--proc_dir", default=None, required=True)
+parser.add_argument("--storagedir", default=None, required=True)
 
 # Processing Parameters
 parser.add_argument("--resolution", nargs=3, type=int, default=(4, 4, 40))
@@ -37,7 +37,7 @@ parser.add_argument("--timing_tag", default=None)
 
 
 args = parser.parse_args()
-args.proc_url = s.io.parse_proc_url(args.proc_url)
+args.storagestr = s.io.parse_storagestr(args.storagestr)
 print(vars(args))
 
 
