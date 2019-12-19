@@ -23,9 +23,9 @@ spec:
       containers:
       - image: seunglab/synaptor:kube
         name: synaptor-gpu
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         command: ["/bin/sh"]
-        args: ["-c", "python -u worker.py [QUEUE_URL]"]
+        args: ["-c", "python -u worker.py [QUEUE_URL] [TIMEOUT]"]
         resources: 
           limits:
             nvidia.com/gpu: 1
@@ -33,27 +33,29 @@ spec:
         - name: secrets
           mountPath: /root/.cloudvolume/secrets/google-secret.json
           readOnly: true
-          subPath: microns-seunglab-google-secret.json
+          subPath: google-secret.json
         - name: secrets
           mountPath: /root/.cloudvolume/secrets/aws-secret.json
           readOnly: true
           subPath: aws-secret.json
         - name: storagestr
-          mountPath: /root/proc_url
-          readOnly: true
-          subPath: proc_url
+# UNCOMMENT THIS IF YOU USE A DATABASE CONNECTION STRING
+#           mountPath: /root/proc_url
+#           readOnly: true
+#           subPath: proc_url
         - name: boto
           mountPath: /root/.boto
           readOnly: true
-          subPath: minimal_boto_microns
+          subPath: minimal_boto
       dnsPolicy: Default
       volumes:
       - name: secrets
         secret:
           secretName: secrets
-      - name: storagestr
-        secret:
-          secretName: storagestr
+# UNCOMMENT THIS IF YOU USE A DATABASE CONNECTION STRING
+#       - name: storagestr
+#         secret:
+#           secretName: storagestr
       - name: boto
         secret:
           secretName: boto
