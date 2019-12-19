@@ -18,8 +18,8 @@ def main(configfilename):
 
     iterator = tc.create_connected_component_tasks(
                    config["descriptor"], config["temp_output"],
-                   proc_url=config["storagestrs"][0],
-                   proc_dir=config["storagestrs"][1],
+                   storagestr=config["storagestrs"][0],
+                   storagedir=config["storagestrs"][1],
                    cc_thresh=config["ccthresh"], sz_thresh=config["szthresh"],
                    bounds=bounds, shape=config["chunk_shape"],
                    mip=config["voxelres"], hashmax=config["num_merge_tasks"])

@@ -58,7 +58,7 @@ def create_connected_component_tasks(
           chunk_end = tup2str(task_bounds.maxpt)
           mip_str = tup2str(mip)
 
-          cmd = (f"chunk_ccs {descpath} {segpath} {proc_url}"
+          cmd = (f"chunk_ccs {descpath} {segpath} {storagestr}"
                  f" {cc_thresh} {sz_thresh} --chunk_begin {chunk_begin}"
                  f" --chunk_end {chunk_end} --hashmax {hashmax}"
                  f" --parallel {parallel} --mip {mip_str}"
@@ -136,7 +136,7 @@ def create_merge_seginfo_tasks(
             if self.aux_storagestr is None:
                 aux_arg = ""
             else:
-                aux_arg = f"--aux_proc_url {aux_storagestr}"
+                aux_arg = f"--aux_storagestr {aux_storagestr}"
             for i in range(self.level_start, self.level_end):
                 cmd = (f"merge_seginfo {self.storagestr} {i} {aux_arg}")
 
@@ -146,7 +146,7 @@ def create_merge_seginfo_tasks(
 
 
 def create_chunk_edges_tasks(
-    imgpath, cleftpath, segpath, storagestr, hashmax, procdir,
+    imgpath, cleftpath, segpath, storagestr, hashmax, storagedir,
     bounds, chunkshape, patchsz, resolution=(4, 4, 40)):
     """ Only passing the required arguments for now """
     shape = Vec(*chunkshape)
@@ -183,7 +183,7 @@ def create_chunk_edges_tasks(
                 res_str = tup2str(resolution)
 
                 cmd = (f"chunk_edges {imgpath} {cleftpath} {segpath}"
-                       f" {storagestr} {hashmax} --proc_dir {procdir}"
+                       f" {storagestr} {hashmax} --storagedir {storagedir}"
                        f" --chunk_begin {chunk_begin} --chunk_end {chunk_end}"
                        f" --patchsz {patchsz_str} --resolution {res_str}")
 
@@ -246,7 +246,7 @@ def create_merge_dup_tasks(
             for i in range(self.level_start, self.level_end):
                 cmd = (f"merge_dups {self.storagestr} {i} {dist_thresh}"
                        f" {size_thresh} --voxel_res {res_str}"
-                       f" --fulldf_proc_url {output_storagestr}")
+                       f" --fulldf_storagestr {output_storagestr}")
 
                 yield SynaptorTask(cmd)
 
