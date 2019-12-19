@@ -54,7 +54,7 @@ def _read_face_file(fname):
 
     continuations = list()
 
-    with h5py.File(fname) as f:
+    with h5py.File(fname, "r") as f:
         face_index = f["face_axis"][()]
         face_hi = f["hi_face"][()]
 
@@ -73,7 +73,7 @@ def _read_legacy_file(fname):
 
     continuations = dict()
 
-    with h5py.File(fname) as f:
+    with h5py.File(fname, "r") as f:
         for face in Face.all_faces():
             axis = face.axis
             hi_index = "high" if face.hi_index else "low"
@@ -108,7 +108,7 @@ def _write_face_file(face_continuations, fname, face=None):
     if os.path.exists(fname):
         os.remove(fname)
 
-    with h5py.File(fname) as f:
+    with h5py.File(fname, "w") as f:
         f.create_dataset("face_axis", data=face.axis)
         f.create_dataset("hi_face", data=face.hi_index)
         coord_group = f.create_group("face_coords")

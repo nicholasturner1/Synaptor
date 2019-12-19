@@ -71,23 +71,20 @@ def write_network(net, path):
 
 def open_h5(fname):
     """ Open an hdf5 file, return the file object. """
-    f = h5py.File(fname)
+    f = h5py.File(fname, "r+")
     return f
 
 
 def read_h5(fname, dset_name="/main"):
     """ Read a specific dataset from an hdf5. """
     assert os.path.isfile(fname), "File {} doesn't exist".format(fname)
-    with h5py.File(fname) as f:
+    with h5py.File(fname, "r") as f:
         return f[dset_name][()]
 
 
 def write_h5(data, fname, dset_name="/main", chunk_size=None):
     """ Write a data array to a specific dataset within an hdf5. """
-    if os.path.exists(fname):
-        os.remove(fname)
-
-    with h5py.File(fname) as f:
+    with h5py.File(fname, "w") as f:
 
         if chunk_size is None:
             f.create_dataset(dset_name, data=data)
