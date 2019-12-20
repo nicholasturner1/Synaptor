@@ -32,8 +32,8 @@ def count_overlaps(seg1, seg2, orig_ids=False):
 
     overlap_mask = np.logical_and(seg1 != 0, seg2 != 0)
 
-    n_rows = seg1_ids.max() + 1 if orig_ids else seg1_ids.size
-    n_cols = seg2_ids.max() + 1 if orig_ids else seg2_ids.size
+    n_rows = int(seg1_ids.max() + 1) if orig_ids else seg1_ids.size
+    n_cols = int(seg2_ids.max() + 1) if orig_ids else seg2_ids.size
 
     seg1_vals = seg1[overlap_mask]
     seg2_vals = seg2[overlap_mask]
