@@ -21,7 +21,7 @@ def apply_chunk_id_maps(overlap_arr, chunk_id_maps):
     return sp.coo_matrix((vs, (rs, cs)))
 
 
-def consolidate_overlaps(overlap_mat_arr, dtype=np.uint32):
+def consolidate_overlaps(overlap_mat_arr, dtype=np.uint64):
 
     num_entries = 0
     for new_mat in overlap_mat_arr.flat:
