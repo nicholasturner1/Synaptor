@@ -31,7 +31,14 @@ def overlap_mat_from_dframe(df):
     cs = list(df[cn.cols])
     vs = list(df[cn.vals])
 
+    if len(rs) == 0 or len(cs) == 0 or len(vs) == 0:
+        return empty_matrix()
+
     return sp.coo_matrix((vs, (rs, cs)))
+
+
+def empty_matrix():
+    return sp.coo_matrix(([], ([], [])), shape=(0, 0))
 
 
 def write_chunk_overlap_mat(overlap_mat, chunk_bounds, proc_url):
