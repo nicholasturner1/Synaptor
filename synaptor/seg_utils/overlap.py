@@ -27,6 +27,10 @@ def count_overlaps(seg1, seg2, orig_ids=False):
     seg1_ids = describe.nonzero_unique_ids(seg1)
     seg2_ids = describe.nonzero_unique_ids(seg2)
 
+    if len(seg1_ids) == 0 or len(seg2_ids) == 0:
+        overlap_mat = sparse.coo_matrix(([], ([], [])), shape=(0, 0))
+        return overlap_mat, seg1_ids, seg2_ids
+
     seg1_index = {v: i for (i, v) in enumerate(seg1_ids)}
     seg2_index = {v: i for (i, v) in enumerate(seg2_ids)}
 
