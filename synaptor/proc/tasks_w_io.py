@@ -65,7 +65,7 @@ def cc_task(desc_cvname, seg_cvname, storagestr,
         #  you can create "phantom" segments in the database that don't
         #  really exist. This creates further problems later.
         timed("Writing results to the database",
-              taskio.write_db_dframes,
+              io.write_db_dframes,
               [fhash_df, seginfo_df], storagestr,
               [fhash_tablename, seginfo_tablename])
 
