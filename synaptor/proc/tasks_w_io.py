@@ -331,16 +331,16 @@ def edge_task(img_cvname, cleft_cvname, seg_cvname,
               time.time() - start_time, "edge", timing_tag, storagestr)
 
 
-def merge_edges_task(voxel_res, dist_thr, size_thr, proc_url, timing_tag=None):
+def merge_edges_task(voxel_res, dist_thr, size_thr, storagestr, timing_tag=None):
 
     start_time = time.time()
 
     edges_arr = timed("Reading all edges",
                       taskio.read_all_chunk_edge_infos,
-                      proc_url)
+                      storagestr)
     merged_cleft_info = timed("Reading merged cleft info",
                               taskio.read_merged_seg_info,
-                              proc_url)
+                              storagestr)
 
     full_df, dup_id_map, merged_edge_df = tasks.merge_edges_task(
                                               edges_arr, merged_cleft_info,
@@ -348,32 +348,32 @@ def merge_edges_task(voxel_res, dist_thr, size_thr, proc_url, timing_tag=None):
 
     timed("Writing duplicate id mapping",
           taskio.write_dup_id_map,
-          dup_id_map, proc_url)
+          dup_id_map, storagestr)
     timed("Writing merged edge list",
           taskio.write_merged_edge_info,
-          merged_edge_df, proc_url)
+          merged_edge_df, storagestr)
     timed("Writing final & complete DataFrame",
           taskio.write_full_info,
-          full_df, proc_url)
+          full_df, storagestr)
 
     if timing_tag is not None:
         timed("Writing total task time",
               taskio.write_task_timing,
-              time.time() - start_time, "merge_edges", timing_tag, proc_url)
+              time.time() - start_time, "merge_edges", timing_tag, storagestr)
 
 
-def pick_largest_edges_task(proc_url, clefthash=None, timing_tag=None):
+def pick_largest_edges_task(storagestr, clefthash=None, timing_tag=None):
 
     start_time = time.time()
 
     if clefthash is None:
         edges = timed("Reading all chunkwise edge info",
                       taskio.read_all_chunk_edge_infos,
-                      proc_url)
+                      storagestr)
     else:
         edges = timed(f"Reading edge info for cleft id hash {clefthash}",
                       taskio.read_hashed_edge_info,
-                      proc_url,
+                      storagestr,
                       clefthash=clefthash, merged=False)
 
     if edges.index.name == cn.seg_id:
@@ -383,51 +383,51 @@ def pick_largest_edges_task(proc_url, clefthash=None, timing_tag=None):
 
     timed("Writing merged edge list",
           taskio.write_merged_edge_info,
-          largest_info, proc_url)
+          largest_info, storagestr)
 
     if timing_tag is not None:
         timed("Writing total task time",
               taskio.write_task_timing,
-              time.time() - start_time, "pick_edge", timing_tag, proc_url)
+              time.time() - start_time, "pick_edge", timing_tag, storagestr)
 
 
 def merge_duplicates_task(voxel_res, dist_thr, size_thr,
-                          src_proc_url, hash_index, fulldf_proc_url=None,
+                          src_storagestr, hash_index, fulldf_storagestr=None,
                           timing_tag=None):
 
     start_time = time.time()
 
-    fulldf_proc_url = (src_proc_url if fulldf_proc_url is None
-                       else fulldf_proc_url)
+    fulldf_storagestr = (src_storagestr if fulldf_storagestr is None
+                       else fulldf_storagestr)
 
     edge_df = timed(f"Reading edges for hash index {hash_index}",
                     taskio.read_hashed_edge_info,
-                    src_proc_url, hash_index, dedup=True)
+                    src_storagestr, hash_index, dedup=True)
 
     merged_cleft_info = timed(f"Reading merged seg info for ind {hash_index}",
                               taskio.read_merged_seg_info,
-                              src_proc_url, hash_index)
+                              src_storagestr, hash_index)
 
     full_df, dup_id_map = tasks.merge_duplicates_task(merged_cleft_info,
                                                       edge_df, dist_thr,
                                                       voxel_res, size_thr)
 
     # Considered using a transaction here, but that breaks generality
-    # when src_proc_url != fulldf_proc_url and writing the dup_id_map
+    # when src_storagestr != fulldf_storagestr and writing the dup_id_map
     # twice shouldn't cause any bad effects. Testing should evaluate this
     # call.
     timed("Writing duplicate id mapping for hash index",
           taskio.write_dup_id_map,
-          dup_id_map, src_proc_url)
+          dup_id_map, src_storagestr)
     timed("Writing final DataFrame for hash index",
           taskio.write_full_info,
-          full_df, fulldf_proc_url,
+          full_df, fulldf_storagestr,
           tag=hash_index)
 
     if timing_tag is not None:
         timed("Writing total task time",
               taskio.write_task_timing,
-              time.time() - start_time, "merge_dups", timing_tag, src_proc_url)
+              time.time() - start_time, "merge_dups", timing_tag, src_storagestr)
 
 
 def overlap_task(seg_cvname, base_seg_cvname,
