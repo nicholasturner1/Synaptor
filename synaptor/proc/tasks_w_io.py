@@ -300,7 +300,7 @@ def edge_task(img_cvname, cleft_cvname, seg_cvname,
 
     chunk_id_map = timed("Reading chunk id map",
                          taskio.read_chunk_id_map,
-                         proc_url, base_bounds)
+                         storagestr, base_bounds)
 
     # Downsampling clefts to match other volumes
     if num_downsamples > 0:
@@ -323,12 +323,12 @@ def edge_task(img_cvname, cleft_cvname, seg_cvname,
 
     timed("Writing chunk edges",
           taskio.write_chunk_edge_info,
-          edge_info, proc_url, base_bounds)
+          edge_info, storagestr, base_bounds)
 
     if timing_tag is not None:
         timed("Writing total task time",
               taskio.write_task_timing,
-              time.time() - start_time, "edge", timing_tag, proc_url)
+              time.time() - start_time, "edge", timing_tag, storagestr)
 
 
 def merge_edges_task(voxel_res, dist_thr, size_thr, proc_url, timing_tag=None):
