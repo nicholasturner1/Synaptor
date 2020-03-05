@@ -15,11 +15,13 @@ def parse(filename):
     conf["temp_output"] = parser.get("Volumes", "temp_output")
     conf["output"] = parser.get("Volumes", "output")
     conf["base_seg"] = parser.get("Volumes", "base_seg")
+    conf["image"] = parser.get("Volumes", "image")
 
     conf["voxelres"] = parse_tuple(parser.get("Dimensions", "voxelres"))
     conf["startcoord"] = parse_tuple(parser.get("Dimensions", "startcoord"))
     conf["vol_shape"] = parse_tuple(parser.get("Dimensions", "vol_shape"))
     conf["chunk_shape"] = parse_tuple(parser.get("Dimensions", "chunk_shape"))
+    conf["patch_shape"] = parse_tuple(parser.get("Dimensions", "patch_shape"))
     # Additional field inferred from chunk_shape
     conf["max_face_shape"] = infer_max_face_shape(conf["chunk_shape"])
 
