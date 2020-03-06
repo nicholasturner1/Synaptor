@@ -28,6 +28,7 @@ def parse(filename):
     conf["ccthresh"] = parser.getfloat("Parameters", "ccthresh")
     conf["szthresh"] = parser.getint("Parameters", "szthresh")
     conf["dustthresh"] = parser.getint("Parameters", "dustthresh")
+    conf["mergethresh"] = parser.getint("Parameters", "mergethresh")
     conf["num_merge_tasks"] = parser.getint("Parameters", "num_merge_tasks")
 
     conf["workspacetype"] = parser.get("Workspaces", "workspacetype")
