@@ -33,6 +33,8 @@ def mip_or_res(x): return x[0] if (x is not None and len(x) == 1) else x
 args = parser.parse_args()
 args.mip = mip_or_res(args.mip)
 args.storagestr = s.io.parse_storagestr(args.storagestr)
+if args.dup_map_storagestr is not None:
+    args.dup_map_storagestr = s.io.parse_storagestr(args.dup_map_storagestr)
 print(vars(args))
 
 
