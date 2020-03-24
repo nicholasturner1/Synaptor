@@ -63,7 +63,8 @@ def cc_task(desc_cvname, seg_cvname, storagestr,
 
         # NOTE: need to send these as a transaction. Otherwise,
         #  you can create "phantom" segments in the database that don't
-        #  really exist. This creates further problems later.
+        #  really exist in the segmentation volume.
+        #  These phantoms create further problems later.
         timed("Writing results to the database",
               io.write_db_dframes,
               [fhash_df, seginfo_df], storagestr,
