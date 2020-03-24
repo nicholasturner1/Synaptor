@@ -4,6 +4,7 @@ import os
 import re
 import random
 import string
+import fileinput
 
 import numpy as np
 
@@ -135,3 +136,18 @@ def infer_dims(ordered_tups):
     z = x_times_z // x
 
     return (x, y, z)
+
+
+def concat_csvs(filenames, output_filename):
+    """
+    Concatenates a set of csvs and saves them as one. Does NOT do
+    format checking to ensure that the files have the same columns.
+    """
+    with open(output_filename, "w+") as fout:
+        with fileinput.input(filenames) as fin:
+
+            for line in fin:
+                if fin.isfirstline() and fin.filename() != filenames[0]:
+                    continue
+                else:
+                    fout.write(line)
