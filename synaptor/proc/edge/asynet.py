@@ -363,7 +363,7 @@ def seg_weights(output, seg, segids=None):
     for i in segids:
 
         seg_mask = torch.from_numpy(
-                       (seg == i).astype("uint8")).cuda()[0, 0, ...]
+                       (seg == i).astype("bool")).cuda()[0, 0, ...]
         sizes[i] = torch.sum(seg_mask).item()
 
         # pre_avg  = torch.sum(presyn_output[seg_mask]).item() / sizes[i]
