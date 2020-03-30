@@ -143,7 +143,9 @@ def precision(overlaps, ids=None):
     If ids aren't dense (each row represents an object in the orig volume),
     can pass a list/np.array of ids to handle that.
     """
-    if overlaps.shape[0] == 0:
+    if (overlaps.shape[0] == 0 and
+        (ids is None or
+         (ids is not None and len(ids) == 0))):
         return 1, np.array([])
 
     elif overlaps.shape[1] == 0:
