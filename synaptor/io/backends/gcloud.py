@@ -59,6 +59,13 @@ def pull_directory(remote_dir):
     local_fnames = [os.path.join(local_dir, os.path.basename(b.name))
                     for b in remote_blobs]
 
+    orig_dir = [i for i in range(len(local_fnames))
+                if local_fnames[i] == utils.check_slash(local_dir)]
+    if len(orig_dir) > 0:
+        assert len(orig_dir) == 1, "weird results"
+        remote_blobs.pop(orig_dir[0])
+        local_fnames.pop(orig_dir[0])
+
     if not os.path.isdir(local_dir):
         os.makedirs(local_dir)
 
