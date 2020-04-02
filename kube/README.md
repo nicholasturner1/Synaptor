@@ -42,5 +42,6 @@ For each step, pass the configuration file to the `task_generation` script for y
 
 Some common workflows are listed below. Each step matches a task script in the main repo directory, and you can find a basic descriptions in the documentation there.
 
-* Distributed Connected Components: `init_db` -> `chunk_ccs` -> `match_contins` -> `seg_graph_ccs` -> `chunk_seg_map` -> `merge_seginfo` -> `remap`
-* Synapse Segmentation and Assignment: `init_db` -> `chunk_ccs` -> `match_contins` -> `seg_graph_ccs` -> `chunk_seg_map` -> `merge_seginfo` -> `chunk_edges` -> `pick_edge` -> `merge_dups` -> `remap`
+* Basic Connected Components (File Backend): `chunk_ccs` -> `merge_ccs` -> `remap`
+* Distributed Connected Components (Database Backend): `init_db` -> `chunk_ccs` -> `match_contins` -> `seg_graph_ccs` -> `chunk_seg_map` -> `merge_seginfo` -> `remap`
+* Synapse Segmentation and Assignment (Database Backend): `init_db` -> `chunk_ccs` -> `match_contins` -> `seg_graph_ccs` -> `chunk_seg_map` -> `merge_seginfo` -> `chunk_edges` -> `pick_edge` -> `merge_dups` -> `remap`

@@ -12,14 +12,14 @@ def main(configfilename):
     config = parser.parse(configfilename)
 
     startcoord = Vec(*config["startcoord"])
-    volshape = Vec(*config["vol_shape"])
+    volshape = Vec(*config["volshape"])
 
     bounds = Bbox(startcoord, startcoord + volshape)
 
     iterator = tc.create_remap_tasks(
-                   config["temp_output"], config["output"],
+                   config["tempoutput"], config["output"],
                    storagestr=config["storagestrs"][0],
-                   bounds=bounds, shape=config["chunk_shape"],
+                   bounds=bounds, shape=config["chunkshape"],
                    resolution=config["voxelres"])
 
     tq = TaskQueue(config["queueurl"])

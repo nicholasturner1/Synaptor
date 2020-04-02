@@ -12,17 +12,17 @@ def main(configfilename):
     config = parser.parse(configfilename)
 
     startcoord = Vec(*config["startcoord"])
-    volshape = Vec(*config["vol_shape"])
+    volshape = Vec(*config["volshape"])
 
     bounds = Bbox(startcoord, startcoord + volshape)
 
     iterator = tc.create_chunk_edges_tasks(
-                   config["image"], config["temp_output"],
-                   config["base_seg"], storagestr=config["storagestrs"][0],
-                   hashmax=config["num_merge_tasks"],
+                   config["image"], config["tempoutput"],
+                   config["baseseg"], storagestr=config["storagestrs"][0],
+                   hashmax=config["nummergetasks"],
                    storagedir=config["storagestrs"][1],
-                   bounds=bounds, chunkshape=config["chunk_shape"],
-                   patchsz=config["patch_shape"],
+                   bounds=bounds, chunkshape=config["chunkshape"],
+                   patchsz=config["patchshape"],
                    resolution=config["voxelres"])
 
     tq = TaskQueue(config["queueurl"])

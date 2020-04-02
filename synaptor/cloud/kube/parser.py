@@ -12,24 +12,25 @@ def parse(filename):
     conf = dict()
 
     conf["descriptor"] = parser.get("Volumes", "descriptor")
-    conf["temp_output"] = parser.get("Volumes", "temp_output")
+    conf["tempoutput"] = parser.get("Volumes", "tempoutput")
     conf["output"] = parser.get("Volumes", "output")
-    conf["base_seg"] = parser.get("Volumes", "base_seg")
+    conf["baseseg"] = parser.get("Volumes", "baseseg")
     conf["image"] = parser.get("Volumes", "image")
 
     conf["voxelres"] = parse_tuple(parser.get("Dimensions", "voxelres"))
     conf["startcoord"] = parse_tuple(parser.get("Dimensions", "startcoord"))
-    conf["vol_shape"] = parse_tuple(parser.get("Dimensions", "vol_shape"))
-    conf["chunk_shape"] = parse_tuple(parser.get("Dimensions", "chunk_shape"))
-    conf["patch_shape"] = parse_tuple(parser.get("Dimensions", "patch_shape"))
+    conf["volshape"] = parse_tuple(parser.get("Dimensions", "volshape"))
+    conf["chunkshape"] = parse_tuple(parser.get("Dimensions", "chunkshape"))
+    conf["blockshape"] = parse_tuple(parser.get("Dimensions", "blockshape"))
+    conf["patchshape"] = parse_tuple(parser.get("Dimensions", "patchshape"))
     # Additional field inferred from chunk_shape
-    conf["max_face_shape"] = infer_max_face_shape(conf["chunk_shape"])
+    conf["maxfaceshape"] = infer_max_face_shape(conf["chunkshape"])
 
     conf["ccthresh"] = parser.getfloat("Parameters", "ccthresh")
     conf["szthresh"] = parser.getint("Parameters", "szthresh")
     conf["dustthresh"] = parser.getint("Parameters", "dustthresh")
     conf["mergethresh"] = parser.getint("Parameters", "mergethresh")
-    conf["num_merge_tasks"] = parser.getint("Parameters", "num_merge_tasks")
+    conf["nummergetasks"] = parser.getint("Parameters", "nummergetasks")
 
     conf["workspacetype"] = parser.get("Workspaces", "workspacetype")
     conf["queueurl"] = parser.get("Workspaces", "queueurl")

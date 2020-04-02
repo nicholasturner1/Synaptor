@@ -11,7 +11,7 @@ def main(configfilename):
     config = parser.parse(configfilename)
 
     iterator = tc.create_merge_seginfo_tasks(
-                   config["storagestrs"][0], config["num_merge_tasks"],
+                   config["storagestrs"][0], config["nummergetasks"],
                    aux_storagestr=config["storagestrs"][1])
 
     tq = TaskQueue(config["queueurl"])

@@ -10,6 +10,7 @@ from cloudvolume.lib import Bbox, Vec, xyzrange, min2, yellow
 from taskqueue import GreenTaskQueue
 
 from .synaptortask import SynaptorTask
+from synaptor import io
 
 
 def tup2str(t):
@@ -349,3 +350,15 @@ def create_overlap_tasks(
 
 def create_merge_overlaps_task(storagestr):
     return SynaptorTask(f"merge_overlaps {storagestr}")
+
+
+def create_cloudvols(
+    output_path, temp_output_path, voxelres, vol_shape,
+    startcoord, block_shape):
+
+    io.init_seg_volume(output_path, voxelres, vol_shape, "",
+                       [], offset=startcoord, chunk_size=block_shape)
+
+    if temp_output_path != output_path:
+        io.init_seg_volume(temp_output_path, voxelres, vol_shape, "",
+                           [], offset=startcoord, chunk_size=block_shape)

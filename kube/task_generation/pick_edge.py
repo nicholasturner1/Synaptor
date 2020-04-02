@@ -11,7 +11,7 @@ def main(configfilename):
     config = parser.parse(configfilename)
 
     iterator = tc.create_pick_edge_tasks(
-                   config["storagestrs"][0], config["num_merge_tasks"]
+                   config["storagestrs"][0], config["nummergetasks"]
                    )
 
     tq = TaskQueue(config["queueurl"])

@@ -10,11 +10,10 @@ def main(configfilename):
 
     config = parser.parse(configfilename)
 
-    task = tc.create_seg_graph_cc_task(config["storagestrs"][0],
-                                       config["nummergetasks"])
-
-    tq = TaskQueue(config["queueurl"])
-    tq.insert_all([task])
+    task = tc.create_cloudvols(
+               config["output"], config["tempoutput"],
+               config["voxelres"], config["volshape"],
+               config["startcoord"], config["blockshape"])
 
 
 if __name__ == "__main__":

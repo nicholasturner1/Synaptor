@@ -12,7 +12,7 @@ def main(configfilename):
 
     task = tc.create_merge_ccs_task(
                config["storagestrs"][0], config["szthresh"],
-               config["max_face_shape"])
+               config["maxfaceshape"])
 
     tq = TaskQueue(config["queueurl"])
     tq.insert_all([task])

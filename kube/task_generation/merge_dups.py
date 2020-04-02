@@ -11,7 +11,7 @@ def main(configfilename):
     config = parser.parse(configfilename)
 
     iterator = tc.create_merge_dup_tasks(
-                   config["storagestrs"][0], config["num_merge_tasks"],
+                   config["storagestrs"][0], config["nummergetasks"],
                    config["mergethresh"], config["szthresh"],
                    config["voxelres"], config["storagestrs"][1]
                    )
