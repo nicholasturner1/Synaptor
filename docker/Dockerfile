@@ -26,7 +26,7 @@ RUN apt-get update && \
     pip --no-cache-dir install h5py pandas cloud-volume task-queue python-igraph future && \
     pip --no-cache-dir install requests psycopg2-binary && \
     conda install scipy pybind11 sqlalchemy && \
-    conda install pytorch==1.0.1 torchvision cudatoolkit=10.0 -c pytorch && \
+    conda install pytorch==1.3.1 torchvision cudatoolkit=10.0 -c pytorch && \
     # gsutil requires python2
     /usr/bin/pip --no-cache-dir install gsutil && \
     git clone https://github.com/nicholasturner1/Synaptor.git && \
