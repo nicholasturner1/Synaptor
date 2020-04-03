@@ -4,7 +4,7 @@ from setuptools import setup, find_packages, Extension
 from setuptools.command.build_ext import build_ext
 
 
-__version__ = "0.0.2"
+__version__ = "0.0.3"
 
 
 #==========================================================
@@ -112,7 +112,7 @@ setup(
     packages=setuptools.find_packages(),
     ext_modules=ext_modules,
     install_requires=['numpy', 'scipy', 'python-igraph', 'pandas', 'h5py',
-                      'cloud-volume', 'task-queue', 'torch==1.0.1',
+                      'cloud-volume', 'task-queue', 'torch==1.3.1',
                       'torchvision', 'future', 'pybind11>=2.2',
                       'psycopg2-binary', 'sqlalchemy', 'pytest',
                       'connected-components-3d'],
