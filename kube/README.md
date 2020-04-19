@@ -21,7 +21,7 @@ Each volume is a path to a volumetric dataset in Neuroglancer Precomputed / Clou
 * `startcoord` - starting voxel coordinate (inclusive) of the bounding box within the descriptor volume that you wish to process
 * `volshape` - the size of the processing volume in voxels, the full bounding box can be represented by (`startcoord + vol_shape`)
 * `chunkshape` - the shape of chunk each chunkwise process should use in voxels. Smaller chunks require more intermediate data, but this parameter should mostly
-* `blockshape` - the shape of a storage block for created volumes (output & tempoutput)
+* `blockshape` - the shape of a storage block for created volumes (`output` & `tempoutput`)
 * `patchshape` - the shape of an inference patch for synapse assignment. Only required for synapse assignment.
 
 ### Parameters
