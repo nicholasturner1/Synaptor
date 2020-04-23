@@ -119,7 +119,7 @@ def create_merge_seginfo_tasks(
     szthresh=None, timingtag=None):
 
     class MergeSeginfoTaskIterator(object):
-        def __init__(self, storagestr, hashmax, aux_storagestr):
+        def __init__(self, storagestr, hashmax, aux_storagestr, szthresh):
             self.level_start = 0
             self.level_end = hashmax
             self.storagestr = storagestr

@@ -10,7 +10,7 @@ def main(configfilename):
 
     config = parser.parse(configfilename)
 
-    enforce_szthresh = config["workspacetype"] == "Segmentation"
+    enforce_szthresh = config["workflowtype"] == "Segmentation"
     szthresh = config["szthresh"] if enforce_szthresh else None
 
     iterator = tc.create_merge_seginfo_tasks(
