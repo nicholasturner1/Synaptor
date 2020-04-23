@@ -115,14 +115,16 @@ def create_chunk_seg_map_task(storagestr):
 
 
 def create_merge_seginfo_tasks(
-    storagestr, hashmax, aux_storagestr=None, timingtag=None):
+    storagestr, hashmax, aux_storagestr=None, 
+    szthresh=None, timingtag=None):
 
     class MergeSeginfoTaskIterator(object):
-        def __init__(self, storagestr, hashmax, aux_storagestr):
+        def __init__(self, storagestr, hashmax, aux_storagestr, szthresh):
             self.level_start = 0
             self.level_end = hashmax
             self.storagestr = storagestr
             self.aux_storagestr = aux_storagestr
+            self.szthresh = szthresh
 
         def __len__(self):
             return self.level_end - self.level_start
@@ -137,13 +139,18 @@ def create_merge_seginfo_tasks(
             if self.aux_storagestr is None:
                 aux_arg = ""
             else:
-                aux_arg = f"--aux_storagestr {aux_storagestr}"
+                aux_arg = f"--aux_storagestr {self.aux_storagestr}"
+
+            if self.szthresh is not None:
+                aux_arg += f" --szthresh {self.szthresh}"
+
             for i in range(self.level_start, self.level_end):
                 cmd = (f"merge_seginfo {self.storagestr} {i} {aux_arg}")
 
                 yield SynaptorTask(cmd)
 
-    return MergeSeginfoTaskIterator(storagestr, hashmax, aux_storagestr)
+    return MergeSeginfoTaskIterator(
+               storagestr, hashmax, aux_storagestr, szthresh)
 
 
 def create_chunk_edges_tasks(

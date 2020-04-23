@@ -1,13 +1,18 @@
 import configparser
 
 
+SUPPORTED_WORKFLOWS = ["Segmentation", "Segmentation+Assignment"]
+SUPPORTED_WORKSPACES = ["Database", "File"]
+
+
 def parse(filename):
-    """ Parses a configuration file. """
+    """Parses a configuration file."""
 
     parser = configparser.ConfigParser()
     parser.read(filename)
 
-    assert parser.get("Workspaces", "workspacetype") in ["Database", "File"]
+    assert parser.get("Workflow", "workflowtype") in SUPPORTED_WORKFLOWS
+    assert parser.get("Workflow", "workspacetype") in SUPPORTED_WORKSPACES
 
     conf = dict()
 
@@ -32,10 +37,11 @@ def parse(filename):
     conf["mergethresh"] = parser.getint("Parameters", "mergethresh")
     conf["nummergetasks"] = parser.getint("Parameters", "nummergetasks")
 
-    conf["workspacetype"] = parser.get("Workspaces", "workspacetype")
-    conf["queueurl"] = parser.get("Workspaces", "queueurl")
-    conf["connectionstr"] = parser.get("Workspaces", "connectionstr")
-    conf["storagedir"] = parser.get("Workspaces", "storagedir")
+    conf["workflowtype"] = parser.get("Workflow", "workflowtype")
+    conf["workspacetype"] = parser.get("Workflow", "workspacetype")
+    conf["queueurl"] = parser.get("Workflow", "queueurl")
+    conf["connectionstr"] = parser.get("Workflow", "connectionstr")
+    conf["storagedir"] = parser.get("Workflow", "storagedir")
     conf["storagestrs"] = get_storagestrs(parser)
 
     return conf
@@ -51,14 +57,14 @@ def infer_max_face_shape(chunk_shape):
 
 def get_storagestrs(parser):
     """ Extracts the storage strings depending upon the workspace type. """
-    workspacetype = parser.get("Workspaces", "workspacetype")
+    workspacetype = parser.get("Workflow", "workspacetype")
 
     if workspacetype == "Database":
-        storagestr = parser.get("Workspaces", "connectionstr")
+        storagestr = parser.get("Workflow", "connectionstr")
 
     elif workspacetype == "File":
-        storagestr = parser.get("Workspaces", "storagedir")
+        storagestr = parser.get("Workflow", "storagedir")
 
-    aux_storagestr = parser.get("Workspaces", "storagedir")
+    aux_storagestr = parser.get("Workflow", "storagedir")
 
     return storagestr, aux_storagestr

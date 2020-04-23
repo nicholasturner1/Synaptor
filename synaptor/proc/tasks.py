@@ -163,11 +163,21 @@ def seg_graph_cc_task(graph_edges, hashmax, all_ids):
     return seg_merge_df
 
 
-def merge_seginfo_task(seginfo_dframe):
+def merge_seginfo_task(seginfo_dframe, szthresh=None):
 
-    return timed("Merging seginfo dataframe",
-                 seg.merge.merge_seginfo_df,
-                 seginfo_dframe, new_id_colname=cn.dst_id)
+    merged_df = timed("Merging seginfo dataframe",
+                      seg.merge.merge_seginfo_df,
+                      seginfo_dframe, new_id_colname=cn.dst_id)
+
+    if szthresh is not None:
+        # merged_df is modified in-place
+        szthresh_map = timed("Enforcing size threshold over merged ccs",
+                             seg.merge.enforce_size_threshold,
+                             merged_df, szthresh)
+    else:
+        szthresh_map = None
+
+    return merged_df, szthresh_map
 
 
 def edge_task(img, clefts, seg, assoc_net,

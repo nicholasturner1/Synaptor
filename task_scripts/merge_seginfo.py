@@ -16,6 +16,7 @@ parser.add_argument("hashval", type=int)
 
 parser.add_argument("--aux_storagestr", default=None)
 parser.add_argument("--timing_tag", default=None)
+parser.add_argument("--szthresh", type=int, default=None)
 
 
 args = parser.parse_args()
