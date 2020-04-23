@@ -10,9 +10,13 @@ def main(configfilename):
 
     config = parser.parse(configfilename)
 
+    enforce_szthresh = config["workspacetype"] == "Segmentation"
+    szthresh = config["szthresh"] if enforce_szthresh else None
+
     iterator = tc.create_merge_seginfo_tasks(
                    config["storagestrs"][0], config["nummergetasks"],
-                   aux_storagestr=config["storagestrs"][1])
+                   aux_storagestr=config["storagestrs"][1],
+                   szthresh=szthresh)
 
     tq = TaskQueue(config["queueurl"])
     tq.insert_all(iterator)

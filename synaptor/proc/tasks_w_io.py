@@ -216,7 +216,7 @@ def chunk_seg_merge_map(storagestr, timing_tag=None):
               timing_tag, storagestr)
 
 
-def merge_seginfo_task(storagestr, hashval,
+def merge_seginfo_task(storagestr, hashval, szthresh=None,
                        aux_storagestr=None, timing_tag=None):
 
     start_time = time.time()
@@ -225,16 +225,23 @@ def merge_seginfo_task(storagestr, hashval,
                              taskio.read_mapped_seginfo_by_dst_hash,
                              storagestr, hashval)
 
-    merged_seginfo = tasks.merge_seginfo_task(seginfo_w_new_id)
+    merged_seginfo, szthresh_map = tasks.merge_seginfo_task(
+                                       seginfo_w_new_id,
+                                       szthresh=szthresh)
+
+    timed(f"Writing merged seginfo for dst hash {hashval}",
+          taskio.write_merged_seg_info,
+          merged_seginfo, storagestr, hash_tag=hashval)
 
     if aux_storagestr is not None:
         timed(f"Writing merged seginfo for dst hash {hashval} to aux",
               taskio.write_merged_seg_info,
               merged_seginfo, aux_storagestr, hash_tag=hashval)
 
-    timed(f"Writing merged seginfo for dst hash {hashval}",
-          taskio.write_merged_seg_info,
-          merged_seginfo, storagestr, hash_tag=hashval)
+    if szthresh is not None:
+        timed("Writing mapping for size threshold",
+              taskio.write_dup_id_map,
+              szthresh_map, storagestr)
 
     if timing_tag is not None:
         timed("Writing total task time",
