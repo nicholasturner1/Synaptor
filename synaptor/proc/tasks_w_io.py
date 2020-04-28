@@ -47,7 +47,7 @@ def cc_task(desc_cvname, seg_cvname, storagestr,
           continuations, storagedir, chunk_bounds)
 
     # Adding this ugly branch bc the outputs need to be handled
-    #  a bit diffeently here (see note below)
+    #  a bit differently here (see note below)
     if io.is_db_url(storagestr):
         face_hashes = seg.hash_chunk_faces(chunk_begin, chunk_end,
                                            maxval=hashmax)
