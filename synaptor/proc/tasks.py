@@ -181,7 +181,8 @@ def merge_seginfo_task(seginfo_dframe, szthresh=None):
 
 
 def edge_task(img, clefts, seg, assoc_net,
-              patchsz, offset=(0, 0, 0), root_seg=None,
+              patchsz, batchsz=1,
+              offset=(0, 0, 0), root_seg=None,
               samples_per_cleft=2, dil_param=5,
               id_map=None, hashmax=None, hash_fillval=-1):
     """
@@ -201,11 +202,10 @@ def edge_task(img, clefts, seg, assoc_net,
                        clefts, id_map, copy=False)
 
     edges = timed("Inferring edges",
-                  edge.infer_edges,
+                  edge.batch.infer_edges,
                   assoc_net, img, clefts, seg,
-                  offset=offset, patchsz=patchsz,
-                  samples_per_cleft=samples_per_cleft,
-                  root_seg=root_seg, dil_param=dil_param)
+                  patchsz=patchsz, batchsz=batchsz,
+                  offset=offset, dil_param=dil_param)
 
     edges = timed("Computing cleft size and adding it to dframe",
                   edge.add_cleft_sizes,

@@ -25,6 +25,7 @@ parser.add_argument("--storagedir", default=None, required=True)
 # Processing Parameters
 parser.add_argument("--resolution", nargs=3, type=int, default=(4, 4, 40))
 parser.add_argument("--patchsz", nargs=3, type=int, required=True)
+parser.add_argument("--batchsz", type=int, default=1)
 parser.add_argument("--chunk_begin", nargs=3, type=int, required=True)
 parser.add_argument("--chunk_end", nargs=3, type=int, required=True)
 parser.add_argument("--samples_per_cleft", type=int, default=1)
