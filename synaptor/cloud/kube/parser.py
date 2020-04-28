@@ -36,6 +36,7 @@ def parse(filename):
     conf["dustthresh"] = parser.getint("Parameters", "dustthresh")
     conf["mergethresh"] = parser.getint("Parameters", "mergethresh")
     conf["nummergetasks"] = parser.getint("Parameters", "nummergetasks")
+    conf["batchsz"] = parser.getint("Parameters", "batchsz")
 
     conf["workflowtype"] = parser.get("Workflow", "workflowtype")
     conf["workspacetype"] = parser.get("Workflow", "workspacetype")

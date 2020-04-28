@@ -22,7 +22,7 @@ def main(configfilename):
                    hashmax=config["nummergetasks"],
                    storagedir=config["storagestrs"][1],
                    bounds=bounds, chunkshape=config["chunkshape"],
-                   patchsz=config["patchshape"],
+                   patchsz=config["patchshape"], batchsz=config["batchsz"],
                    resolution=config["voxelres"])
 
     tq = TaskQueue(config["queueurl"])

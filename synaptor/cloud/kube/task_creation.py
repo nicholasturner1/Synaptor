@@ -155,7 +155,7 @@ def create_merge_seginfo_tasks(
 
 def create_chunk_edges_tasks(
     imgpath, cleftpath, segpath, storagestr, hashmax, storagedir,
-    bounds, chunkshape, patchsz, resolution=(4, 4, 40)):
+    bounds, chunkshape, patchsz, batchsz, resolution=(4, 4, 40)):
     """ Only passing the required arguments for now """
     shape = Vec(*chunkshape)
 
@@ -193,7 +193,8 @@ def create_chunk_edges_tasks(
                 cmd = (f"chunk_edges {imgpath} {cleftpath} {segpath}"
                        f" {storagestr} {hashmax} --storagedir {storagedir}"
                        f" --chunk_begin {chunk_begin} --chunk_end {chunk_end}"
-                       f" --patchsz {patchsz_str} --resolution {res_str}")
+                       f" --patchsz {patchsz_str} --batchsz {batchsz}"
+                       f"  --resolution {res_str}")
 
                 yield SynaptorTask(cmd)
 
