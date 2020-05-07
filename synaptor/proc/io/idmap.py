@@ -31,20 +31,41 @@ def make_dframe_from_dict(id_map):
 
 
 def read_chunk_unique_ids(proc_url, chunk_bounds):
-    assert io.is_db_url(proc_url), "file unique id map not implemented yet"
+    
+    if io.is_db_url(proc_url):
 
-    tag = io.fname_chunk_tag(chunk_bounds)
-    metadata = io.open_db_metadata(proc_url)
-    chunk_segs = metadata.tables["chunk_segs"]
+        tag = io.fname_chunk_tag(chunk_bounds)
+        metadata = io.open_db_metadata(proc_url)
+        chunk_segs = metadata.tables["chunk_segs"]
+    
+        columns = list(chunk_segs.c[name] for name in UNIQUE_ID_MAP_COLUMNS)
+        statement = select(columns).where(chunk_segs.c[cn.chunk_tag] == tag)
+    
+        dframe = io.read_db_dframe(proc_url, statement)
 
-    columns = list(chunk_segs.c[name] for name in UNIQUE_ID_MAP_COLUMNS)
-    statement = select(columns).where(chunk_segs.c[cn.chunk_tag] == tag)
+        return dict(zip(dframe[cn.seg_id], dframe["id"]))
 
-    dframe = io.read_db_dframe(proc_url, statement)
+    else:
 
-    return dict(zip(dframe[cn.seg_id], dframe["id"]))
+        fname = io.pull_file(cleft_map_fname(proc_url, chunk_bounds))
+        dframe = io.read_dframe(fname)
+
+        return dict(zip(dframe.index, dframe["id"]))
 
 
+def write_chunk_unique_ids(mapping, storagestr, chunk_bounds):
+    """Writes a mapping from chunk ids to unique ids"""
+    dframe = make_dframe_from_dict(id_map)
+
+    if io.is_db_url(proc_url):
+        tag = io.fname_chunk_tag(chunk_bounds)
+        dframe["chunk_tag"] = tag
+        io.write_db_dframe(dframe, proc_url, "seg_idmap")
+
+    else:
+        io.write_dframe(dframe, cleft_map_fname(proc_url, chunk_bounds))
+
+    
 def read_all_chunk_unique_ids(proc_url):
     assert io.is_db_url(proc_url), "file unique id map not implemented yet"
 
@@ -176,6 +197,30 @@ def read_dup_id_map(proc_url):
             dframe = pd.DataFrame({cn.dst_id: []})
 
     return dict(zip(dframe.index, dframe[cn.dst_id]))
+
+
+def read_filtered_dup_id_map(proc_url, src_ids, chunksize=1000):
+    """ Reads a duplicate mapping from storage. """
+    src_ids = set(src_ids)
+    if io.is_db_url(proc_url):
+        raise Exception("filtering not implemented for DB io")
+
+    else:
+        try:
+            mapping = dict()
+            for subdf in io.read_dframe(
+                             storagestr, fn.dup_map_fname,
+                             chunksize=chunksize):
+                reqd_rows = subdf.loc[src_ids.intersection(subdf.index)]
+                mapping.update(
+                    dict(zip(reqd_rows.index, reqd_rows[cn.dst_id])))
+
+        except Exception as e:
+            print(e)
+            print("WARNING: no dup id map found, passing empty dup mapping")
+            dframe = pd.DataFrame({cn.dst_id: []})
+    
+    return mapping
 
 
 def write_dup_id_map(id_map, proc_url):

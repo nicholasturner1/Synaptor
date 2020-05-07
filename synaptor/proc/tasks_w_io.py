@@ -15,6 +15,7 @@ from . import tasks
 from .tasks import timed
 from . import seg
 from . import edge
+from . import norm
 from . import colnames as cn
 
 
@@ -27,6 +28,14 @@ def cc_task(desc_cvname, seg_cvname, storagestr,
 
     storagedir = storagestr if storagedir is None else storagedir
     chunk_bounds = types.BBox3d(chunk_begin, chunk_end)
+
+    # Checking whether this task has already been completed
+    # re-running these tasks can cause problems later
+    try:
+        timed("Testing for task completion",
+              task.io.read_chunk_unique_ids,
+              storagedir, chunk_bounds)
+        return
 
     desc_vol = timed(f"Reading network output chunk: {chunk_bounds}",
                      io.read_cloud_volume_chunk,
@@ -69,6 +78,17 @@ def cc_task(desc_cvname, seg_cvname, storagestr,
               io.write_db_dframes,
               [fhash_df, seginfo_df], storagestr,
               [fhash_tablename, seginfo_tablename])
+
+        # Writing a backup unique ids mapping to file storage to
+        # make match_contins faster
+        unique_ids = timed(f"Reading unique ids for chunk {chunk_bounds}",
+                           taskio.read_chunk_unique_ids,
+                           storagestr, chunk_bounds)
+
+        timed(f"Writing unique ids to file storage",
+              taskio.write_chunk_unique_ids,
+              unique_ids, storagedir, chunk_bounds)
+        
 
     else:  # file storage backend
         timed("Writing seg info to storage",
@@ -257,6 +277,8 @@ def edge_task(img_cvname, cleft_cvname, seg_cvname,
               resolution=(4, 4, 40), num_downsamples=0,
               base_res_begin=None, base_res_end=None,
               parallel=1, hashmax=None, storagedir=None,
+              normcloudpath=None,
+              lower_clip_frac=0.01, upper_clip_frac=0.01,
               timing_tag=None):
     """
     Runs tasks.chunk_edges_task after reading the relevant
@@ -291,6 +313,16 @@ def edge_task(img_cvname, cleft_cvname, seg_cvname,
                 io.read_cloud_volume_chunk,
                 img_cvname, chunk_bounds,
                 mip=resolution, parallel=parallel)
+
+    if normcloudpath is not None:
+        histograms = timed("Reading normalization histograms",
+                           io.norm.read_histogram_bbox,
+                           normcloudpath, chunk_bounds)
+
+        img = timed("Normalizing image chunk",
+                    norm.normalize_chunk,
+                    img, histograms, chunk_begin[2],
+                    lower_clip_frac, upper_clip_frac)
 
     # clefts won't be downsampled - will do that myself below
     clefts = timed(f"Reading cleft chunk at MIP 0",

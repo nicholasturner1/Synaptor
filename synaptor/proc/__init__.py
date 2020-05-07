@@ -3,6 +3,7 @@ from . import edge
 from . import overlap
 from . import candidate
 from . import anchor
+from . import norm
 
 from . import tasks
 from .tasks import cc_task

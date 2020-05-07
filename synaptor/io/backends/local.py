@@ -45,7 +45,7 @@ def send_directory(dirname, dst):
         shutil.move(dirname, dst)
 
 
-def read_dframe(path):
+def read_dframe(path, chunksize=None):
     """ Read a dataframe from local disk. """
     assert os.path.isfile(path)
     return pd.read_csv(path, index_col=0)
