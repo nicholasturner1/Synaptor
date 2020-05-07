@@ -36,6 +36,8 @@ def cc_task(desc_cvname, seg_cvname, storagestr,
               task.io.read_chunk_unique_ids,
               storagedir, chunk_bounds)
         return
+    except Exception as e:
+        pass
 
     desc_vol = timed(f"Reading network output chunk: {chunk_bounds}",
                      io.read_cloud_volume_chunk,
