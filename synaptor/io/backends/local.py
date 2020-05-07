@@ -48,7 +48,7 @@ def send_directory(dirname, dst):
 def read_dframe(path, chunksize=None):
     """ Read a dataframe from local disk. """
     assert os.path.isfile(path)
-    return pd.read_csv(path, index_col=0)
+    return pd.read_csv(path, index_col=0, chunksize=chunksize)
 
 
 def write_dframe(dframe, path, header=True, index=True):
