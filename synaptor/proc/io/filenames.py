@@ -16,6 +16,11 @@ idmap_dirname = "id_maps"
 idmap_fmtstr = "id_map_{tag}.df"
 
 
+# Mapping to unique ids
+uniquemap_dirname = "unique_ids"
+uniquemap_fmtstr = "unique_ids_{tag}.df"
+
+
 # Duplicate connection merging id map
 dup_map_fname = "dup_id_map.df"
 

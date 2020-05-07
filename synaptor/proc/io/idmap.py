@@ -23,11 +23,34 @@ def cleft_map_fname(proc_url, chunk_bounds):
     return os.path.join(proc_url, fn.idmap_dirname, basename)
 
 
+def unique_ids_fname(storagestr, chunk_bounds):
+    chunk_tag = io.fname_chunk_tag(chunk_bounds)
+    basename = fn.uniquemap_fmtstr.format(tag=chunk_tag)
+
+    return os.path.join(storagestr, fn.uniquemap_dirname, basename)
+
+
 def make_dframe_from_dict(id_map):
     df = pd.DataFrame(pd.Series(id_map), columns=[cn.dst_id])
     df.index.name = cn.src_id
 
     return df
+
+
+def read_unique_ids(filename):
+    dframe = io.read_dframe(filename)
+
+    return dict(zip(dframe.index, dframe[cn.dst_id]))
+
+
+def pull_unique_id_files(storagestr, bboxes):
+    assert not io.is_db_url(storagestr), "not implemented for db"
+
+    remote_filenames = [unique_ids_fname(storagestr, bbox) for bbox in bboxes]
+
+    local_filenames = io.pull_files(remote_filenames)
+
+    return {io.bbox_from_fname(f): f for f in local_filenames}
 
 
 def read_chunk_unique_ids(proc_url, chunk_bounds):
@@ -47,10 +70,10 @@ def read_chunk_unique_ids(proc_url, chunk_bounds):
 
     else:
 
-        fname = io.pull_file(cleft_map_fname(proc_url, chunk_bounds))
+        fname = io.pull_file(unique_ids_fname(proc_url, chunk_bounds))
         dframe = io.read_dframe(fname)
 
-        return dict(zip(dframe.index, dframe["id"]))
+        return dict(zip(dframe.index, dframe[cn.dst_id]))
 
 
 def write_chunk_unique_ids(mapping, storagestr, chunk_bounds):
@@ -63,7 +86,7 @@ def write_chunk_unique_ids(mapping, storagestr, chunk_bounds):
         io.write_db_dframe(dframe, storagestr, "seg_idmap")
 
     else:
-        io.write_dframe(dframe, cleft_map_fname(storagestr, chunk_bounds))
+        io.write_dframe(dframe, unique_ids_fname(storagestr, chunk_bounds))
 
 
 def read_all_chunk_unique_ids(proc_url):

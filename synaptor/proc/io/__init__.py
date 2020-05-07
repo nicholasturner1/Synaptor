@@ -30,7 +30,9 @@ from .idmap import read_chunk_id_map, write_chunk_id_map
 from .idmap import write_chunk_id_maps
 from .idmap import read_dup_id_map, write_dup_id_map
 from .idmap import read_filtered_dup_id_map
-from .idmap import read_chunk_unique_ids, read_all_chunk_unique_ids
+from .idmap import read_chunk_unique_ids, write_chunk_unique_ids
+from .idmap import read_unique_ids, pull_unique_id_files
+from .idmap import read_all_chunk_unique_ids
 from .idmap import write_seg_merge_map, write_chunked_seg_map
 
 from . import overlap
