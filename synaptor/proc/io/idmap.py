@@ -31,16 +31,16 @@ def make_dframe_from_dict(id_map):
 
 
 def read_chunk_unique_ids(proc_url, chunk_bounds):
-    
+
     if io.is_db_url(proc_url):
 
         tag = io.fname_chunk_tag(chunk_bounds)
         metadata = io.open_db_metadata(proc_url)
         chunk_segs = metadata.tables["chunk_segs"]
-    
+
         columns = list(chunk_segs.c[name] for name in UNIQUE_ID_MAP_COLUMNS)
         statement = select(columns).where(chunk_segs.c[cn.chunk_tag] == tag)
-    
+
         dframe = io.read_db_dframe(proc_url, statement)
 
         return dict(zip(dframe[cn.seg_id], dframe["id"]))
@@ -55,17 +55,17 @@ def read_chunk_unique_ids(proc_url, chunk_bounds):
 
 def write_chunk_unique_ids(mapping, storagestr, chunk_bounds):
     """Writes a mapping from chunk ids to unique ids"""
-    dframe = make_dframe_from_dict(id_map)
+    dframe = make_dframe_from_dict(mapping)
 
-    if io.is_db_url(proc_url):
+    if io.is_db_url(storagestr):
         tag = io.fname_chunk_tag(chunk_bounds)
         dframe["chunk_tag"] = tag
-        io.write_db_dframe(dframe, proc_url, "seg_idmap")
+        io.write_db_dframe(dframe, storagestr, "seg_idmap")
 
     else:
-        io.write_dframe(dframe, cleft_map_fname(proc_url, chunk_bounds))
+        io.write_dframe(dframe, cleft_map_fname(storagestr, chunk_bounds))
 
-    
+
 def read_all_chunk_unique_ids(proc_url):
     assert io.is_db_url(proc_url), "file unique id map not implemented yet"
 
@@ -199,10 +199,10 @@ def read_dup_id_map(proc_url):
     return dict(zip(dframe.index, dframe[cn.dst_id]))
 
 
-def read_filtered_dup_id_map(proc_url, src_ids, chunksize=1000):
+def read_filtered_dup_id_map(storagestr, src_ids, chunksize=1000):
     """ Reads a duplicate mapping from storage. """
     src_ids = set(src_ids)
-    if io.is_db_url(proc_url):
+    if io.is_db_url(storagestr):
         raise Exception("filtering not implemented for DB io")
 
     else:
@@ -218,8 +218,8 @@ def read_filtered_dup_id_map(proc_url, src_ids, chunksize=1000):
         except Exception as e:
             print(e)
             print("WARNING: no dup id map found, passing empty dup mapping")
-            dframe = pd.DataFrame({cn.dst_id: []})
-    
+            mapping = dict()
+
     return mapping
 
 
