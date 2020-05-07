@@ -199,7 +199,7 @@ def read_dup_id_map(proc_url):
     return dict(zip(dframe.index, dframe[cn.dst_id]))
 
 
-def read_filtered_dup_id_map(storagestr, src_ids, chunksize=1000):
+def read_filtered_dup_id_map(storagestr, src_ids, chunksize=100000):
     """ Reads a duplicate mapping from storage. """
     src_ids = set(src_ids)
     if io.is_db_url(storagestr):
