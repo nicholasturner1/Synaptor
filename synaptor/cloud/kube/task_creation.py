@@ -79,7 +79,7 @@ def create_merge_ccs_task(
 
 
 def create_match_contins_tasks(
-    storagestr, hashmax, max_faceshape, timingtag=None):
+    storagestr, storagedir, hashmax, max_faceshape, timingtag=None):
 
     class MatchContinsTaskIterator(object):
         def __init__(self, hashmax):
