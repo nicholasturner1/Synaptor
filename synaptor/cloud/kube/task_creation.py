@@ -155,7 +155,7 @@ def create_merge_seginfo_tasks(
 
 def create_chunk_edges_tasks(
     imgpath, cleftpath, segpath, storagestr, hashmax, storagedir,
-    bounds, chunkshape, patchsz, resolution=(4, 4, 40)):
+    bounds, chunkshape, patchsz, normcloudpath, resolution=(4, 4, 40)):
     """ Only passing the required arguments for now """
     shape = Vec(*chunkshape)
 
@@ -193,6 +193,7 @@ def create_chunk_edges_tasks(
                 cmd = (f"chunk_edges {imgpath} {cleftpath} {segpath}"
                        f" {storagestr} {hashmax} --storagedir {storagedir}"
                        f" --chunk_begin {chunk_begin} --chunk_end {chunk_end}"
+                       f" --normcloudpath {normcloudpath} "
                        f" --patchsz {patchsz_str} --resolution {res_str}")
 
                 yield SynaptorTask(cmd)
@@ -254,7 +255,7 @@ def create_merge_dup_tasks(
             for i in range(self.level_start, self.level_end):
                 cmd = (f"merge_dups {self.storagestr} {i} {dist_thresh}"
                        f" {size_thresh} --voxel_res {res_str}"
-                       f" --fulldf_storagestr {output_storagestr}")
+                       f" --dst_storagestr {output_storagestr}")
 
                 yield SynaptorTask(cmd)
 

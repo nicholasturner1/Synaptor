@@ -11,6 +11,7 @@ parser = argparse.ArgumentParser()
 
 # Inputs & Outputs
 parser.add_argument("storagestr")
+parser.add_argument("storagedir")
 parser.add_argument("facehash", type=int)
 
 # Processing Parameters

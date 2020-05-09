@@ -19,6 +19,7 @@ parser.add_argument("cleft_cvname")
 parser.add_argument("seg_cvname")
 parser.add_argument("storagestr")
 parser.add_argument("hashmax", type=int, default=1)
+parser.add_argument("--normcloudpath", default=None)
 parser.add_argument("--root_seg_cvname", default=None)
 parser.add_argument("--storagedir", default=None, required=True)
 

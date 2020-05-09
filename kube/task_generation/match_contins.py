@@ -11,7 +11,8 @@ def main(configfilename):
     config = parser.parse(configfilename)
 
     iterator = tc.create_match_contins_tasks(
-                   config["storagestrs"][0], config["nummergetasks"],
+                   config["storagestrs"][0], config["storagestrs"][1],
+                   config["nummergetasks"],
                    max_faceshape=config["maxfaceshape"])
 
     tq = TaskQueue(config["queueurl"])

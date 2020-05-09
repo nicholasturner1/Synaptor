@@ -42,6 +42,7 @@ def parse(filename):
     conf["queueurl"] = parser.get("Workflow", "queueurl")
     conf["connectionstr"] = parser.get("Workflow", "connectionstr")
     conf["storagedir"] = parser.get("Workflow", "storagedir")
+    conf["normcloudpath"] = parser.get("Workflow", "normcloudpath")
     conf["storagestrs"] = get_storagestrs(parser)
 
     return conf

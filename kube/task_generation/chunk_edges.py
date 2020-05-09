@@ -23,6 +23,7 @@ def main(configfilename):
                    storagedir=config["storagestrs"][1],
                    bounds=bounds, chunkshape=config["chunkshape"],
                    patchsz=config["patchshape"],
+                   normcloudpath=config["normcloudpath"],
                    resolution=config["voxelres"])
 
     tq = TaskQueue(config["queueurl"])

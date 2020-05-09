@@ -1,5 +1,4 @@
-#!/usr/bin/env python3
-__doc__ = """
+"""
 Merge Edges Wrapper Script
 
 Takes assignments from multiple chunks, and selects the one from the
