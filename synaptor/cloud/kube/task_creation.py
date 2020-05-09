@@ -98,7 +98,7 @@ def create_match_contins_tasks(
         def __iter__(self):
             max_faceshape_str = tup2str(max_faceshape)
             for i in range(self.level_start, self.level_end):
-                cmd = (f"match_contins {storagestr} {i} "
+                cmd = (f"match_contins {storagestr} {storagedir} {i} "
                        f" --max_face_shape {max_faceshape_str}")
 
                 yield SynaptorTask(cmd)
