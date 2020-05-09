@@ -46,7 +46,10 @@ def read_unique_ids(filename):
 def pull_unique_id_files(storagestr, bboxes):
     assert not io.is_db_url(storagestr), "not implemented for db"
 
-    remote_filenames = [unique_ids_fname(storagestr, bbox) for bbox in bboxes]
+    # you get a bunch of error messages if you specify the same
+    # files more than once
+    remote_filenames = list(set([unique_ids_fname(storagestr, bbox)
+                                 for bbox in bboxes]))
 
     local_filenames = io.pull_files(remote_filenames)
 
