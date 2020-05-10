@@ -1,6 +1,5 @@
 import argparse
 
-from cloudvolume.lib import Bbox, Vec
 from taskqueue import TaskQueue
 
 import synaptor.cloud.kube.parser as parser
@@ -11,16 +10,13 @@ def main(configfilename):
 
     config = parser.parse(configfilename)
 
-    startcoord = Vec(*config["startcoord"])
-    volshape = Vec(*config["volshape"])
-
-    bounds = Bbox(startcoord, startcoord + volshape)
-
     iterator = tc.create_overlap_tasks(
                    config["output"], config["baseseg"],
                    config["storagestrs"][0],
-                   bounds=bounds, shape=config["chunkshape"],
-                   mip=config["voxelres"])
+                   volshape=config["volshape"],
+                   chunkshape=config["chunkshape"],
+                   startcoord=config["startcoord"],
+                   resolution=config["voxelres"])
 
     tq = TaskQueue(config["queueurl"])
     tq.insert_all(iterator)

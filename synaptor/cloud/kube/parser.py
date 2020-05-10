@@ -30,6 +30,7 @@ def parse(filename):
     conf["patchshape"] = parse_tuple(parser.get("Dimensions", "patchshape"))
     # Additional field inferred from chunk_shape
     conf["maxfaceshape"] = infer_max_face_shape(conf["chunkshape"])
+    check_shapes(conf["volshape"], conf["chunkshape"], conf["blockshape"])
 
     conf["ccthresh"] = parser.getfloat("Parameters", "ccthresh")
     conf["szthresh"] = parser.getint("Parameters", "szthresh")
@@ -69,3 +70,10 @@ def get_storagestrs(parser):
     aux_storagestr = parser.get("Workflow", "storagedir")
 
     return storagestr, aux_storagestr
+
+
+def check_shapes(volshape, chunkshape, blockshape):
+    if not all(v % b == 0 for (v, b) in zip(volshape, blockshape)):
+        raise Exception("volshape not evenly divided by blockshape")
+    if not all(c % b == 0 for (c, b) in zip(chunkshape, blockshape)):
+        raise Exception("chunkshape not evenly divided by blockshape")

@@ -1,6 +1,5 @@
 import argparse
 
-from cloudvolume.lib import Bbox, Vec
 from taskqueue import TaskQueue
 
 import synaptor.cloud.kube.parser as parser
@@ -11,17 +10,14 @@ def main(configfilename):
 
     config = parser.parse(configfilename)
 
-    startcoord = Vec(*config["startcoord"])
-    volshape = Vec(*config["volshape"])
-
-    bounds = Bbox(startcoord, startcoord + volshape)
-
     iterator = tc.create_chunk_edges_tasks(
-                   config["image"], config["tempoutput"],
-                   config["baseseg"], storagestr=config["storagestrs"][0],
+                   config["image"], config["tempoutput"], config["baseseg"],
+                   storagestr=config["storagestrs"][0],
                    hashmax=config["nummergetasks"],
                    storagedir=config["storagestrs"][1],
-                   bounds=bounds, chunkshape=config["chunkshape"],
+                   volshape=config["volshape"],
+                   chunkshape=config["chunkshape"],
+                   startcoord=config["startcoord"],
                    patchsz=config["patchshape"],
                    normcloudpath=config["normcloudpath"],
                    resolution=config["voxelres"])
