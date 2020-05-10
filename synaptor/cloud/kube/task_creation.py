@@ -110,8 +110,18 @@ def create_seg_graph_cc_task(storagestr, hashmax):
     return SynaptorTask(f"seg_graph_ccs {storagestr} {hashmax}")
 
 
+def create_index_seg_map_task(storagestr):
+    return SynaptorTask(f"create_index {storagestr}"
+                        " seg_merge_map dst_id_hash")
+
+
 def create_chunk_seg_map_task(storagestr):
     return SynaptorTask(f"chunk_seg_map {storagestr}")
+
+
+def create_index_chunked_seg_map_task(storagestr):
+    return SynaptorTask(f"create_index {storagestr}"
+                        " chunked_seg_merge_map chunk_tag")
 
 
 def create_merge_seginfo_tasks(
