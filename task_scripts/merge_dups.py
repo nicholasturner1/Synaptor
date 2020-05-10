@@ -25,7 +25,7 @@ parser.add_argument("--timing_tag", default=None)
 
 args = parser.parse_args()
 args.src_storagestr = s.io.parse_storagestr(args.src_storagestr)
-args.fulldf_storagestr = s.io.parse_storagestr(args.fulldf_storagestr)
+args.dst_storagestr = s.io.parse_storagestr(args.dst_storagestr)
 print(vars(args))
 
 

@@ -443,9 +443,10 @@ def pick_largest_edges_task(storagestr, clefthash=None, timing_tag=None):
               time.time() - start_time, "pick_edge", timing_tag, storagestr)
 
 
-def merge_duplicates_task(voxel_res, dist_thr, size_thr,
-                          src_storagestr, hash_index, dst_storagestr=None,
-                          timing_tag=None):
+def merge_duplicates_task(
+    voxel_res, dist_thr, size_thr,
+    src_storagestr, hash_index, dst_storagestr=None,
+    timing_tag=None):
 
     start_time = time.time()
 
