@@ -244,7 +244,7 @@ def create_remap_tasks(
     bboxes = chunk_bboxes(volshape, chunkshape, offset=startcoord)
 
     class RemapTaskIterator(object):
-        def __init__(self, level_start, level_end):
+        def __init__(self):
             pass
 
         def __len__(self):
@@ -274,7 +274,7 @@ def create_overlap_tasks(
     bboxes = chunk_bboxes(volshape, chunkshape, offset=startcoord)
 
     class OverlapTaskIterator(object):
-        def __init__(self, level_start, level_end):
+        def __init__(self):
             pass
 
         def __len__(self):

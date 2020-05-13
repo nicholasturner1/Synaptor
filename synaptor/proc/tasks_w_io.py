@@ -328,7 +328,7 @@ def edge_task(img_cvname, cleft_cvname, seg_cvname,
 
     if normcloudpath is not None:
         histograms = timed("Reading normalization histograms",
-                           io.norm.read_histogram_bbox,
+                           taskio.norm.read_histogram_bbox,
                            normcloudpath, chunk_bounds)
 
         img = timed("Normalizing image chunk",
