@@ -471,7 +471,7 @@ def merge_duplicates_task(
     # call.
     timed("Writing duplicate id mapping for hash index",
           taskio.write_dup_id_map,
-          dup_id_map, dst_storagestr)
+          dup_id_map, dst_storagestr, hash_index)
     timed("Writing final DataFrame for hash index",
           taskio.write_full_info,
           full_df, dst_storagestr,
