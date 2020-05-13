@@ -249,12 +249,16 @@ def read_filtered_dup_id_map(storagestr, src_ids, chunksize=100000):
     return mapping
 
 
-def write_dup_id_map(id_map, proc_url):
+def write_dup_id_map(id_map, storagestr, hash_index=None):
     """ Writes a duplicate mapping to storage. """
     dframe = make_dframe_from_dict(id_map)
 
-    if io.is_db_url(proc_url):
-        io.write_db_dframe(dframe.reset_index(), proc_url, "dup_merge_map")
+    if io.is_db_url(storagestr):
+        io.write_db_dframe(dframe.reset_index(), storagestr, "dup_merge_map")
 
     else:
-        io.write_dframe(dframe, proc_url, fn.dup_map_fname)
+        if hash_index is not None:
+            dst_filename = fn.tagged_dup_fname.format(i=hash_index)
+        else:
+            dst_filename = fn.dup_map_fname
+        io.write_dframe(dframe, storagestr, dst_filename)
