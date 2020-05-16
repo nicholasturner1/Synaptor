@@ -76,7 +76,11 @@ def send_file(local_name, remote_path):
 
 
 def send_files(local_names, remote_dir):
-    subprocess.call(["gsutil", "-q", "-m", "cp", *local_names, remote_dir])
+    # gsutil is running into a strange error - using the simpler method instead
+    #subprocess.call(["gsutil", "-q", "-m", "cp", *local_names, remote_dir])
+    for local_name in local_names:
+        dst = os.path.join(remove_dir, local_name)
+        send_file(local_name, dst)
 
 
 def send_directory(local_dir, remote_dir):
