@@ -17,33 +17,46 @@ def parse(filename):
     conf = dict()
 
     conf["descriptor"] = parser.get("Volumes", "descriptor")
-    conf["tempoutput"] = parser.get("Volumes", "tempoutput")
     conf["output"] = parser.get("Volumes", "output")
-    conf["baseseg"] = parser.get("Volumes", "baseseg")
-    conf["image"] = parser.get("Volumes", "image")
+    conf["tempoutput"] = parser.get("Volumes", "tempoutput",
+                                    fallback=conf["output"])
+    conf["baseseg"] = parser.get("Volumes", "baseseg", fallback=None)
+    conf["image"] = parser.get("Volumes", "image", fallback=None)
 
     conf["voxelres"] = parse_tuple(parser.get("Dimensions", "voxelres"))
     conf["startcoord"] = parse_tuple(parser.get("Dimensions", "startcoord"))
     conf["volshape"] = parse_tuple(parser.get("Dimensions", "volshape"))
     conf["chunkshape"] = parse_tuple(parser.get("Dimensions", "chunkshape"))
-    conf["blockshape"] = parse_tuple(parser.get("Dimensions", "blockshape"))
-    conf["patchshape"] = parse_tuple(parser.get("Dimensions", "patchshape"))
+    conf["blockshape"] = parse_tuple(parser.get("Dimensions", "blockshape",
+                                                fallback="1, 1, 1"))
+    conf["patchshape"] = parse_tuple(parser.get("Dimensions", "patchshape",
+                                                fallback="1, 1, 1"))
+
     # Additional field inferred from chunk_shape
     conf["maxfaceshape"] = infer_max_face_shape(conf["chunkshape"])
     check_shapes(conf["volshape"], conf["chunkshape"], conf["blockshape"])
 
     conf["ccthresh"] = parser.getfloat("Parameters", "ccthresh")
-    conf["szthresh"] = parser.getint("Parameters", "szthresh")
-    conf["dustthresh"] = parser.getint("Parameters", "dustthresh")
-    conf["mergethresh"] = parser.getint("Parameters", "mergethresh")
-    conf["nummergetasks"] = parser.getint("Parameters", "nummergetasks")
+    conf["szthresh"] = parser.getint(
+                           "Parameters", "szthresh", fallback=0)
+    conf["dustthresh"] = parser.getint(
+                             "Parameters", "dustthresh", fallback=0)
+    conf["mergethresh"] = parser.getint(
+                              "Parameters", "mergethresh", fallback=0)
+    conf["nummergetasks"] = parser.getint(
+                                "Parameters", "nummergetasks", fallback=1)
 
-    conf["workflowtype"] = parser.get("Workflow", "workflowtype")
-    conf["workspacetype"] = parser.get("Workflow", "workspacetype")
-    conf["queueurl"] = parser.get("Workflow", "queueurl")
-    conf["connectionstr"] = parser.get("Workflow", "connectionstr")
+    conf["workflowtype"] = parser.get(
+                               "Workflow", "workflowtype", fallback="Segmentation")
+    conf["workspacetype"] = parser.get(
+                                "Workflow", "workspacetype", fallback="File")
+    conf["queueurl"] = parser.get("Workflow", "queueurl", fallback=None)
+    conf["connectionstr"] = parser.get(
+                                "Workflow", "connectionstr",
+                                fallback="STORAGE_FROM_FILE")
     conf["storagedir"] = parser.get("Workflow", "storagedir")
-    conf["normcloudpath"] = parser.get("Workflow", "normcloudpath")
+    conf["normcloudpath"] = parser.get(
+                                "Workflow", "normcloudpath", fallback=None)
     conf["storagestrs"] = get_storagestrs(parser)
 
     return conf
@@ -62,7 +75,9 @@ def get_storagestrs(parser):
     workspacetype = parser.get("Workflow", "workspacetype")
 
     if workspacetype == "Database":
-        storagestr = parser.get("Workflow", "connectionstr")
+        storagestr = parser.get(
+                         "Workflow", "connectionstr",
+                         fallback="STORAGE_FROM_FILE")
 
     elif workspacetype == "File":
         storagestr = parser.get("Workflow", "storagedir")

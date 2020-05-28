@@ -16,9 +16,11 @@ def create_connected_component_tasks(
     descpath, outpath, storagestr, storagedir,
     ccthresh, szthresh,
     volshape, chunkshape, startcoord,
-    resolution=(8, 8, 40), parallel=1, hashmax=1):
+    resolution=(8, 8, 40), parallel=1, hashmax=1,
+    bboxes=None):
 
-    bboxes = chunk_bboxes(volshape, chunkshape, offset=startcoord)
+    if bboxes is None:
+        bboxes = chunk_bboxes(volshape, chunkshape, offset=startcoord)
 
     class ConnectedComponentsTaskIterator(object):
         def __init__(self):
@@ -140,10 +142,12 @@ def create_chunk_edges_tasks(
     imgpath, cleftpath, segpath,
     storagestr, hashmax, storagedir,
     volshape, chunkshape, startcoord,
-    patchsz, normcloudpath=None, resolution=(4, 4, 40)):
+    patchsz, normcloudpath=None, resolution=(4, 4, 40),
+    bboxes=None):
     """ Only passing the required arguments for now """
 
-    bboxes = chunk_bboxes(volshape, chunkshape, offset=startcoord)
+    if bboxes is None:
+        bboxes = chunk_bboxes(volshape, chunkshape, offset=startcoord)
 
     class ChunkEdgesTaskIterator(object):
         def __init__(self):

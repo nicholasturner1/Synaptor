@@ -155,3 +155,8 @@ def concat_csvs(filenames, output_filename):
                     continue
                 else:
                     fout.write(line)
+
+
+def read_bbox_tag_filename(filename):
+    with open(filename) as f:
+        return [bbox_from_fname(l) for l in f]
