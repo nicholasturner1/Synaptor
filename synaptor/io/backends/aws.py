@@ -2,6 +2,7 @@
 
 import os
 import re
+import glob
 import subprocess
 
 import cloudvolume  # Piggybacking on cloudvolume's secrets
@@ -49,20 +50,10 @@ def pull_files_in_batches(paths, batch_size=1000):
 
 def pull_directory(remote_dir):
     """ This will currently break if the remote dir has subdirectories """
-    bucket, key = parse_remote_path(remote_dir)
+    local_dirname = os.path.basename(remote_dir)
+    subprocess.call(["gsutil", "-m", "-q", "cp", "-r", remote_dir, "."])
 
-    client = open_client(bucket)
-
-    remote_keys = keys_under_prefix(client, bucket, key)
-    local_dir = os.path.basename(utils.check_no_slash(key))
-    local_fnames = [os.path.join(local_dir, os.path.basename(k))
-                    for k in remote_keys]
-
-    if not os.path.isdir(local_dir):
-        os.makedirs(local_dir)
-
-    for (f, k) in zip(local_fnames, remote_keys):
-        client.download_file(bucket, k, f)
+    local_fnames = glob.glob(f"{local_dirname}/*")
 
     return local_fnames
 

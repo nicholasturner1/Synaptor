@@ -49,28 +49,10 @@ def pull_files_in_batches(paths, batch_size=1000):
 
 def pull_directory(remote_dir):
     """ This will currently break if the remote dir has subdirectories """
-    bucket, key = parse_remote_path(remote_dir)
+    local_dirname = os.path.basename(remote_dir)
+    subprocess.call(["gsutil", "-m", "-q", "cp", "-r", remote_dir, "."])
 
-    active_bucket = open_bucket(bucket)
-
-    remote_blobs = list(active_bucket.list_blobs(
-                            prefix=utils.check_slash(key)))
-    local_dir = os.path.basename(utils.check_no_slash(key))
-    local_fnames = [os.path.join(local_dir, os.path.basename(b.name))
-                    for b in remote_blobs]
-
-    orig_dir = [i for i in range(len(local_fnames))
-                if local_fnames[i] == utils.check_slash(local_dir)]
-    if len(orig_dir) > 0:
-        assert len(orig_dir) == 1, "weird results"
-        remote_blobs.pop(orig_dir[0])
-        local_fnames.pop(orig_dir[0])
-
-    if not os.path.isdir(local_dir):
-        os.makedirs(local_dir)
-
-    for (f, b) in zip(local_fnames, remote_blobs):
-        b.download_to_filename(f)
+    local_fnames = glob.glob(f"{local_dirname}/*")
 
     return local_fnames
 
