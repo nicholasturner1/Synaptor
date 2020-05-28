@@ -23,6 +23,8 @@ def pull_file(remote_path):
 
     client.download_file(bucket, key, local_fname)
 
+    return local_fname
+
 
 def pull_files(remote_paths, batching_limit=50000, batch_size=1000):
 
