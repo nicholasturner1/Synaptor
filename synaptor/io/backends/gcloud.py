@@ -2,6 +2,7 @@
 
 import os
 import re
+import glob
 import subprocess
 
 import cloudvolume  # Piggybacking on cloudvolume's secrets
