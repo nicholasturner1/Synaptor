@@ -52,7 +52,9 @@ def parse_tuple(field):
 
 
 def infer_max_face_shape(chunk_shape):
-    return tuple(sorted(chunk_shape)[1:])
+    no_min = tuple(chunk_shape[i] for i in range(len(chunk_shape))
+                   if i != chunk_shape.index(min(chunk_shape)))
+    return no_min
 
 
 def get_storagestrs(parser):
