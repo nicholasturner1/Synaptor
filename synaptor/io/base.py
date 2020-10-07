@@ -114,7 +114,7 @@ def send_directory(local_dir, path):
         bck.local.send_directory(local_dir, path)
 
 
-def read_dframe(path_or_head, basename=None):
+def read_dframe(path_or_head, basename=None, chunksize=None):
     """
     Reads a dataframe - path can specify remote
     storage in Google Cloud or AWS S3
@@ -129,7 +129,7 @@ def read_dframe(path_or_head, basename=None):
     else:
         local_fname = path
 
-    return bck.local.read_dframe(local_fname)
+    return bck.local.read_dframe(local_fname, chunksize=chunksize)
 
 
 def write_dframe(dframe, path_or_head, basename=None):

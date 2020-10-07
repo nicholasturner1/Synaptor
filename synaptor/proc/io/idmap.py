@@ -23,6 +23,13 @@ def cleft_map_fname(proc_url, chunk_bounds):
     return os.path.join(proc_url, fn.idmap_dirname, basename)
 
 
+def unique_ids_fname(storagestr, chunk_bounds):
+    chunk_tag = io.fname_chunk_tag(chunk_bounds)
+    basename = fn.uniquemap_fmtstr.format(tag=chunk_tag)
+
+    return os.path.join(storagestr, fn.uniquemap_dirname, basename)
+
+
 def make_dframe_from_dict(id_map):
     df = pd.DataFrame(pd.Series(id_map), columns=[cn.dst_id])
     df.index.name = cn.src_id
@@ -30,19 +37,59 @@ def make_dframe_from_dict(id_map):
     return df
 
 
+def read_unique_ids(filename):
+    dframe = io.read_dframe(filename)
+
+    return dict(zip(dframe.index, dframe[cn.dst_id]))
+
+
+def pull_unique_id_files(storagestr, bboxes):
+    assert not io.is_db_url(storagestr), "not implemented for db"
+
+    # you get a bunch of error messages if you specify the same
+    # files more than once
+    remote_filenames = list(set([unique_ids_fname(storagestr, bbox)
+                                 for bbox in bboxes]))
+
+    local_filenames = io.pull_files(remote_filenames)
+
+    return {io.bbox_from_fname(f): f for f in local_filenames}
+
+
 def read_chunk_unique_ids(proc_url, chunk_bounds):
-    assert io.is_db_url(proc_url), "file unique id map not implemented yet"
 
-    tag = io.fname_chunk_tag(chunk_bounds)
-    metadata = io.open_db_metadata(proc_url)
-    chunk_segs = metadata.tables["chunk_segs"]
+    if io.is_db_url(proc_url):
 
-    columns = list(chunk_segs.c[name] for name in UNIQUE_ID_MAP_COLUMNS)
-    statement = select(columns).where(chunk_segs.c[cn.chunk_tag] == tag)
+        tag = io.fname_chunk_tag(chunk_bounds)
+        metadata = io.open_db_metadata(proc_url)
+        chunk_segs = metadata.tables["chunk_segs"]
 
-    dframe = io.read_db_dframe(proc_url, statement)
+        columns = list(chunk_segs.c[name] for name in UNIQUE_ID_MAP_COLUMNS)
+        statement = select(columns).where(chunk_segs.c[cn.chunk_tag] == tag)
 
-    return dict(zip(dframe[cn.seg_id], dframe["id"]))
+        dframe = io.read_db_dframe(proc_url, statement)
+
+        return dict(zip(dframe[cn.seg_id], dframe["id"]))
+
+    else:
+
+        fname = io.pull_file(unique_ids_fname(proc_url, chunk_bounds))
+        dframe = io.read_dframe(fname)
+
+        return dict(zip(dframe.index, dframe[cn.dst_id]))
+
+
+def write_chunk_unique_ids(mapping, storagestr, chunk_bounds):
+    """Writes a mapping from chunk ids to unique ids"""
+    dframe = make_dframe_from_dict(mapping)
+
+    if io.is_db_url(storagestr):
+        tag = io.fname_chunk_tag(chunk_bounds)
+        dframe["chunk_tag"] = tag
+        io.write_db_dframe(dframe, storagestr, "seg_idmap")
+
+    else:
+        io.write_dframe(dframe, unique_ids_fname(storagestr, chunk_bounds))
 
 
 def read_all_chunk_unique_ids(proc_url):
@@ -178,12 +225,40 @@ def read_dup_id_map(proc_url):
     return dict(zip(dframe.index, dframe[cn.dst_id]))
 
 
-def write_dup_id_map(id_map, proc_url):
+def read_filtered_dup_id_map(storagestr, src_ids, chunksize=100000):
+    """ Reads a duplicate mapping from storage. """
+    src_ids = set(src_ids)
+    if io.is_db_url(storagestr):
+        raise Exception("filtering not implemented for DB io")
+
+    else:
+        try:
+            mapping = dict()
+            for subdf in io.read_dframe(
+                             storagestr, fn.dup_map_fname,
+                             chunksize=chunksize):
+                reqd_rows = subdf.loc[src_ids.intersection(subdf.index)]
+                mapping.update(
+                    dict(zip(reqd_rows.index, reqd_rows[cn.dst_id])))
+
+        except Exception as e:
+            print(e)
+            print("WARNING: no dup id map found, passing empty dup mapping")
+            mapping = dict()
+
+    return mapping
+
+
+def write_dup_id_map(id_map, storagestr, hash_index=None):
     """ Writes a duplicate mapping to storage. """
     dframe = make_dframe_from_dict(id_map)
 
-    if io.is_db_url(proc_url):
-        io.write_db_dframe(dframe.reset_index(), proc_url, "dup_merge_map")
+    if io.is_db_url(storagestr):
+        io.write_db_dframe(dframe.reset_index(), storagestr, "dup_merge_map")
 
     else:
-        io.write_dframe(dframe, proc_url, fn.dup_map_fname)
+        if hash_index is not None:
+            dst_filename = fn.tagged_dup_fname.format(i=hash_index)
+        else:
+            dst_filename = fn.dup_map_fname
+        io.write_dframe(dframe, storagestr, dst_filename)

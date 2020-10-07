@@ -15,6 +15,7 @@ from . import tasks
 from .tasks import timed
 from . import seg
 from . import edge
+from . import norm
 from . import colnames as cn
 
 
@@ -27,6 +28,18 @@ def cc_task(desc_cvname, seg_cvname, storagestr,
 
     storagedir = storagestr if storagedir is None else storagedir
     chunk_bounds = types.BBox3d(chunk_begin, chunk_end)
+
+    # Checking whether this task has already been completed
+    # re-running these tasks can cause problems later
+    unique_ids = timed(f"Testing task completion for chunk: {chunk_bounds}",
+                       taskio.read_chunk_unique_ids,
+                       storagestr, chunk_bounds)
+    if len(unique_ids) > 0:    
+        print("Task already completed.")
+        timed("(Re)writing unique ids to cache just in case",
+              taskio.write_chunk_unique_ids,
+              unique_ids, storagedir, chunk_bounds)
+        return
 
     desc_vol = timed(f"Reading network output chunk: {chunk_bounds}",
                      io.read_cloud_volume_chunk,
@@ -69,6 +82,17 @@ def cc_task(desc_cvname, seg_cvname, storagestr,
               io.write_db_dframes,
               [fhash_df, seginfo_df], storagestr,
               [fhash_tablename, seginfo_tablename])
+
+        # Writing a backup unique ids mapping to file storage to
+        # make match_contins faster
+        unique_ids = timed(f"Reading unique ids for chunk {chunk_bounds}",
+                           taskio.read_chunk_unique_ids,
+                           storagestr, chunk_bounds)
+
+        timed(f"Writing unique ids to file storage",
+              taskio.write_chunk_unique_ids,
+              unique_ids, storagedir, chunk_bounds)
+        
 
     else:  # file storage backend
         timed("Writing seg info to storage",
@@ -115,8 +139,9 @@ def merge_ccs_task(storagestr, size_thr, max_face_shape, timing_tag=None):
               time.time() - start_time, "merge_ccs", timing_tag, storagestr)
 
 
-def match_continuations_task(storagestr, facehash, max_face_shape=(1024, 1024),
-                             timing_tag=None):
+def match_continuations_task(
+    storagestr, storagedir, facehash,
+    max_face_shape=(1024, 1024), timing_tag=None):
 
     start_time = time.time()
 
@@ -127,6 +152,14 @@ def match_continuations_task(storagestr, facehash, max_face_shape=(1024, 1024),
     paired_files = timed("Pairing continuation files",
                          seg.merge.pair_continuation_files,
                          contin_files)
+
+    bboxes = timed("Finding required chunks",
+                   io.bboxes_from_fnames,
+                   [f.filename for f in contin_files])
+
+    unique_id_files = timed("Downloading unique id files",
+                            taskio.pull_unique_id_files,
+                            storagedir, bboxes)
 
     graph_edges = list()
 
@@ -147,17 +180,16 @@ def match_continuations_task(storagestr, facehash, max_face_shape=(1024, 1024),
             continue
 
         map1 = timed("Reading id map 1",
-                     taskio.read_chunk_unique_ids,
-                     storagestr, pair[0].bbox)
+                     taskio.read_unique_ids,
+                     unique_id_files[pair[0].bbox])
         map2 = timed("Reading id map 2",
-                     taskio.read_chunk_unique_ids,
-                     storagestr, pair[1].bbox)
-        pair_maps = (map1, map2)
+                     taskio.read_unique_ids,
+                     unique_id_files[pair[1].bbox])
 
         new_graph_edges = tasks.match_continuations_task(
                           pair_contins[0], pair_contins[1],
                           max_face_shape=max_face_shape,
-                          id_map1=pair_maps[0], id_map2=pair_maps[1])
+                          id_map1=map1, id_map2=map2)
 
         graph_edges.extend(new_graph_edges)
 
@@ -257,6 +289,8 @@ def edge_task(img_cvname, cleft_cvname, seg_cvname,
               resolution=(4, 4, 40), num_downsamples=0,
               base_res_begin=None, base_res_end=None,
               parallel=1, hashmax=None, storagedir=None,
+              normcloudpath=None,
+              lower_clip_frac=0.01, upper_clip_frac=0.01,
               timing_tag=None):
     """
     Runs tasks.chunk_edges_task after reading the relevant
@@ -291,6 +325,16 @@ def edge_task(img_cvname, cleft_cvname, seg_cvname,
                 io.read_cloud_volume_chunk,
                 img_cvname, chunk_bounds,
                 mip=resolution, parallel=parallel)
+
+    if normcloudpath is not None:
+        histograms = timed("Reading normalization histograms",
+                           taskio.norm.read_histogram_bbox,
+                           normcloudpath, chunk_bounds)
+
+        img = timed("Normalizing image chunk",
+                    norm.normalize_chunk,
+                    img, histograms, chunk_begin[2],
+                    lower_clip_frac, upper_clip_frac)
 
     # clefts won't be downsampled - will do that myself below
     clefts = timed(f"Reading cleft chunk at MIP 0",
@@ -399,14 +443,15 @@ def pick_largest_edges_task(storagestr, clefthash=None, timing_tag=None):
               time.time() - start_time, "pick_edge", timing_tag, storagestr)
 
 
-def merge_duplicates_task(voxel_res, dist_thr, size_thr,
-                          src_storagestr, hash_index, fulldf_storagestr=None,
-                          timing_tag=None):
+def merge_duplicates_task(
+    voxel_res, dist_thr, size_thr,
+    src_storagestr, hash_index, dst_storagestr=None,
+    timing_tag=None):
 
     start_time = time.time()
 
-    fulldf_storagestr = (src_storagestr if fulldf_storagestr is None
-                       else fulldf_storagestr)
+    dst_storagestr = (src_storagestr if dst_storagestr is None
+                      else dst_storagestr)
 
     edge_df = timed(f"Reading edges for hash index {hash_index}",
                     taskio.read_hashed_edge_info,
@@ -421,15 +466,15 @@ def merge_duplicates_task(voxel_res, dist_thr, size_thr,
                                                       voxel_res, size_thr)
 
     # Considered using a transaction here, but that breaks generality
-    # when src_storagestr != fulldf_storagestr and writing the dup_id_map
+    # when src_storagestr != dst_storagestr and writing the dup_id_map
     # twice shouldn't cause any bad effects. Testing should evaluate this
     # call.
     timed("Writing duplicate id mapping for hash index",
           taskio.write_dup_id_map,
-          dup_id_map, src_storagestr)
+          dup_id_map, dst_storagestr, hash_index)
     timed("Writing final DataFrame for hash index",
           taskio.write_full_info,
-          full_df, fulldf_storagestr,
+          full_df, dst_storagestr,
           tag=hash_index)
 
     if timing_tag is not None:
@@ -511,8 +556,8 @@ def remap_ids_task(seg_in_cvname, seg_out_cvname,
                          storagestr, chunk_bounds)
 
     dup_id_map = timed("Reading duplicate id map",
-                       taskio.read_dup_id_map,
-                       dup_map_storagestr)
+                       taskio.read_filtered_dup_id_map,
+                       dup_map_storagestr, chunk_id_map.values())
 
     seg = timed("Reading cleft chunk",
                 io.read_cloud_volume_chunk,

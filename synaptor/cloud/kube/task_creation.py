@@ -1,20 +1,11 @@
 import copy
-import math
-import os
-import subprocess
-
-from time import strftime
-
-from cloudvolume import CloudVolume
-from cloudvolume.lib import Bbox, Vec, xyzrange, min2, yellow
-from taskqueue import GreenTaskQueue
 
 from .synaptortask import SynaptorTask
-from synaptor import io
+from synaptor import io, chunk_bboxes
 
 
 def tup2str(t):
-  return " ".join(map(str, t))
+    return " ".join(map(str, t))
 
 
 def create_init_db_task(storagestr):
@@ -22,53 +13,37 @@ def create_init_db_task(storagestr):
 
 
 def create_connected_component_tasks(
-    descpath, segpath, storagestr, storagedir,
-    cc_thresh, sz_thresh, bounds, shape,
-    mip=(8, 8, 40), parallel=1, hashmax=1):
+    descpath, outpath, storagestr, storagedir,
+    ccthresh, szthresh,
+    volshape, chunkshape, startcoord,
+    resolution=(8, 8, 40), parallel=1, hashmax=1,
+    bboxes=None):
 
-    shape = Vec(*shape)
-
-    vol = CloudVolume(segpath, mip=mip)
-    # bounds = vol.bbox_to_mip(bounds, mip=0, to_mip=mip)
-    bounds = Bbox.clamp(bounds, vol.bounds)
+    if bboxes is None:
+        bboxes = chunk_bboxes(volshape, chunkshape, offset=startcoord)
 
     class ConnectedComponentsTaskIterator(object):
-      def __init__(self, level_start, level_end):
-        self.level_start = level_start
-        self.level_end = level_end
-      def __len__(self):
-        return self.level_end - self.level_start
-      def __getitem__(self, slc):
-        itr = copy.deepcopy(self)
-        itr.level_start = self.level_start + slc.start
-        itr.level_end = self.level_start + slc.stop
-        return itr
-      def __iter__(self):
-        self.bounds = bounds.clone()
-        self.bounds.minpt.z = bounds.minpt.z + self.level_start * shape.z
-        self.bounds.maxpt.z = bounds.minpt.z + self.level_end * shape.z
+        def __init__(self):
+            pass
 
-        for startpt in xyzrange( self.bounds.minpt, self.bounds.maxpt, shape ):
-          task_shape = min2(shape.clone(), self.bounds.maxpt - startpt)
+        def __len__(self):
+            return len(bboxes)
 
-          task_bounds = Bbox( startpt, startpt + task_shape )
-          if task_bounds.volume() < 1:
-            continue
+        def __iter__(self):
+            for bbox in bboxes:
+                chunk_begin = tup2str(bbox.min())
+                chunk_end = tup2str(bbox.max())
+                res_str = tup2str(resolution)
 
-          chunk_begin = tup2str(task_bounds.minpt)
-          chunk_end = tup2str(task_bounds.maxpt)
-          mip_str = tup2str(mip)
+                cmd = (f"chunk_ccs {descpath} {outpath} {storagestr}"
+                       f" {ccthresh} {szthresh} --chunk_begin {chunk_begin}"
+                       f" --chunk_end {chunk_end} --hashmax {hashmax}"
+                       f" --parallel {parallel} --mip {res_str}"
+                       f" --storagedir {storagedir}")
 
-          cmd = (f"chunk_ccs {descpath} {segpath} {storagestr}"
-                 f" {cc_thresh} {sz_thresh} --chunk_begin {chunk_begin}"
-                 f" --chunk_end {chunk_end} --hashmax {hashmax}"
-                 f" --parallel {parallel} --mip {mip_str}"
-                 f" --storagedir {storagedir}")
+                yield SynaptorTask(cmd)
 
-          yield SynaptorTask(cmd)
-
-    level_end = int(math.ceil(bounds.size3().z / shape.z))
-    return ConnectedComponentsTaskIterator(0, level_end)
+    return ConnectedComponentsTaskIterator()
 
 
 def create_merge_ccs_task(
@@ -79,7 +54,7 @@ def create_merge_ccs_task(
 
 
 def create_match_contins_tasks(
-    storagestr, hashmax, max_faceshape, timingtag=None):
+    storagestr, storagedir, hashmax, max_faceshape, timingtag=None):
 
     class MatchContinsTaskIterator(object):
         def __init__(self, hashmax):
@@ -98,7 +73,7 @@ def create_match_contins_tasks(
         def __iter__(self):
             max_faceshape_str = tup2str(max_faceshape)
             for i in range(self.level_start, self.level_end):
-                cmd = (f"match_contins {storagestr} {i} "
+                cmd = (f"match_contins {storagestr} {storagedir} {i} "
                        f" --max_face_shape {max_faceshape_str}")
 
                 yield SynaptorTask(cmd)
@@ -110,12 +85,22 @@ def create_seg_graph_cc_task(storagestr, hashmax):
     return SynaptorTask(f"seg_graph_ccs {storagestr} {hashmax}")
 
 
+def create_index_seg_map_task(storagestr):
+    return SynaptorTask(f"create_index {storagestr}"
+                        " seg_merge_map dst_id_hash")
+
+
 def create_chunk_seg_map_task(storagestr):
     return SynaptorTask(f"chunk_seg_map {storagestr}")
 
 
+def create_index_chunked_seg_map_task(storagestr):
+    return SynaptorTask(f"create_index {storagestr}"
+                        " chunked_seg_merge_map chunk_tag")
+
+
 def create_merge_seginfo_tasks(
-    storagestr, hashmax, aux_storagestr=None, 
+    storagestr, hashmax, aux_storagestr=None,
     szthresh=None, timingtag=None):
 
     class MergeSeginfoTaskIterator(object):
@@ -154,51 +139,42 @@ def create_merge_seginfo_tasks(
 
 
 def create_chunk_edges_tasks(
-    imgpath, cleftpath, segpath, storagestr, hashmax, storagedir,
-    bounds, chunkshape, patchsz, resolution=(4, 4, 40)):
+    imgpath, cleftpath, segpath,
+    storagestr, hashmax, storagedir,
+    volshape, chunkshape, startcoord,
+    patchsz, normcloudpath=None, resolution=(4, 4, 40),
+    bboxes=None):
     """ Only passing the required arguments for now """
-    shape = Vec(*chunkshape)
+
+    if bboxes is None:
+        bboxes = chunk_bboxes(volshape, chunkshape, offset=startcoord)
 
     class ChunkEdgesTaskIterator(object):
-        def __init__(self, level_start, level_end):
-            self.level_start = level_start
-            self.level_end = level_end
+        def __init__(self):
+            pass
 
         def __len__(self):
-            return self.level_end - self.level_start
-
-        def __getitem__(self, slc):
-            itr = copy.deepcopy(self)
-            itr.level_start = self.level_start + slc.start
-            itr.level_end = self.level_start + slc.stop
-            return itr
+            return len(bboxes)
 
         def __iter__(self):
-            self.bounds = bounds.clone()
-            self.bounds.minpt.z = bounds.minpt.z + self.level_start * shape.z
-            self.bounds.maxpt.z = bounds.minpt.z + self.level_end * shape.z
-
-            for start in xyzrange(self.bounds.minpt, self.bounds.maxpt, shape):
-                task_shape = min2(shape.clone(), self.bounds.maxpt - start)
-
-                task_bounds = Bbox(start, start + task_shape)
-                if task_bounds.volume() < 1:
-                    continue
-
-                chunk_begin = tup2str(task_bounds.minpt)
-                chunk_end = tup2str(task_bounds.maxpt)
+            for bbox in bboxes:
+                chunk_begin = tup2str(bbox.min())
+                chunk_end = tup2str(bbox.max())
                 patchsz_str = tup2str(patchsz)
                 res_str = tup2str(resolution)
 
                 cmd = (f"chunk_edges {imgpath} {cleftpath} {segpath}"
                        f" {storagestr} {hashmax} --storagedir {storagedir}"
                        f" --chunk_begin {chunk_begin} --chunk_end {chunk_end}"
+                       f" --normcloudpath {normcloudpath} "
                        f" --patchsz {patchsz_str} --resolution {res_str}")
+
+                if normcloudpath is not None:
+                    cmd += f" --normcloudpath {normcloudpath}"
 
                 yield SynaptorTask(cmd)
 
-    level_end = int(math.ceil(bounds.size3().z / shape.z))
-    return ChunkEdgesTaskIterator(0, level_end)
+    return ChunkEdgesTaskIterator()
 
 
 def create_pick_edge_tasks(storagestr, hashmax):
@@ -254,105 +230,73 @@ def create_merge_dup_tasks(
             for i in range(self.level_start, self.level_end):
                 cmd = (f"merge_dups {self.storagestr} {i} {dist_thresh}"
                        f" {size_thresh} --voxel_res {res_str}"
-                       f" --fulldf_storagestr {output_storagestr}")
+                       f" --dst_storagestr {output_storagestr}")
 
                 yield SynaptorTask(cmd)
 
     return MergeDupsTaskIterator(storagestr, hashmax)
 
+
 def create_remap_tasks(
     cleftpath, cleftoutpath, storagestr,
-    bounds, shape, dupstoragestr=None,
+    volshape, chunkshape, startcoord,
+    dupstoragestr=None,
     resolution=(8, 8, 40), parallel=1):
 
     dupstoragestr = storagestr if dupstoragestr is None else dupstoragestr
 
-    shape = Vec(*shape)
+    bboxes = chunk_bboxes(volshape, chunkshape, offset=startcoord)
 
     class RemapTaskIterator(object):
-        def __init__(self, level_start, level_end):
-            self.level_start = level_start
-            self.level_end = level_end
+        def __init__(self):
+            pass
 
         def __len__(self):
-            return self.level_end - self.level_start
-        def __getitem__(self, slc):
-            itr = copy.deepcopy(self)
-            itr.level_start = self.level_start + slc.start
-            itr.level_end = self.level_start + slc.stop
-            return itr
+            return len(bboxes)
 
         def __iter__(self):
-            self.bounds = bounds.clone()
-            self.bounds.minpt.z = bounds.minpt.z + self.level_start * shape.z
-            self.bounds.maxpt.z = bounds.minpt.z + self.level_end * shape.z
-
-            for start in xyzrange(self.bounds.minpt, self.bounds.maxpt, shape):
-                task_shape = min2(shape.clone(), self.bounds.maxpt - start)
-
-                task_bounds = Bbox(start, start + task_shape)
-                if task_bounds.volume() < 1:
-                    continue
-
-                chunk_begin = tup2str(task_bounds.minpt)
-                chunk_end = tup2str(task_bounds.maxpt)
+            for bbox in bboxes:
+                chunk_begin = tup2str(bbox.min())
+                chunk_end = tup2str(bbox.max())
                 res_str = tup2str(resolution)
 
                 cmd = (f"remap_ids {cleftpath} {cleftoutpath} {storagestr}"
                        f" --chunk_begin {chunk_begin} --chunk_end {chunk_end}"
-                       f" --dup_map_storagestr {dupstoragestr} --mip {res_str}")
+                       f" --dup_map_storagestr {dupstoragestr}"
+                       f" --mip {res_str}")
 
                 yield SynaptorTask(cmd)
 
-    level_end = int(math.ceil(bounds.size3().z / shape.z))
-    return RemapTaskIterator(0, level_end)
+    return RemapTaskIterator()
 
 
 def create_overlap_tasks(
     segpath, base_segpath, storagestr,
-    bounds, shape, mip=(8, 8, 40), parallel=1):
+    volshape, chunkshape, startcoord,
+    resolution=(8, 8, 40), parallel=1):
 
-    shape = Vec(*shape)
-
-    vol = CloudVolume(segpath, mip=mip)
-    # bounds = vol.bbox_to_mip(bounds, mip=0, to_mip=mip)
-    bounds = Bbox.clamp(bounds, vol.bounds)
+    bboxes = chunk_bboxes(volshape, chunkshape, offset=startcoord)
 
     class OverlapTaskIterator(object):
-      def __init__(self, level_start, level_end):
-        self.level_start = level_start
-        self.level_end = level_end
-      def __len__(self):
-        return self.level_end - self.level_start
-      def __getitem__(self, slc):
-        itr = copy.deepcopy(self)
-        itr.level_start = self.level_start + slc.start
-        itr.level_end = self.level_start + slc.stop
-        return itr
-      def __iter__(self):
-        self.bounds = bounds.clone()
-        self.bounds.minpt.z = bounds.minpt.z + self.level_start * shape.z
-        self.bounds.maxpt.z = bounds.minpt.z + self.level_end * shape.z
+        def __init__(self):
+            pass
 
-        for startpt in xyzrange( self.bounds.minpt, self.bounds.maxpt, shape ):
-          task_shape = min2(shape.clone(), self.bounds.maxpt - startpt)
+        def __len__(self):
+            return len(bboxes)
 
-          task_bounds = Bbox( startpt, startpt + task_shape )
-          if task_bounds.volume() < 1:
-            continue
+        def __iter__(self):
+            for bbox in bboxes:
+                chunk_begin = tup2str(bbox.min())
+                chunk_end = tup2str(bbox.max())
+                res_str = tup2str(resolution)
 
-          chunk_begin = tup2str(task_bounds.minpt)
-          chunk_end = tup2str(task_bounds.maxpt)
-          mip_str = tup2str(mip)
+                cmd = (f"chunk_overlaps {segpath} {base_segpath} {storagestr}"
+                       f" --chunk_begin {chunk_begin} --chunk_end {chunk_end}"
+                       f" --parallel {parallel} --mip {res_str}")
 
-          cmd = (f"chunk_overlaps {segpath} {base_segpath} {storagestr}"
-                 f" --chunk_begin {chunk_begin} --chunk_end {chunk_end}"
-                 f" --parallel {parallel} --mip {mip_str}")
+                yield SynaptorTask(cmd)
 
-          yield SynaptorTask(cmd)
-
-    level_end = int(math.ceil(bounds.size3().z / shape.z))
-    return OverlapTaskIterator(0, level_end)
+    return OverlapTaskIterator()
 
 
 def create_merge_overlaps_task(storagestr):

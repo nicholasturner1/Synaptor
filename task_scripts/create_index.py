@@ -1,8 +1,5 @@
 """
 Create an index on a single database column
-
-- Takes a graph of continuation edges as input
-- Makes an id mapping that merges the connected continuations using global ids
 """
 import synaptor as s
 

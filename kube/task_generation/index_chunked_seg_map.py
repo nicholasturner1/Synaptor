@@ -10,13 +10,10 @@ def main(configfilename):
 
     config = parser.parse(configfilename)
 
-    iterator = tc.create_match_contins_tasks(
-                   config["storagestrs"][0], config["storagestrs"][1],
-                   config["nummergetasks"],
-                   max_faceshape=config["maxfaceshape"])
+    task = tc.create_index_chunked_seg_map_task(config["storagestrs"][0])
 
     tq = TaskQueue(config["queueurl"])
-    tq.insert_all(iterator)
+    tq.insert_all([task])
 
 
 if __name__ == "__main__":

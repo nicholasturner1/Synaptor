@@ -70,6 +70,10 @@ def bbox_from_fname(path):
     return bbox_from_tag(match.group(0))
 
 
+def bboxes_from_fnames(paths):
+    return [bbox_from_fname(path) for path in paths]
+
+
 def bbox_from_tag(tag):
     """ Extracts the bounding box specified by a tag. """
     beg_str, end_str = split_tag(tag)
@@ -151,3 +155,8 @@ def concat_csvs(filenames, output_filename):
                     continue
                 else:
                     fout.write(line)
+
+
+def read_bbox_tag_filename(filename):
+    with open(filename) as f:
+        return [bbox_from_fname(l) for l in f]

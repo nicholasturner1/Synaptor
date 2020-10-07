@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-__doc__ = """
-
+"""
 3D Vector class.
 
 Modified from the vec3d class on the pygame wiki site.
