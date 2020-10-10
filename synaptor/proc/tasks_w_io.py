@@ -31,9 +31,13 @@ def cc_task(desc_cvname, seg_cvname, storagestr,
 
     # Checking whether this task has already been completed
     # re-running these tasks can cause problems later
-    unique_ids = timed(f"Testing task completion for chunk: {chunk_bounds}",
-                       taskio.read_chunk_unique_ids,
-                       storagestr, chunk_bounds)
+    try:
+        unique_ids = timed(f"Testing task completion for chunk: {chunk_bounds}",
+                           taskio.read_chunk_unique_ids,
+                           storagestr, chunk_bounds)
+    except:
+        unique_ids = []
+
     if len(unique_ids) > 0:    
         print("Task already completed.")
         timed("(Re)writing unique ids to cache just in case",
