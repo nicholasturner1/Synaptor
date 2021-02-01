@@ -36,6 +36,10 @@ parser.add_argument("--base_res_end", nargs=3, type=int, default=None)
 parser.add_argument("--parallel", type=int, default=1)
 parser.add_argument("--timing_tag", default=None)
 
+parser.add_argument("--aggscratchpath", default=None)
+parser.add_argument("--aggchunksize", nargs=3, type=int, default=None)
+parser.add_argument("--aggstartcoord", nargs=3, type=int, default=None)
+parser.add_argument("--aggmaxmip", default=None)
 
 args = parser.parse_args()
 args.storagestr = s.io.parse_storagestr(args.storagestr)

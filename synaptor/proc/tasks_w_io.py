@@ -32,13 +32,14 @@ def cc_task(desc_cvname, seg_cvname, storagestr,
     # Checking whether this task has already been completed
     # re-running these tasks can cause problems later
     try:
-        unique_ids = timed(f"Testing task completion for chunk: {chunk_bounds}",
-                           taskio.read_chunk_unique_ids,
-                           storagestr, chunk_bounds)
+        unique_ids = timed(
+                         f"Testing task completion for chunk: {chunk_bounds}",
+                         taskio.read_chunk_unique_ids,
+                         storagestr, chunk_bounds)
     except:
         unique_ids = []
 
-    if len(unique_ids) > 0:    
+    if len(unique_ids) > 0:
         print("Task already completed.")
         timed("(Re)writing unique ids to cache just in case",
               taskio.write_chunk_unique_ids,
@@ -93,10 +94,9 @@ def cc_task(desc_cvname, seg_cvname, storagestr,
                            taskio.read_chunk_unique_ids,
                            storagestr, chunk_bounds)
 
-        timed(f"Writing unique ids to file storage",
+        timed("Writing unique ids to file storage",
               taskio.write_chunk_unique_ids,
               unique_ids, storagedir, chunk_bounds)
-        
 
     else:  # file storage backend
         timed("Writing seg info to storage",
@@ -144,8 +144,8 @@ def merge_ccs_task(storagestr, size_thr, max_face_shape, timing_tag=None):
 
 
 def match_continuations_task(
-    storagestr, storagedir, facehash,
-    max_face_shape=(1024, 1024), timing_tag=None):
+        storagestr, storagedir, facehash,
+        max_face_shape=(1024, 1024), timing_tag=None):
 
     start_time = time.time()
 
@@ -295,6 +295,8 @@ def edge_task(img_cvname, cleft_cvname, seg_cvname,
               parallel=1, hashmax=None, storagedir=None,
               normcloudpath=None,
               lower_clip_frac=0.01, upper_clip_frac=0.01,
+              aggscratchpath=None, aggchunksize=None,
+              aggstartcoord=None, aggmaxmip=11,
               timing_tag=None):
     """
     Runs tasks.chunk_edges_task after reading the relevant
@@ -341,14 +343,22 @@ def edge_task(img_cvname, cleft_cvname, seg_cvname,
                     lower_clip_frac, upper_clip_frac)
 
     # clefts won't be downsampled - will do that myself below
-    clefts = timed(f"Reading cleft chunk at MIP 0",
+    clefts = timed("Reading cleft chunk at MIP 0",
                    io.read_cloud_volume_chunk,
                    cleft_cvname, base_bounds,
                    mip=0, parallel=parallel)
-    seg = timed(f"Reading segmentation chunk at {resolution}",
-                io.read_cloud_volume_chunk,
-                seg_cvname, chunk_bounds, mip=resolution,
-                parallel=parallel)
+
+    if aggscratchpath is None:
+        seg = timed(f"Reading segmentation chunk at {resolution}",
+                    io.read_cloud_volume_chunk,
+                    seg_cvname, chunk_bounds, mip=resolution,
+                    parallel=parallel)
+    else:
+        seg = timed(f"Reading agglomeration chunk at {resolution}",
+                    taskio.agg.readchunk,
+                    seg_cvname, chunk_bounds, aggstartcoord,
+                    aggchunksize, aggscratchpath,
+                    voxelres=resolution, maxmip=aggmaxmip)
 
     assoc_net = timed("Reading association network",
                       taskio.read_network_from_proc,
@@ -387,7 +397,8 @@ def edge_task(img_cvname, cleft_cvname, seg_cvname,
               time.time() - start_time, "edge", timing_tag, storagestr)
 
 
-def merge_edges_task(voxel_res, dist_thr, size_thr, storagestr, timing_tag=None):
+def merge_edges_task(voxel_res, dist_thr, size_thr,
+                     storagestr, timing_tag=None):
 
     start_time = time.time()
 
@@ -448,9 +459,9 @@ def pick_largest_edges_task(storagestr, clefthash=None, timing_tag=None):
 
 
 def merge_duplicates_task(
-    voxel_res, dist_thr, size_thr,
-    src_storagestr, hash_index, dst_storagestr=None,
-    timing_tag=None):
+        voxel_res, dist_thr, size_thr,
+        src_storagestr, hash_index, dst_storagestr=None,
+        timing_tag=None):
 
     start_time = time.time()
 
@@ -484,7 +495,8 @@ def merge_duplicates_task(
     if timing_tag is not None:
         timed("Writing total task time",
               taskio.write_task_timing,
-              time.time() - start_time, "merge_dups", timing_tag, src_storagestr)
+              time.time() - start_time, "merge_dups",
+              timing_tag, src_storagestr)
 
 
 def overlap_task(seg_cvname, base_seg_cvname,
