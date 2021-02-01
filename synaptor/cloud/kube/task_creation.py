@@ -180,7 +180,7 @@ def create_chunk_edges_tasks(
                     aggstartcoord_str = tup2str(aggstartcoord)
                     cmd += (f" --aggscratchpath {aggscratchpath}"
                             f" --aggchunksize {aggchunksize_str}"
-                            f" --aggstartcoord {aggstartcoord_str}")
+                            f" --aggstartcoord {aggstartcoord_str}"
                             f" --aggmaxmip {aggmaxmip}")
 
                 yield SynaptorTask(cmd)
