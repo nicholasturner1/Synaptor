@@ -32,7 +32,8 @@ def pull_files(remote_paths, batching_limit=50000, batch_size=1000):
     if len(remote_paths) > batching_limit:
         return pull_files_in_batches(remote_paths, batch_size)
     else:
-        subprocess.call(["gsutil", "-m", "-q", "cp", *remote_paths, "."])
+        subprocess.run(["gsutil", "-m", "-q", "cp", *remote_paths, "."],
+                       check=True)
         return list(map(os.path.basename, remote_paths))
 
 
@@ -42,7 +43,8 @@ def pull_files_in_batches(paths, batch_size=1000):
     local_paths = list()
     for i in range(num_batches):
         batch_paths = paths[i*batch_size:(i+1)*batch_size]
-        subprocess.call(["gsutil", "-m", "-q", "cp", *batch_paths, "."])
+        subprocess.run(["gsutil", "-m", "-q", "cp", *batch_paths, "."],
+                       check=True)
         local_paths.extend(map(os.path.basename, batch_paths))
 
     return local_paths
@@ -51,7 +53,8 @@ def pull_files_in_batches(paths, batch_size=1000):
 def pull_directory(remote_dir):
     """ This will currently break if the remote dir has subdirectories """
     local_dirname = os.path.basename(remote_dir)
-    subprocess.call(["gsutil", "-m", "-q", "cp", "-r", remote_dir, "."])
+    subprocess.run(["gsutil", "-m", "-q", "cp", "-r", remote_dir, "."],
+                   check=True)
 
     local_fnames = glob.glob(f"{local_dirname}/*")
 
@@ -68,7 +71,7 @@ def send_file(local_name, remote_path):
 
 def send_files(local_names, remote_dir):
     # gsutil is running into a strange error - using the simpler method instead
-    #subprocess.call(["gsutil", "-q", "-m", "cp", *local_names, remote_dir])
+    #subprocess.run(["gsutil", "-q", "-m", "cp", *local_names, remote_dir])
     for local_name in local_names:
         dst = os.path.join(remote_dir, os.path.basename(local_name))
         send_file(local_name, dst)
