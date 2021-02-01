@@ -27,6 +27,10 @@ def main(configfilename, tagfilename=None):
                    patchsz=config["patchshape"],
                    normcloudpath=config["normcloudpath"],
                    resolution=config["voxelres"],
+                   aggscratchpath=config["aggscratchpath"],
+                   aggchunksize=config["aggchunksize"],
+                   aggmaxmip=config["aggmaxmip"],
+                   aggstartcoord=config["startcoord"],
                    bboxes=bboxes)
 
     tq = TaskQueue(config["queueurl"])

@@ -143,6 +143,8 @@ def create_chunk_edges_tasks(
     storagestr, hashmax, storagedir,
     volshape, chunkshape, startcoord,
     patchsz, normcloudpath=None, resolution=(4, 4, 40),
+    aggscratchpath=None, aggchunksize=None,
+    aggmaxmip=None, aggstartcoord=None,
     bboxes=None):
     """ Only passing the required arguments for now """
 
@@ -157,11 +159,12 @@ def create_chunk_edges_tasks(
             return len(bboxes)
 
         def __iter__(self):
+            patchsz_str = tup2str(patchsz)
+            res_str = tup2str(resolution)
+
             for bbox in bboxes:
                 chunk_begin = tup2str(bbox.min())
                 chunk_end = tup2str(bbox.max())
-                patchsz_str = tup2str(patchsz)
-                res_str = tup2str(resolution)
 
                 cmd = (f"chunk_edges {imgpath} {cleftpath} {segpath}"
                        f" {storagestr} {hashmax} --storagedir {storagedir}"
@@ -171,6 +174,14 @@ def create_chunk_edges_tasks(
 
                 if normcloudpath is not None:
                     cmd += f" --normcloudpath {normcloudpath}"
+
+                if aggscratchpath is not None:
+                    aggchunksize_str = tup2str(aggchunksize)
+                    aggstartcoord_str = tup2str(aggstartcoord)
+                    cmd += (f" --aggscratchpath {aggscratchpath}"
+                            f" --aggchunksize {aggchunksize_str}"
+                            f" --aggstartcoord {aggstartcoord_str}")
+                            f" --aggmaxmip {aggmaxmip}")
 
                 yield SynaptorTask(cmd)
 

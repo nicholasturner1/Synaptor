@@ -20,7 +20,6 @@ def readchunk(cvpath, bbox, startcoord, chunksize, scratchpath,
 
     chunks, chunkinds = reqdchunks(bbox, Vec3d(startcoord), Vec3d(chunksize))
     for (chunk, xyz) in zip(chunks, chunkinds):
-        print(xyz)
         chunk = chunk.translate(-bbox._min)
         remapchunk(ws, chunk, xyz, scratchpath, layer=layer,
                    bits_per_dim=bits_per_dim, maxmip=maxmip)
@@ -34,10 +33,10 @@ def reqdchunks(bbox, startcoord, chunksize):
     xbounds = chunking.bounds1D(end[0], chunksize[0], start[0])
     ybounds = chunking.bounds1D(end[1], chunksize[1], start[1])
     zbounds = chunking.bounds1D(end[2], chunksize[2], start[2])
-    
+
     chunks = [BBox3d(x, y, z).translate(startcoord) for (x, y, z)
               in itertools.product(xbounds, ybounds, zbounds)]
-    
+
     chunkinds = [(bbox._min-startcoord) // chunksize
                  for bbox in chunks]
 
@@ -66,9 +65,9 @@ def remapchunk(seg, chunk, chunkindex, scratchpath,
 
 def readremapfiles(scratchpath, chunkindex, pcgchunkid, maxmip=11):
     mipinds = indsbymip(chunkindex, maxmip)
-    coordfmt = f"{chunkindex[0]}_{chunkindex[1]}_{chunkindex[2]}"
-    remotefiles = [os.path.join(scratchpath, "agg/remap",
-                       f"done_{mip}_{formatcoord(index)}_{pcgchunkid}.data.zst")
+    remotefiles = [os.path.join(
+                      scratchpath, "agg/remap",
+                      f"done_{mip}_{formatcoord(index)}_{pcgchunkid}.data.zst")
                    for (mip, index) in enumerate(mipinds)]
 
     localfiles = sorted(io.pull_files(remotefiles))
