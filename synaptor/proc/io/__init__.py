@@ -47,3 +47,5 @@ from .timing import read_all_task_timing
 from . import norm
 
 from . import initdb
+
+from . import agglomeration as agg
