@@ -44,26 +44,27 @@ def chunk_bboxes(vol_size, chunk_size, offset=None, mip=0):
     return bboxes
 
 
-def bounds1D(full_width, step_size):
+def bounds1D(stop, step_size, start=0):
     """
     Return the bbox coordinates for a single dimension given
     the size of the chunked dimension and the size of each box
     """
     assert step_size > 0, f"invalid step_size: {step_size}"
-    assert full_width > 0, f"invalid volume_width: {full_width}"
 
-    start = 0
-    end = step_size
+    i = start // step_size
+    beg = start
+    end = (i+1) * step_size
 
     bounds = []
-    while end < full_width:
-        bounds.append(slice(start, end))
+    while end < stop:
+        bounds.append(slice(beg, end))
 
-        start += step_size
+        i += 1
+        beg = end
         end += step_size
 
     # last window
-    bounds.append(slice(start, full_width))
+    bounds.append(slice(beg, stop))
 
     return bounds
 
