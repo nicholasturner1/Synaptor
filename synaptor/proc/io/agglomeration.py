@@ -4,7 +4,6 @@ import subprocess
 
 import numpy as np
 import fastremap
-import pipelinelib
 import zstandard
 
 from ...types.bbox import BBox3d, Vec3d
@@ -47,7 +46,7 @@ def reqdchunks(bbox, startcoord, chunksize):
 def remapchunk(seg, chunk, chunkindex, scratchpath,
                layer=1, bits_per_dim=10, maxmip=11):
     x, y, z = chunkindex
-    pcgchunkid = pipelinelib.pcg.get_chunk_id(
+    pcgchunkid = io.pcg.get_chunk_id(
                      layer=layer, x=x, y=y, z=z,
                      bits_per_dim=bits_per_dim)
 
