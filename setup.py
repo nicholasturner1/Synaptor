@@ -112,7 +112,7 @@ setup(
     packages=setuptools.find_packages(),
     ext_modules=ext_modules,
     install_requires=['numpy', 'scipy', 'python-igraph', 'pandas', 'h5py',
-                      'cloud-volume', 'task-queue', 'torch==1.3.1',
+                      'cloud-volume', 'task-queue', 'torch',
                       'torchvision', 'future', 'pybind11>=2.2',
                       'psycopg2-binary', 'sqlalchemy', 'pytest',
                       'connected-components-3d'],
