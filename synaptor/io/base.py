@@ -29,7 +29,7 @@ def pull_file(path):
         return bck.local.pull_file(path)
 
 
-def pull_files(paths):
+def pull_files(paths, check=True):
     """
     Pulls multiple files from storage. The storage can be
     local or remote as specified by the paths, though each
@@ -40,22 +40,22 @@ def pull_files(paths):
         return list()
 
     if GCLOUD_REGEXP.match(paths[0]):
-        return bck.gcloud.pull_files(paths)
+        return bck.gcloud.pull_files(paths, check=check)
     elif AWS_REGEXP.match(paths[0]):
-        return bck.aws.pull_files(paths)
+        return bck.aws.pull_files(paths, check=check)
     else:  # local
         return bck.local.pull_files(paths)
 
 
-def pull_directory(dir_path):
+def pull_directory(dir_path, check=True):
     """
     Pulls a directory from storage. The storage can be
     local or remote as specified by the pathname
     """
     if GCLOUD_REGEXP.match(dir_path):
-        return bck.gcloud.pull_directory(dir_path)
+        return bck.gcloud.pull_directory(dir_path, check=check)
     elif AWS_REGEXP.match(dir_path):
-        return bck.aws.pull_directory(dir_path)
+        return bck.aws.pull_directory(dir_path, check=check)
     else:  # local
         return bck.local.pull_directory(dir_path)
 

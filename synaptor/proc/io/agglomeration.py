@@ -1,5 +1,6 @@
 import os
 import itertools
+import subprocess
 
 import numpy as np
 import fastremap
@@ -50,10 +51,17 @@ def remapchunk(seg, chunk, chunkindex, scratchpath,
                      layer=layer, x=x, y=y, z=z,
                      bits_per_dim=bits_per_dim)
 
-    mappings = readremapfiles(scratchpath, chunkindex,
-                              pcgchunkid, maxmip=maxmip)
-
     data = seg[chunk.index()]
+
+    try:
+        mappings = readremapfiles(scratchpath, chunkindex,
+                                  pcgchunkid, maxmip=maxmip)
+    except subprocess.CalledProcessError as e:
+        if data.max() == 0:
+            return data
+        else:
+            raise e
+
     for mapping in mappings:
         data = fastremap.remap(data, mapping, in_place=False,
                                preserve_missing_labels=True)

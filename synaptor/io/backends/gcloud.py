@@ -27,34 +27,35 @@ def pull_file(remote_path):
     return local_fname
 
 
-def pull_files(remote_paths, batching_limit=50000, batch_size=1000):
+def pull_files(remote_paths, check=True,
+               batching_limit=50000, batch_size=1000):
 
     if len(remote_paths) > batching_limit:
         return pull_files_in_batches(remote_paths, batch_size)
     else:
         subprocess.run(["gsutil", "-m", "-q", "cp", *remote_paths, "."],
-                       check=True)
+                       check=check)
         return list(map(os.path.basename, remote_paths))
 
 
-def pull_files_in_batches(paths, batch_size=1000):
+def pull_files_in_batches(paths, check=True, batch_size=1000):
     num_batches = len(paths) / batch_size + 1
 
     local_paths = list()
     for i in range(num_batches):
         batch_paths = paths[i*batch_size:(i+1)*batch_size]
         subprocess.run(["gsutil", "-m", "-q", "cp", *batch_paths, "."],
-                       check=True)
+                       check=check)
         local_paths.extend(map(os.path.basename, batch_paths))
 
     return local_paths
 
 
-def pull_directory(remote_dir):
+def pull_directory(remote_dir, check=True):
     """ This will currently break if the remote dir has subdirectories """
     local_dirname = os.path.basename(remote_dir)
     subprocess.run(["gsutil", "-m", "-q", "cp", "-r", remote_dir, "."],
-                   check=True)
+                   check=check)
 
     local_fnames = glob.glob(f"{local_dirname}/*")
 
@@ -69,9 +70,9 @@ def send_file(local_name, remote_path):
     blob.upload_from_filename(local_name)
 
 
-def send_files(local_names, remote_dir):
+def send_files(local_names, remote_dir, check=True):
     subprocess.run(["gsutil", "-q", "-m", "cp", *local_names, remote_dir],
-                   check=True)
+                   check=check)
 
 
 def send_directory(local_dir, remote_dir):

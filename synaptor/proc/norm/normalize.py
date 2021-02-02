@@ -22,6 +22,12 @@ def normalize_chunk(img, histograms, z_offset,
 def normalize_slice(imgslice, histogram,
                     lower_clip_frac, upper_clip_frac,
                     minval=1, maxval=np.iinfo(np.uint8).max):
+    if histogram is None:
+        if np.all(imgslice == 0):
+            return imgslice
+        else:
+            raise ValueError("no histogram for non-empty slice")
+
     lower, upper = find_clamping_values(
                        histogram, lower_clip_frac, upper_clip_frac)
     lookup = make_lookup_table(lower, upper, minval, maxval)
