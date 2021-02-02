@@ -1,5 +1,3 @@
-import torch  # Doing this here avoids strange "StaticTLS" bug with PyTorch...
-
 from . import types
 from .types import bbox
 from .types.bbox import BBox3d, chunk_bboxes
