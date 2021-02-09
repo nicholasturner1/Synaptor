@@ -9,7 +9,8 @@ def read_cloud_volume_chunk(
     """ Read a chunk of data specified by a bounding box. """
 
     cv = cloudvolume.CloudVolume(cv_name, mip=mip, parallel=parallel,
-                                 progress=progress)
+                                 progress=progress,
+                                 request_payer=request_payer)
 
     # ensuring that we always read something
     # (i.e. that we know what we're doing)
