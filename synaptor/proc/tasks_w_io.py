@@ -330,7 +330,8 @@ def edge_task(img_cvname, cleft_cvname, seg_cvname,
     img = timed(f"Reading img chunk at {resolution}",
                 io.read_cloud_volume_chunk,
                 img_cvname, chunk_bounds,
-                mip=resolution, parallel=parallel)
+                mip=resolution, parallel=parallel,
+                request_payer="zetta-aibs-mouse-001")
 
     if normcloudpath is not None:
         histograms = timed("Reading normalization histograms",
