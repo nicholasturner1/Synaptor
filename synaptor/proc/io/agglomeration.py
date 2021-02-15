@@ -77,9 +77,20 @@ def readremapfiles(scratchpath, chunkindex, pcgchunkid, maxmip=11):
                       f"done_{mip}_{formatcoord(index)}_{pcgchunkid}.data.zst")
                    for (mip, index) in enumerate(mipinds)]
 
-    localfiles = sorted(io.pull_files(remotefiles))
+    localfiles = sortmapfiles(io.pull_files(remotefiles))
 
     return [readzstdmapping(f) for f in localfiles]
+
+
+def sortmapfiles(filenames):
+    sortedfiles = [None] * len(filenames)
+
+    for f in filenames:
+        index = int(f.split('_')[1])
+        assert sortedfiles[index] is None, "multiple files at the same MIP"
+        sortedfiles[index] = f
+
+    return sortedfiles
 
 
 def indsbymip(baseindex, maxmip):
