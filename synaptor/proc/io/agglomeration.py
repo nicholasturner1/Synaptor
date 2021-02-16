@@ -15,14 +15,16 @@ DCMP = zstandard.ZstdDecompressor()
 
 
 def readchunk(cvpath, bbox, startcoord, chunksize, scratchpath,
-              voxelres=0, layer=1, bits_per_dim=10, maxmip=11):
+              voxelres=0, layer=1, bits_per_dim=10, maxmip=11,
+              correctvers=True):
     ws = io.read_cloud_volume_chunk(cvpath, bbox, mip=voxelres)
 
     chunks, chunkinds = reqdchunks(bbox, Vec3d(startcoord), Vec3d(chunksize))
     for (chunk, xyz) in zip(chunks, chunkinds):
         chunk = chunk.translate(-bbox._min)
         remapchunk(ws, chunk, xyz, scratchpath, layer=layer,
-                   bits_per_dim=bits_per_dim, maxmip=maxmip)
+                   bits_per_dim=bits_per_dim, maxmip=maxmip,
+                   correctvers=correctvers)
 
     return ws
 
@@ -44,7 +46,7 @@ def reqdchunks(bbox, startcoord, chunksize):
 
 
 def remapchunk(seg, chunk, chunkindex, scratchpath,
-               layer=1, bits_per_dim=10, maxmip=11):
+               layer=1, bits_per_dim=10, maxmip=11, correctvers=True):
     x, y, z = chunkindex
     pcgchunkid = io.pcg.get_chunk_id(
                      layer=layer, x=x, y=y, z=z,
@@ -53,8 +55,12 @@ def remapchunk(seg, chunk, chunkindex, scratchpath,
     data = seg[chunk.index()]
 
     try:
-        mappings = readremapfiles(scratchpath, chunkindex,
-                                  pcgchunkid, maxmip=maxmip)
+        if correctvers:
+            mappings = readremapfiles(scratchpath, chunkindex,
+                                      pcgchunkid, maxmip=maxmip)
+        else:
+            mappings = _readremapfiles(scratchpath, chunkindex,
+                                       pcgchunkid, maxmip=maxmip)
     except subprocess.CalledProcessError as e:
         if data.max() == 0:
             return data
@@ -78,6 +84,20 @@ def readremapfiles(scratchpath, chunkindex, pcgchunkid, maxmip=11):
                    for (mip, index) in enumerate(mipinds)]
 
     localfiles = sortmapfiles(io.pull_files(remotefiles))
+
+    return [readzstdmapping(f) for f in localfiles]
+
+
+def _readremapfiles(scratchpath, chunkindex, pcgchunkid, maxmip=11):
+    """Keeping the wrong version for testing"""
+    mipinds = indsbymip(chunkindex, maxmip)
+    remotefiles = [os.path.join(
+                      scratchpath, "agg/remap",
+                      f"done_{mip}_{formatcoord(index)}_{pcgchunkid}.data.zst")
+                   for (mip, index) in enumerate(mipinds)]
+
+    # BUG - 1 -> 10 -> 2 -> ...
+    localfiles = sorted(io.pull_files(remotefiles))
 
     return [readzstdmapping(f) for f in localfiles]
 
@@ -116,3 +136,39 @@ def readzstdmapping(filename, dtype=np.uint64):
     assert len(ids) % 2 == 0
 
     return {ids[i*2]: ids[i*2+1] for i in range(len(ids) // 2)}
+
+
+def readhotfixfiles(bbox, scratchpath, chunksize, startcoord, mip=11,
+                    layer=1, bits_per_dim=10):
+    chunks, chunkinds = reqdchunks(bbox, Vec3d(startcoord), Vec3d(chunksize))
+
+    remotefiles = list()
+    pcgids = list()
+    for (chunk, ind) in zip(chunks, chunkinds):
+        x, y, z = ind
+        pcgids.append(io.pcg.get_chunk_id(
+                          layer=layer, x=x, y=y, z=z,
+                          bits_per_dim=bits_per_dim))
+
+        mipind = indsbymip(ind, mip)[mip-1]
+
+        remotefiles.append(
+            os.path.join(
+                scratchpath, "agg/remap",
+                f"done_{mip-1}_{formatcoord(mipind)}_{pcgids[-1]}.data.zst"))
+
+    matchedfiles = sortfilesbypcgid(pcgids, io.pull_files(remotefiles))
+    mappings = [readzstdmapping(f) for f in matchedfiles]
+
+    return chunks, mappings
+
+
+def sortfilesbypcgid(pcgids, filenames):
+    sortedfiles = list()
+    for pcgid in pcgids:
+        filtered = [f for f in filenames if str(pcgid) in f]
+        assert len(filtered) == 1, ("more than one pcgid match:"
+                                    " {pcgid} -> {filtered}")
+        sortedfiles.append(filtered[0])
+
+    return sortedfiles
