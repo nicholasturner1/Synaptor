@@ -22,7 +22,7 @@ def read_full_info(proc_url):
     if io.is_db_url(proc_url):
         metadata = io.open_db_metadata(proc_url)
 
-        final = metadata.tables["final"]
+        final = metadata.tables["corrected_final"]
         columns = list(final.c[name] for name in FULL_INFO_COLUMNS)
         statement = select(columns)
 
@@ -39,7 +39,7 @@ def write_full_info(dframe, proc_url, tag=None):
     """
     if io.is_db_url(proc_url):
         dframe = dframe.reset_index()
-        io.write_db_dframe(dframe, proc_url, "final", index=False)
+        io.write_db_dframe(dframe, proc_url, "corrected_final", index=False)
 
     else:
         if tag is None:
