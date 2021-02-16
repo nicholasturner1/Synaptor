@@ -30,7 +30,7 @@ def read_chunk_edge_info(proc_url, chunk_bounds):
         tag = io.fname_chunk_tag(chunk_bounds)
         metadata = io.open_db_metadata(proc_url)
 
-        edges = metadata.tables["chunk_edges"]
+        edges = metadata.tables["corrected_chunk_edges"]
         columns = list(edges.c[name] for name in EDGE_INFO_COLUMNS)
         statement = select(columns).where(edges.c[cn.chunk_tag] == tag)
 
@@ -50,9 +50,9 @@ def read_hashed_edge_info(proc_url, partnerhash=None,
     metadata = io.open_db_metadata(proc_url)
 
     if merged:
-        edges = metadata.tables["merged_edges"]
+        edges = metadata.tables["corrected_merged_edges"]
     else:
-        edges = metadata.tables["chunk_edges"]
+        edges = metadata.tables["corrected_chunk_edges"]
 
     columns = list(edges.c[name] for name in EDGE_INFO_COLUMNS)
 
@@ -69,13 +69,14 @@ def read_hashed_edge_info(proc_url, partnerhash=None,
         return io.read_db_dframe(proc_url, statement, index_col=cn.seg_id)
 
 
-def write_chunk_edge_info(dframe, proc_url, chunk_bounds):
+def write_chunk_edge_info(dframe, proc_url, chunk_bounds,
+                          tablename="corrected_chunk_edges"):
     """ Writes edge info for a single chunk to storage. """
     if io.is_db_url(proc_url):
         chunk_tag = io.fname_chunk_tag(chunk_bounds)
         to_write = dframe[EDGE_INFO_COLUMNS].copy()
         to_write[cn.chunk_tag] = chunk_tag
-        io.write_db_dframe(to_write, proc_url, "chunk_edges", index=False)
+        io.write_db_dframe(to_write, proc_url, tablename, index=False)
 
     else:
         io.write_dframe(dframe, chunk_info_fname(proc_url, chunk_bounds))
@@ -89,7 +90,7 @@ def read_all_chunk_edge_infos(proc_url):
     """
     if io.is_db_url(proc_url):
         metadata = io.open_db_metadata(proc_url)
-        edges = metadata.tables["chunk_edges"]
+        edges = metadata.tables["corrected_chunk_edges"]
         chunks = metadata.tables["chunks"]
 
         edgecols = list(edges.c[name] for name in EDGE_INFO_COLUMNS)
@@ -142,7 +143,7 @@ def read_max_n_edge_per_cleft(proc_url, n):
     assert io.is_db_url(proc_url)
 
     metadata = io.open_db_metadata(proc_url)
-    edges = metadata.tables["chunk_edges"]
+    edges = metadata.tables["corrected_chunk_edges"]
 
     n_column = edges.columns[n]
     statement = edges.select().distinct(edges.c[cn.seg_id]).\
@@ -156,7 +157,7 @@ def read_merged_edge_info(proc_url):
     if io.is_db_url(proc_url):
         metadata = io.open_db_metadata(proc_url)
 
-        edges = metadata.tables["merged_edges"]
+        edges = metadata.tables["corrected_merged_edges"]
         columns = list(edges.c[name] for name in EDGE_INFO_COLUMNS)
         statement = select(columns)
 
@@ -172,7 +173,7 @@ def write_merged_edge_info(dframe, proc_url):
     """ Writes a merged edge info dataframe to storage. """
     if io.is_db_url(proc_url):
         dframe = dframe.reset_index()
-        io.write_db_dframe(dframe, proc_url, "merged_edges", index=False)
+        io.write_db_dframe(dframe, proc_url, "corrected_merged_edges", index=False)
 
     else:
         io.write_dframe(dframe, proc_url, fn.merged_edgeinfo_fname)
