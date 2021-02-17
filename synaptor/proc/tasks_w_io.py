@@ -653,7 +653,7 @@ def fixsegids_task(storagestr, chunk_begin, chunk_end,
                     storagestr, chunk_bounds)
 
     bboxes, mappings = timed("Reading required remap files",
-                             taskio.readhotfixfiles,
+                             taskio.agg.readhotfixfiles,
                              chunk_bounds, aggscratchpath, aggchunksize,
                              aggstartcoord, aggmaxmip)
 
