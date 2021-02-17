@@ -348,7 +348,7 @@ def anchor_task(edge_info, seg, clf, chunk_begin,
                  min_box_width=min_box_width, root_seg=root_seg)
 
 
-def fixsegids_task(edgeinfo, bboxes, mappings):
+def fixsegids_task(edgeinfo, bboxes, mappings, hashmax=400, hash_fillval=-1):
 
     def mapids(pts, ids, bboxes, mappings):
         newsegids = list()
@@ -381,5 +381,12 @@ def fixsegids_task(edgeinfo, bboxes, mappings):
                                       mapids,
                                       postsynpts, edgeinfo["postsyn_segid"],
                                       bboxes, mappings)
+
+    if hashmax is not None:
+        edgeinfo = timed("Hashing partner id combinations",
+                         hashing.add_hashed_index,
+                         edgeinfo, [cn.presyn_id, cn.postsyn_id], hashmax,
+                         indexname=cn.partnerhash,
+                         null_fillval=hash_fillval)
 
     return edgeinfo
