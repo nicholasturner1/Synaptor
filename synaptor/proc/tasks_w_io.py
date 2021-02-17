@@ -661,5 +661,5 @@ def fixsegids_task(storagestr, chunk_begin, chunk_end,
 
     timed("Writing results",
           taskio.write_chunk_edge_info,
-          fixed_df, storagestr, chunk_bounds,
+          fixed_df.reset_index(), storagestr, chunk_bounds,
           tablename="corrupted_chunk_edges")
