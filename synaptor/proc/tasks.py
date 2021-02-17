@@ -353,12 +353,12 @@ def fixsegids_task(edgeinfo, bboxes, mappings):
     def mapids(pts, ids, bboxes, mappings):
         newsegids = list()
         for (pt, segid) in zip(pts, ids):
-            ind_ = [i for (i, bb) in bboxes if bb.contains(pt)]
+            ind_ = [i for (i, bb) in enumerate(bboxes) if bb.contains(pt)]
             assert len(ind_) == 1
             ind = ind_[0]
 
             if segid in mappings[ind]:
-                newsegids.append(mappinds[ind][segid])
+                newsegids.append(mappings[ind][segid])
             else:
                 newsegids.append(segid)
 
