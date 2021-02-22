@@ -652,6 +652,10 @@ def fixsegids_task(storagestr, chunk_begin, chunk_end,
                     taskio.read_chunk_edge_info,
                     storagestr, chunk_bounds)
 
+    if len(edge_df) == 0:
+        print("Empty chunk")
+        return
+
     bboxes, mappings = timed("Reading required remap files",
                              taskio.agg.readhotfixfiles,
                              chunk_bounds, aggscratchpath, aggchunksize,
