@@ -644,7 +644,7 @@ def anchor_task(cleft_cvname, seg_cvname, storagestr,
 
 def fixsegids_task(storagestr, chunk_begin, chunk_end,
                    aggscratchpath=None, aggchunksize=None,
-                   aggstartcoord=None, aggmaxmip=11):
+                   aggstartcoord=None, aggmaxmip=11, hashmax=None):
 
     chunk_bounds = types.BBox3d(chunk_begin, chunk_end)
 
@@ -657,7 +657,7 @@ def fixsegids_task(storagestr, chunk_begin, chunk_end,
                              chunk_bounds, aggscratchpath, aggchunksize,
                              aggstartcoord, aggmaxmip)
 
-    fixed_df = tasks.fixsegids_task(edge_df, bboxes, mappings)
+    fixed_df = tasks.fixsegids_task(edge_df, bboxes, mappings, hashmax=hashmax)
 
     timed("Writing results",
           taskio.write_chunk_edge_info,

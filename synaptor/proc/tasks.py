@@ -348,7 +348,7 @@ def anchor_task(edge_info, seg, clf, chunk_begin,
                  min_box_width=min_box_width, root_seg=root_seg)
 
 
-def fixsegids_task(edgeinfo, bboxes, mappings, hashmax=400, hash_fillval=-1):
+def fixsegids_task(edgeinfo, bboxes, mappings, hashmax=None, hash_fillval=-1):
 
     def mapids(pts, ids, bboxes, mappings):
         newsegids = list()

@@ -13,6 +13,7 @@ parser.add_argument("storagestr")
 # Processing Parameters
 parser.add_argument("--chunk_begin", nargs=3, type=int, required=True)
 parser.add_argument("--chunk_end", nargs=3, type=int, required=True)
+parser.add_argument("--hashmax", type=int, default=None)
 
 parser.add_argument("--aggscratchpath", default=None)
 parser.add_argument("--aggchunksize", nargs=3, type=int, default=None)
