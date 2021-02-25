@@ -15,10 +15,13 @@ REGEXP = re.compile("gs://")
 CREDS_FN = cloudvolume.secrets.google_credentials
 
 
-def pull_file(remote_path):
+def pull_file(remote_path, alwayspull=False):
     bucket, key = parse_remote_path(remote_path)
 
     local_fname = os.path.basename(remote_path)
+
+    if not alwayspull and os.path.isfile(local_fname):
+        return local_fname
 
     blob = open_bucket(bucket).blob(key)
 
