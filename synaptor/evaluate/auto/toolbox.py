@@ -62,9 +62,9 @@ def analyze_thresholds(preds, labels, voxel_bins=None):
     positive_bins, _ = np.histogram(preds[labels != 0], bins=voxel_bins)
     negative_bins, _ = np.histogram(preds[labels == 0], bins=voxel_bins)
 
-    tps = np.cumsum(positive_bins[::-1])[::-1]
-    fps = np.cumsum(negative_bins[::-1])[::-1]
-    fns = np.cumsum(positive_bins)
+    tps = np.concatenate((np.cumsum(positive_bins[::-1])[::-1], [0]))
+    fps = np.concatenate((np.cumsum(negative_bins[::-1])[::-1], [0]))
+    fns = np.concatenate(([0], np.cumsum(positive_bins)))
 
     return tps, fps, fns
 
@@ -74,7 +74,7 @@ def opt_threshold(tps, fps, fns, voxel_beta=1.5, voxel_bins=None):
     if voxel_bins is None:
         voxel_bins = [0.01*i for i in range(101)]
 
-    assert len(tps)==len(fps)==len(fns)==(len(voxel_bins)-1), "length mismatch"
+    assert len(tps)==len(fps)==len(fns)==(len(voxel_bins)), "length mismatch"
 
     old_err = np.seterr(invalid="ignore",divide="ignore")
 
@@ -85,8 +85,7 @@ def opt_threshold(tps, fps, fns, voxel_beta=1.5, voxel_bins=None):
 
     opt_i = find_best_fscore(precs, recs, voxel_beta)
 
-
-    return voxel_bins[opt_i+1]
+    return voxel_bins[opt_i]
 
 
 def merge_duplicate_clefts(asynet, patchsz, img, seg, clf,
