@@ -330,7 +330,8 @@ def edge_task(img_cvname, cleft_cvname, seg_cvname,
     img = timed(f"Reading img chunk at {resolution}",
                 io.read_cloud_volume_chunk,
                 img_cvname, chunk_bounds,
-                mip=resolution, parallel=parallel)
+                mip=resolution, parallel=parallel,
+                request_payer="zetta-aibs-mouse-001")
 
     if normcloudpath is not None:
         histograms = timed("Reading normalization histograms",
@@ -639,3 +640,30 @@ def anchor_task(cleft_cvname, seg_cvname, storagestr,
         timed("Writing total task time",
               taskio.write_task_timing,
               time.time() - start_time, "chunk_anchor", timing_tag, storagestr)
+
+
+def fixsegids_task(storagestr, chunk_begin, chunk_end,
+                   aggscratchpath=None, aggchunksize=None,
+                   aggstartcoord=None, aggmaxmip=11, hashmax=None):
+
+    chunk_bounds = types.BBox3d(chunk_begin, chunk_end)
+
+    edge_df = timed("Reading chunk edge info",
+                    taskio.read_chunk_edge_info,
+                    storagestr, chunk_bounds)
+
+    if len(edge_df) == 0:
+        print("Empty chunk")
+        return
+
+    bboxes, mappings = timed("Reading required remap files",
+                             taskio.agg.readhotfixfiles,
+                             chunk_bounds, aggscratchpath, aggchunksize,
+                             aggstartcoord, aggmaxmip)
+
+    fixed_df = tasks.fixsegids_task(edge_df, bboxes, mappings, hashmax=hashmax)
+
+    timed("Writing results",
+          taskio.write_chunk_edge_info,
+          fixed_df.reset_index(), storagestr, chunk_bounds,
+          tablename="corrupted_chunk_edges")

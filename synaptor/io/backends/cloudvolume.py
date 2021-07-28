@@ -3,11 +3,14 @@
 import cloudvolume
 
 
-def read_cloud_volume_chunk(cv_name, bbox, mip=0, parallel=1, progress=False):
+def read_cloud_volume_chunk(
+    cv_name, bbox, mip=0, parallel=1, progress=False,
+    request_payer=None):
     """ Read a chunk of data specified by a bounding box. """
 
     cv = cloudvolume.CloudVolume(cv_name, mip=mip, parallel=parallel,
-                                 progress=progress)
+                                 progress=progress,
+                                 request_payer=request_payer)
 
     # ensuring that we always read something
     # (i.e. that we know what we're doing)
