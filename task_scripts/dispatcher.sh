@@ -8,7 +8,6 @@ case $1 in
     chunk_seg_map)    python3 -u chunk_seg_map.py ${@:2} ;;
     merge_seginfo)    python3 -u merge_seginfo.py ${@:2} ;;
     chunk_edges)      python3 -u chunk_edges.py ${@:2} ;;
-    fixsegids)        python3 -u fixsegids.py ${@:2} ;;
     pick_edge)        python3 -u pick_edge.py ${@:2} ;;
     merge_dups)       python3 -u merge_dups.py ${@:2} ;;
     remap_ids)        python3 -u remap_ids.py ${@:2} ;;

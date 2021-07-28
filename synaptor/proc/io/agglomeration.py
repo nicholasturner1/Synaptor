@@ -136,39 +136,3 @@ def readzstdmapping(filename, dtype=np.uint64):
     assert len(ids) % 2 == 0
 
     return {ids[i*2]: ids[i*2+1] for i in range(len(ids) // 2)}
-
-
-def readhotfixfiles(bbox, scratchpath, chunksize, startcoord, mip=11,
-                    layer=1, bits_per_dim=10):
-    chunks, chunkinds = reqdchunks(bbox, Vec3d(startcoord), Vec3d(chunksize))
-
-    remotefiles = list()
-    pcgids = list()
-    for (chunk, ind) in zip(chunks, chunkinds):
-        x, y, z = ind
-        pcgids.append(io.pcg.get_chunk_id(
-                          layer=layer, x=x, y=y, z=z,
-                          bits_per_dim=bits_per_dim))
-
-        mipind = indsbymip(ind, mip)[mip-1]
-
-        remotefiles.append(
-            os.path.join(
-                scratchpath, "agg/remap",
-                f"done_{mip-1}_{formatcoord(mipind)}_{pcgids[-1]}.data.zst"))
-
-    matchedfiles = sortfilesbypcgid(pcgids, io.pull_files(remotefiles))
-    mappings = [readzstdmapping(f) for f in matchedfiles]
-
-    return chunks, mappings
-
-
-def sortfilesbypcgid(pcgids, filenames):
-    sortedfiles = list()
-    for pcgid in pcgids:
-        filtered = [f for f in filenames if str(pcgid) in f]
-        assert len(filtered) == 1, ("more than one pcgid match:"
-                                    " {pcgid} -> {filtered}")
-        sortedfiles.append(filtered[0])
-
-    return sortedfiles
