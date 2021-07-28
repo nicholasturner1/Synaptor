@@ -16,17 +16,12 @@ def main(configfilename, tagfilename=None):
     else:
         bboxes = None
 
-    iterator = tc.create_chunk_edges_tasks(
-                   config["image"], config["tempoutput"], config["baseseg"],
+    iterator = tc.create_fixsegids_tasks(
                    storagestr=config["storagestrs"][0],
                    hashmax=config["nummergetasks"],
-                   storagedir=config["storagestrs"][1],
                    volshape=config["volshape"],
                    chunkshape=config["chunkshape"],
                    startcoord=config["startcoord"],
-                   patchsz=config["patchshape"],
-                   normcloudpath=config["normcloudpath"],
-                   resolution=config["voxelres"],
                    aggscratchpath=config["aggscratchpath"],
                    aggchunksize=config["aggchunksize"],
                    aggmaxmip=config["aggmaxmip"],

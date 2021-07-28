@@ -16,6 +16,7 @@ def parse(filename):
 
     conf = dict()
 
+    # [Volumes]
     conf["descriptor"] = parser.get("Volumes", "descriptor")
     conf["output"] = parser.get("Volumes", "output")
     conf["tempoutput"] = parser.get("Volumes", "tempoutput",
@@ -23,6 +24,7 @@ def parse(filename):
     conf["baseseg"] = parser.get("Volumes", "baseseg", fallback=None)
     conf["image"] = parser.get("Volumes", "image", fallback=None)
 
+    # [Dimensions]
     conf["voxelres"] = parse_tuple(parser.get("Dimensions", "voxelres"))
     conf["startcoord"] = parse_tuple(parser.get("Dimensions", "startcoord"))
     conf["volshape"] = parse_tuple(parser.get("Dimensions", "volshape"))
@@ -36,6 +38,7 @@ def parse(filename):
     conf["maxfaceshape"] = infer_max_face_shape(conf["chunkshape"])
     check_shapes(conf["volshape"], conf["chunkshape"], conf["blockshape"])
 
+    # [Parameters]
     conf["ccthresh"] = parser.getfloat("Parameters", "ccthresh")
     conf["szthresh"] = parser.getint(
                            "Parameters", "szthresh", fallback=0)
@@ -46,8 +49,10 @@ def parse(filename):
     conf["nummergetasks"] = parser.getint(
                                 "Parameters", "nummergetasks", fallback=1)
 
+    # [Workflow]
     conf["workflowtype"] = parser.get(
-                               "Workflow", "workflowtype", fallback="Segmentation")
+                               "Workflow",
+                               "workflowtype", fallback="Segmentation")
     conf["workspacetype"] = parser.get(
                                 "Workflow", "workspacetype", fallback="File")
     conf["queueurl"] = parser.get("Workflow", "queueurl", fallback=None)
@@ -58,6 +63,17 @@ def parse(filename):
     conf["normcloudpath"] = parser.get(
                                 "Workflow", "normcloudpath", fallback=None)
     conf["storagestrs"] = get_storagestrs(parser)
+
+    # [Remapped segmentation]
+    conf["aggscratchpath"] = parser.get(
+                                 "Remapped segmentation",
+                                 "aggscratchpath", fallback=None)
+    conf["aggchunksize"] = parse_tuple(parser.get(
+                               "Remapped segmentation",
+                               "aggchunksize", fallback=None))
+    conf["aggmaxmip"] = parser.get(
+                            "Remapped segmentation",
+                            "aggmaxmip", fallback=None)
 
     return conf
 
