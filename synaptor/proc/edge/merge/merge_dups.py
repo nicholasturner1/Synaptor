@@ -13,13 +13,13 @@ from ... import utils
 from ... import colnames as cn
 
 
-def merge_duplicate_clefts(full_info_df, dist_thr, res):
+def merge_duplicate_clefts(full_info_df, dist_thr, res, maxgroupsize=100_000):
 
     full_info_df = full_info_df.reset_index()
     conn_comps = []
 
     def find_new_comps(group):
-        if len(group) > 1:
+        if len(group) > 1 and len(group) < maxgroupsize:
             ids = group.cleft_segid.values
             coords = group[cn.centroid_cols].values
 
