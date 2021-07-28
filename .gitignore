@@ -4,3 +4,4 @@
 build/
 *.so
 projects
+docker/[0-9]*

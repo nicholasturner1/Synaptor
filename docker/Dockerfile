@@ -25,6 +25,7 @@ RUN apt-get update && \
 #For some reason, pip works for h5py and pandas, and conda doesn't
     pip --no-cache-dir install h5py pandas cloud-volume task-queue python-igraph future && \
     pip --no-cache-dir install requests psycopg2-binary && \
+    pip --no-cache-dir install -U six && \
     conda install scipy pybind11 sqlalchemy && \
     conda install pytorch==1.3.1 torchvision cudatoolkit=10.0 -c pytorch && \
     # gsutil requires python2
@@ -32,6 +33,5 @@ RUN apt-get update && \
     git clone https://github.com/nicholasturner1/Synaptor.git && \
     pip install -e /Synaptor && \
     conda clean -t -p
-
 
 WORKDIR /Synaptor/task_scripts
